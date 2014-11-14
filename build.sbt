@@ -21,5 +21,5 @@ libraryDependencies ++= Seq(
 
 com.typesafe.sbt.SbtScalariform.scalariformSettings
 
-mainClass in (Compile, run) := Some("SimpleApp")
+//mainClass in (Compile, run) := Some("SimpleApp")
 
