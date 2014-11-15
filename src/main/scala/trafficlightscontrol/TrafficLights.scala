@@ -7,12 +7,10 @@ import scala.concurrent.ExecutionContext
 import akka.actor.ActorLogging
 import akka.actor.Stash
 
-object ChangeToRedCommand
-object ChangeToGreenCommand
 object GetStatusQuery
-object ChangedToRedEvent
-object ChangedToGreenEvent
+object ChangeToRedCommand
 case class ChangeToGreenCommand(id: String)
+object ChangedToRedEvent
 case class ChangedToGreenEvent(id: String)
 object TimeoutEvent
 
@@ -30,13 +28,13 @@ class TrafficLight(
   id: String,
   var status: Light = RedLight,
   delay: FiniteDuration = 1 seconds)(implicit executionContext: ExecutionContext)
-    extends Actor with ActorLogging with Stash {
+  extends Actor with ActorLogging with Stash {
 
   def receive = {
     case GetStatusQuery => sender ! status
     case msg => status match {
-      case RedLight => receiveWhenRed(msg)
-      case GreenLight => receiveWhenGreen(msg)
+      case RedLight    => receiveWhenRed(msg)
+      case GreenLight  => receiveWhenGreen(msg)
       case OrangeLight => receiveWhenOrange(msg)
     }
   }
@@ -45,7 +43,7 @@ class TrafficLight(
     case ChangeToRedCommand => {
       sender ! ChangedToRedEvent
     }
-    case ChangeToGreenCommand => {
+    case ChangeToGreenCommand(id) => {
       status = OrangeLight
       logStatusChange()
       context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToGreenCommand(sender))
@@ -58,8 +56,8 @@ class TrafficLight(
       logStatusChange()
       context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToRedCommand(sender))
     }
-    case ChangeToGreenCommand => {
-      sender ! ChangedToGreenEvent
+    case ChangeToGreenCommand(id) => {
+      sender ! ChangedToGreenEvent(id)
     }
   }
 
@@ -73,7 +71,7 @@ class TrafficLight(
     case ChangeFromOrangeToGreenCommand(origin) => {
       status = GreenLight
       logStatusChange()
-      origin ! ChangedToGreenEvent
+      origin ! ChangedToGreenEvent(id)
       unstashAll()
     }
     case msg => stash()

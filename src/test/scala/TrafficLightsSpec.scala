@@ -24,10 +24,9 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
     """.stripMargin
 
   val actorSystemConfig = ConfigFactory.parseString(config).withFallback(ConfigFactory.load)
-  val counter: AtomicInteger = new AtomicInteger(1)
 
   object TestTrafficLight {
-    def apply(id: String = s"Light#${counter.getAndIncrement}", status: Light = RedLight, delay: FiniteDuration = 100 milliseconds)(implicit system: ActorSystem, executionContext: ExecutionContext) =
+    def apply(id: String = "1", status: Light = RedLight, delay: FiniteDuration = 100 milliseconds)(implicit system: ActorSystem, executionContext: ExecutionContext) =
       TestActorRef(new TrafficLight(id, status, delay))
   }
 
@@ -51,8 +50,8 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
     val tested = TestTrafficLight()
     val probe = TestProbe()
     implicit val sender = probe.ref
-    tested ! ChangeToGreenCommand
-    probe.expectMsg(ChangedToGreenEvent)
+    tested ! ChangeToGreenCommand("1")
+    probe.expectMsg(ChangedToGreenEvent("1"))
     clean
   }
 

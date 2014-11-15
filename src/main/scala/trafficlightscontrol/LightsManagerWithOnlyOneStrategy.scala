@@ -21,9 +21,9 @@ class LightsManagerWithOnlyOneStrategy(val workers: Map[String, ActorRef], timeo
           val timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)
           val orginalSender = sender
           context.become(receiveRedEvents(sender, timeoutTask) {
-            target ! ChangeToGreenCommand
+            target ! ChangeToGreenCommand(id)
             val nextTimeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)
-            context.become(receiveFinalGreenEventWhenBusy(id, orginalSender, target, nextTimeoutTask))
+            context.become(receiveFinalGreenEventWhenBusy(id, orginalSender, nextTimeoutTask))
           })
         }
       }
@@ -56,13 +56,15 @@ class LightsManagerWithOnlyOneStrategy(val workers: Map[String, ActorRef], timeo
     case msg => stash()
   }
 
-  def receiveFinalGreenEventWhenBusy(id: String, originalSender: ActorRef, target: ActorRef, timeoutTask: Cancellable): Receive = {
-    case ChangedToGreenEvent => {
-      if (sender == target) {
+  def receiveFinalGreenEventWhenBusy(id: String, originalSender: ActorRef, timeoutTask: Cancellable): Receive = {
+    case ChangedToGreenEvent(targetId) => {
+      if (targetId == id) {
         timeoutTask.cancel()
         originalSender ! ChangedToGreenEvent(id)
         context.become(receiveWhenFree)
         unstashAll()
+      } else {
+        throw new Exception()
       }
     }
     case TimeoutEvent => {
