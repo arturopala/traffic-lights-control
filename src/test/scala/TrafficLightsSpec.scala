@@ -24,17 +24,17 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
     """.stripMargin
 
   val actorSystemConfig = ConfigFactory.parseString(config).withFallback(ConfigFactory.load)
+  val counter: AtomicInteger = new AtomicInteger(1)
 
   object TestTrafficLight {
-    val counter: AtomicInteger = new AtomicInteger(1)
     def apply(id: String = s"Light#${counter.getAndIncrement}", status: Light = RedLight, delay: FiniteDuration = 100 milliseconds)(implicit system: ActorSystem, executionContext: ExecutionContext) =
       TestActorRef(new TrafficLight(id, status, delay))
   }
 
   object TestLightManager {
-    def apply(timeout: FiniteDuration = 100 milliseconds)(implicit system: ActorSystem, executionContext: ExecutionContext) = {
-      val workers = Map[String, ActorRef]("1" -> TestTrafficLight("1"), "2" -> TestTrafficLight("2"))
-      TestActorRef(new LightsManager(workers, timeout))
+    def apply(lights: Seq[Light], timeout: FiniteDuration = 10 seconds)(implicit system: ActorSystem, executionContext: ExecutionContext) = {
+      val workers = lights zip (1 to lights.size) map { case (l, c) => ("" + c -> TestTrafficLight("" + c, l)) }
+      TestActorRef(new LightsManager(workers.toMap, timeout))
     }
   }
 
@@ -73,8 +73,75 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
     clean
   }
 
-  "A LightsManager actor" should "change status from red to green" in new ActorsTest {
-    val tested = TestLightManager()
+  "A LightsManager actor" should "change status of Light#1 from red to green" in new ActorsTest {
+    val tested = TestLightManager(Seq(RedLight, RedLight, RedLight, RedLight))
+    val probe = TestProbe()
+    implicit val sender = probe.ref
+    tested ! ChangeToGreenCommand("1")
+    probe.expectMsg(ChangedToGreenEvent)
+    clean
+  }
+
+  def statusOf(ref: ActorRef): Light = ref.asInstanceOf[TestActorRef[TrafficLight]].underlyingActor.status
+
+  it should "change status of Light#1 from red to green and status of others to red" in new ActorsTest {
+    val tested = TestLightManager(Seq(RedLight, GreenLight, RedLight, RedLight))
+    val workers = tested.underlyingActor.workers
+    val probe = TestProbe()
+    implicit val sender = probe.ref
+    statusOf(workers("1")) should equal(RedLight)
+    statusOf(workers("2")) should equal(GreenLight)
+    statusOf(workers("3")) should equal(RedLight)
+    statusOf(workers("4")) should equal(RedLight)
+
+    tested ! ChangeToGreenCommand("1")
+
+    probe.expectMsg(ChangedToGreenEvent)
+    statusOf(workers("1")) should equal(GreenLight)
+    statusOf(workers("2")) should equal(RedLight)
+    statusOf(workers("3")) should equal(RedLight)
+    statusOf(workers("4")) should equal(RedLight)
+    clean
+  }
+
+  it should "change status of Light#1 from red to green and status of others to red (2)" in new ActorsTest {
+    val tested = TestLightManager(Seq(RedLight, GreenLight, GreenLight, GreenLight))
+    val workers = tested.underlyingActor.workers
+    val probe = TestProbe()
+    implicit val sender = probe.ref
+    statusOf(workers("1")) should equal(RedLight)
+    statusOf(workers("2")) should equal(GreenLight)
+    statusOf(workers("3")) should equal(GreenLight)
+    statusOf(workers("4")) should equal(GreenLight)
+
+    tested ! ChangeToGreenCommand("1")
+
+    probe.expectMsg(ChangedToGreenEvent)
+    statusOf(workers("1")) should equal(GreenLight)
+    statusOf(workers("2")) should equal(RedLight)
+    statusOf(workers("3")) should equal(RedLight)
+    statusOf(workers("4")) should equal(RedLight)
+    clean
+  }
+
+  it should "change status of all lights to red" in new ActorsTest {
+    val tested = TestLightManager(Seq(GreenLight, GreenLight, RedLight, GreenLight))
+    val workers = tested.underlyingActor.workers
+    val probe = TestProbe()
+    implicit val sender = probe.ref
+    statusOf(workers("1")) should equal(GreenLight)
+    statusOf(workers("2")) should equal(GreenLight)
+    statusOf(workers("3")) should equal(RedLight)
+    statusOf(workers("4")) should equal(GreenLight)
+
+    tested ! ChangeToRedCommand
+
+    probe.expectMsg(ChangedToRedEvent)
+    statusOf(workers("1")) should equal(RedLight)
+    statusOf(workers("2")) should equal(RedLight)
+    statusOf(workers("3")) should equal(RedLight)
+    statusOf(workers("4")) should equal(RedLight)
+    clean
   }
 
 }
