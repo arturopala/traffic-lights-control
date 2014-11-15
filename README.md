@@ -18,18 +18,16 @@ Project proposed and implemented during [Scala Hackaton in Berlin](http://www.me
 ##Design:
 
 + main components are Actors:
-  + traffic lights [TrafficLight]
-  + lights groups [LightsGroupWithOnlyOneIsGreenStrategy]
-  + detectors [TrafficDetector]
-  + route directors [TrafficDirector]
+  + traffic lights [TrafficLight](https://github.com/arturopala/traffic-lights-control/blob/master/src/main/scala/trafficlightscontrol/TrafficLights.scala)
+  + lights groups [LightsGroupWithOnlyOneIsGreenStrategy](https://github.com/arturopala/traffic-lights-control/blob/master/src/main/scala/trafficlightscontrol/LightsControllerWithOnlyOneIsGreenStrategy.scala)
+  + detectors [TrafficDetector](https://github.com/arturopala/traffic-lights-control/blob/master/src/main/scala/trafficlightscontrol/TrafficDetector.scala)
+  + route directors [TrafficDirector](https://github.com/arturopala/traffic-lights-control/blob/master/src/main/scala/trafficlightscontrol/TrafficDirector.scala)
++ 
 
 ##How to run demo app?
 
-run command:
-     $sbt re-start
-  
-open url in browser:
-     http://localhost:8080/
+run command: $sbt re-start
+open url in browser: (http://localhost:8080/)
 
 
 
