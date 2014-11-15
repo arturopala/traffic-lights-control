@@ -12,12 +12,25 @@ Project proposed and implemented during [Scala Hackaton in Berlin](http://www.me
 ##Technologies:
 + Scala
 + Akka
++ Spray
++ Html5 + AngularJs (frontend)
 
 ##Design:
 
 + main components are Actors:
-  + traffic lights
-  + lights managers
-  + detectors
+  + traffic lights [TrafficLight]
+  + lights groups [LightsGroupWithOnlyOneIsGreenStrategy]
+  + detectors [TrafficDetector]
+  + route directors [TrafficDirector]
+
+##How to run demo app?
+
+run command
+  $sbt re-start
+  
+open url in browser
+  http://localhost:8080/
+
+
 
 
