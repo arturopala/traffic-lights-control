@@ -1,0 +1,129 @@
+.row {
+    height: 144px;
+}
+.row.center {
+    margin: 0 auto;
+    width : 50px;
+    padding-left: 17px;
+}
+.tf {
+    background: url("images/traffic-lights-all-icon.png") no-repeat;
+    width : 32px;
+    height : 32px;
+}
+.RedLight {
+    background: url("images/traffic-lights-red-icon.png") no-repeat;
+}
+.OrangeLight {
+    background: url("images/traffic-lights-yellow-icon.png") no-repeat;
+}
+.GreenLight {
+    background: url("images/traffic-lights-green-icon.png") no-repeat;
+}
+.tf.east {
+    float : right;
+}
+
+.tf.west {
+    float : left
+}
+.main {
+    width: 312px;
+    height: 800px;
+    margin : 50px 100px;
+    background: url("images/crossroad.png") no-repeat center 30px;
+}
+
+.car {
+    display: none;
+    position: absolute;
+    top: 230px;
+    left: 30px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: url("images/transport-car-icon.png") no-repeat;
+
+    animation: move 3s infinite ;
+    -webkit-animation: move 3s infinite ;
+}
+
+.from-0 {
+    display: block;
+    top: 76px;
+    left: 229px;
+    animation: move-down 3s infinite ;
+    -webkit-animation: move-down 3s ease infinite ;
+}
+
+@-webkit-keyframes move-down {
+    100% {
+        top: 370px;
+    }
+}
+
+@keyframes move-down {
+    100% {
+        top: 370px;
+    }
+}
+
+.from-1 {
+    display: block;
+    top: 197px;
+    left: 384px;
+    animation: move-left 3s ease infinite ;
+    -webkit-animation: move-left 3s ease infinite ;
+}
+
+@-webkit-keyframes move-left {
+    100% {
+        left: 100px;
+    }
+}
+
+@keyframes move-left {
+    100% {
+        left: 100px;
+    }
+}
+
+.from-2 {
+    display: block;
+    top: 370px;
+    left: 261px;
+    animation: move-up 3s ease infinite ;
+    -webkit-animation: move-up 3s ease infinite ;
+}
+
+@-webkit-keyframes move-up {
+    100% {
+        top: 76px;
+    }
+}
+
+@keyframes move-up {
+    100% {
+        top: 76px;
+    }
+}
+
+.from-3 {
+    display: block;
+    top: 230px;
+    left: 100px;
+    animation: move-right 3s ease infinite ;
+    -webkit-animation: move-right 3s ease infinite ;
+}
+
+@-webkit-keyframes move-right {
+    100% {
+        left: 384px;
+    }
+}
+
+@keyframes move-right {
+    100% {
+        left: 384px;
+    }
+}

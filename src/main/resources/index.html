@@ -4,45 +4,10 @@
     <meta charset="UTF-8">
     <title>TrafficLights manager</title>
     <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
-    <style>
-
-        .row {
-            height: 100px;
-        }
-        .row.center {
-            margin: 0 auto;
-            width : 50px;
-        }
-        .tf {
-            background: url("images/traffic-lights-all-icon.png") no-repeat;
-            width : 32px;
-            height : 32px;
-        }
-        .RedLight {
-            background: url("images/traffic-lights-red-icon.png") no-repeat;
-        }
-        .OrangeLight {
-            background: url("images/traffic-lights-yellow-icon.png") no-repeat;
-        }
-        .GreenLight {
-            background: url("images/traffic-lights-green-icon.png") no-repeat;
-        }
-        .tf.east {
-            float : right;
-        }
-
-        .tf.west {
-            float : left
-        }
-        .main {
-            width: 400px;
-            height: 800px;
-            margin : 50px 100px;
-        }
-
-    </style>
+    <link rel="stylesheet" href="traffic.css">
 </head>
 <body ng-app="" ng-controller="trafficLightsController">
+<div class="car {{car}}"></div>
 <button ng-click="toggleLights()">{{autoRefreshing? 'Stop' : 'Start'}}</button>
 <div class="main" >
    <div class="row center"><div id="north-tf" class="tf {{lightColor[0]}}" ></div></div>
@@ -65,6 +30,7 @@ function trafficLightsController($scope,$timeout,$http) {
             for(var i=0;i < $scope.lightColor.length;i++ ) {
                 $scope.lightColor[i] = null;
             }
+            $scope.car = "";
             return;
         }
         $scope.autoRefreshing = true;
@@ -85,6 +51,9 @@ function trafficLightsController($scope,$timeout,$http) {
                 success(function (data, status, headers, config) {
                    var statuses =  data.status;
                    for(var i=0;i < $scope.lightColor.length;i++ ) {
+                       if(statuses[i] == "GreenLight") {
+                           $scope.car = "from-" + i;
+                       }
                        $scope.lightColor[i] = statuses[i];
                    }
                 });
