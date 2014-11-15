@@ -7,14 +7,14 @@
     <style>
 
         .row {
-            height: 50px;
+            height: 100px;
         }
         .row.center {
             margin: 0 auto;
             width : 50px;
         }
         .tf {
-            background: url("images/traffic-lights-red-icon.png") no-repeat;
+            background: url("images/traffic-lights-all-icon.png") no-repeat;
             width : 32px;
             height : 32px;
         }
@@ -37,19 +37,17 @@
         .main {
             width: 400px;
             height: 800px;
+            margin : 50px 100px;
         }
 
     </style>
 </head>
-<body>
-  <div class="main" ng-app="" ng-controller="trafficLightsController">
-
-   <div class="row center"><div id="north-tf" class="tf {{northColor}}" ></div></div>
-   <div class="row"><div id="west-tf" class="tf west {{westColor}}"></div><div id="east-tf" class="tf east {{eastColor}}"></div></div>
-   <div class="row center"><div id="south-tf" class="tf {{southColor}}"></div></div>
-
-
-      <button ng-click="toggleLights()">{{autoRefreshing? 'Stop' : 'Start'}}</button>
+<body ng-app="" ng-controller="trafficLightsController">
+<button ng-click="toggleLights()">{{autoRefreshing? 'Stop' : 'Start'}}</button>
+<div class="main" >
+   <div class="row center"><div id="north-tf" class="tf {{lightColor[0]}}" ></div></div>
+   <div class="row"><div id="west-tf" class="tf west {{lightColor[3]}}"></div><div id="east-tf" class="tf east {{lightColor[1]}}"></div></div>
+   <div class="row center"><div id="south-tf" class="tf {{lightColor[2]}}"></div></div>
   </div>
 
 </body>
@@ -58,22 +56,26 @@
 function trafficLightsController($scope,$timeout,$http) {
 
     $scope.autoRefreshing = false;
+    $scope.lightColor = new Array(4);
     $scope.toggleLights = function(){
 
         var promise = null;
         if($scope.autoRefreshing){
             $scope.autoRefreshing = false;
+            for(var i=0;i < $scope.lightColor.length;i++ ) {
+                $scope.lightColor[i] = null;
+            }
             return;
         }
         $scope.autoRefreshing = true;
-       callFnOnInterval(2000);
+       callFnOnInterval(1000);
     };
 
     function callFnOnInterval( timeInterval) {
-            $scope.updateTrafficLightsModel();
-            if($scope.autoRefreshing) {
+        if($scope.autoRefreshing) {
+                $scope.updateTrafficLightsModel();
                 $timeout(function () {
-                    callFnOnInterval(timeInterval);
+                    if($scope.autoRefreshing){callFnOnInterval(timeInterval);}
                 }, timeInterval);
             }
     };
@@ -82,10 +84,9 @@ function trafficLightsController($scope,$timeout,$http) {
         $http.get('/status').
                 success(function (data, status, headers, config) {
                    var statuses =  data.status;
-                   $scope.northColor = statuses[0];
-                   $scope.eastColor = statuses[1];
-                   $scope.southColor = statuses[2];
-                   $scope.westColor = statuses[3];
+                   for(var i=0;i < $scope.lightColor.length;i++ ) {
+                       $scope.lightColor[i] = statuses[i];
+                   }
                 });
     };
  }
