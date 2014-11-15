@@ -23,7 +23,7 @@ class LightsManager(val workers: Map[String, ActorRef], timeout: FiniteDuration 
           context.become(receiveRedEvents(sender, timeoutTask) {
             target ! ChangeToGreenCommand
             val nextTimeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)
-            context.become(receiveFinalGreenEventWhenBusy(orginalSender, target, nextTimeoutTask))
+            context.become(receiveFinalGreenEventWhenBusy(id, orginalSender, target, nextTimeoutTask))
           })
         }
       }
@@ -56,11 +56,11 @@ class LightsManager(val workers: Map[String, ActorRef], timeout: FiniteDuration 
     case msg => stash()
   }
 
-  def receiveFinalGreenEventWhenBusy(originalSender: ActorRef, target: ActorRef, timeoutTask: Cancellable): Receive = {
+  def receiveFinalGreenEventWhenBusy(id: String, originalSender: ActorRef, target: ActorRef, timeoutTask: Cancellable): Receive = {
     case ChangedToGreenEvent => {
       if (sender == target) {
         timeoutTask.cancel()
-        originalSender ! ChangedToGreenEvent
+        originalSender ! ChangedToGreenEvent(id)
         context.become(receiveWhenFree)
         unstashAll()
       }

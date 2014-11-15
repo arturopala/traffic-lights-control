@@ -78,7 +78,7 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
     val probe = TestProbe()
     implicit val sender = probe.ref
     tested ! ChangeToGreenCommand("1")
-    probe.expectMsg(ChangedToGreenEvent)
+    probe.expectMsg(ChangedToGreenEvent("1"))
     clean
   }
 
@@ -96,7 +96,7 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
 
     tested ! ChangeToGreenCommand("1")
 
-    probe.expectMsg(ChangedToGreenEvent)
+    probe.expectMsg(ChangedToGreenEvent("1"))
     statusOf(workers("1")) should equal(GreenLight)
     statusOf(workers("2")) should equal(RedLight)
     statusOf(workers("3")) should equal(RedLight)
@@ -116,7 +116,7 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
 
     tested ! ChangeToGreenCommand("1")
 
-    probe.expectMsg(ChangedToGreenEvent)
+    probe.expectMsg(ChangedToGreenEvent("1"))
     statusOf(workers("1")) should equal(GreenLight)
     statusOf(workers("2")) should equal(RedLight)
     statusOf(workers("3")) should equal(RedLight)

@@ -13,6 +13,7 @@ object GetStatusQuery
 object ChangedToRedEvent
 object ChangedToGreenEvent
 case class ChangeToGreenCommand(id: String)
+case class ChangedToGreenEvent(id: String)
 object TimeoutEvent
 
 sealed abstract class Light(colour: String) {
