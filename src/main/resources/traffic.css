@@ -57,6 +57,9 @@
 }
 
 @-webkit-keyframes move-down {
+    0% {
+        top: 76px;
+    }
     100% {
         top: 370px;
     }
@@ -77,6 +80,9 @@
 }
 
 @-webkit-keyframes move-left {
+    0% {
+        left: 384px;
+    }
     100% {
         left: 100px;
     }
@@ -97,6 +103,9 @@
 }
 
 @-webkit-keyframes move-up {
+    0% {
+        top: 370px;
+    }
     100% {
         top: 76px;
     }
@@ -117,6 +126,9 @@
 }
 
 @-webkit-keyframes move-right {
+    0% {
+      left: 100px;
+    }
     100% {
         left: 384px;
     }
