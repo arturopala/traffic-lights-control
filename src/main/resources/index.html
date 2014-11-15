@@ -7,25 +7,25 @@
     <style>
 
         .row {
-            display: block;
+            height: 50px;
         }
         .row.center {
             margin: 0 auto;
             width : 50px;
         }
         .tf {
-            background-image: url("tf.jpg")
-            width : 50px;
-            height : 50px;
+            background: url("images/traffic-lights-red-icon.png") no-repeat;
+            width : 32px;
+            height : 32px;
         }
-        .red {
-            background-image: url("tf-r.jpg")
+        .RedLight {
+            background: url("images/traffic-lights-red-icon.png") no-repeat;
         }
-        .orange {
-            background-image: url("tf-o.jpg")
+        .OrangeLight {
+            background: url("images/traffic-lights-yellow-icon.png") no-repeat;
         }
-        .green {
-            background-image: url("tf-g.jpg")
+        .GreenLight {
+            background: url("images/traffic-lights-green-icon.png") no-repeat;
         }
         .tf.east {
             float : right;
@@ -35,7 +35,7 @@
             float : left
         }
         .main {
-            width: 800px;
+            width: 400px;
             height: 800px;
         }
 
@@ -44,24 +44,20 @@
 <body>
   <div class="main" ng-app="" ng-controller="trafficLightsController">
 
-   <div class="row center"><div id="north-tf" ng-class="tf {{northColor}}" ></div></div>
-   <div class="row"><div id="west-tf" class="tf west"></div><div id="east-tf" class="tf east"></div></div>
-   <div class="row center"><div id="south-tf" class="tf"></div></div>
+   <div class="row center"><div id="north-tf" class="tf {{northColor}}" ></div></div>
+   <div class="row"><div id="west-tf" class="tf west {{westColor}}"></div><div id="east-tf" class="tf east {{eastColor}}"></div></div>
+   <div class="row center"><div id="south-tf" class="tf {{southColor}}"></div></div>
 
 
-      <button ng-click="toggleLights()">test</button>
+      <button ng-click="toggleLights()">{{autoRefreshing? 'Stop' : 'Start'}}</button>
   </div>
 
 </body>
 
 <script>
-function trafficLightsController($scope,$timeout) {
+function trafficLightsController($scope,$timeout,$http) {
 
     $scope.autoRefreshing = false;
-    $scope.handle = function(){
-        console.log("red");
-        $scope.northColor = 'red';
-    };
     $scope.toggleLights = function(){
 
         var promise = null;
@@ -74,7 +70,7 @@ function trafficLightsController($scope,$timeout) {
     };
 
     function callFnOnInterval( timeInterval) {
-            $scope.handle();
+            $scope.updateTrafficLightsModel();
             if($scope.autoRefreshing) {
                 $timeout(function () {
                     callFnOnInterval(timeInterval);
@@ -82,7 +78,16 @@ function trafficLightsController($scope,$timeout) {
             }
     };
 
-
+    $scope.updateTrafficLightsModel = function(){
+        $http.get('/status').
+                success(function (data, status, headers, config) {
+                   var statuses =  data.status;
+                   $scope.northColor = statuses[0];
+                   $scope.eastColor = statuses[1];
+                   $scope.southColor = statuses[2];
+                   $scope.westColor = statuses[3];
+                });
+    };
  }
 
 
