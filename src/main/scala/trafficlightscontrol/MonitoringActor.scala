@@ -12,12 +12,11 @@ class MonitoringActor(target: ActorRef, period: FiniteDuration = 1.seconds) exte
   def receive = {
     case GetReportQuery => {
       sender ! ReportEvent(report)
+      target ! RegisterMonitorCommand(self)
     }
     case StatusEvent(id, status) => {
       report += (id -> status)
     }
   }
-
-  context.system.scheduler.schedule(0.milliseconds, period, target, GetStatusQuery)(context.system.dispatcher, self)
 
 }

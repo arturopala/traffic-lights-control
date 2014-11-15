@@ -34,7 +34,7 @@ trait TrafficHttpService extends HttpService {
 
   import Directives._
 
-  object GetStatusQueryTimeout
+  object GetReportQueryTimeout
 
   val exceptionHandler = {
     ExceptionHandler {
@@ -69,27 +69,31 @@ trait TrafficHttpService extends HttpService {
       Props {
         new Actor with ActorLogging {
 
-          monitoring ! GetReportQuery
-
           val responseStart = HttpResponse(entity = HttpEntity(`application/json`, "{\"status\":{"))
           ctx.responder ! ChunkedResponseStart(responseStart)
 
           def receive = {
             case ReportEvent(report) => {
+              timeoutTask.cancel()
               ctx.responder ! MessageChunk(report map { case (k, v) => s""""$k":"$v"""" } mkString ("", ",", "}}"))
               ctx.responder ! ChunkedMessageEnd
               context.stop(self)
             }
-            case GetStatusQueryTimeout => {
+            case GetReportQueryTimeout => {
               ctx.responder ! MessageChunk("}}")
               ctx.responder ! ChunkedMessageEnd
               context.stop(self)
             }
-            case ev: Http.ConnectionClosed =>
+            case ev: Http.ConnectionClosed => {
+              timeoutTask.cancel()
               log.warning("Stopping response streaming due to {}", ev)
+            }
+
           }
 
-          context.system.scheduler.scheduleOnce(1.seconds, self, GetStatusQueryTimeout)(context.system.dispatcher)
+          val timeoutTask = context.system.scheduler.scheduleOnce(1.seconds, self, GetReportQueryTimeout)(context.system.dispatcher)
+
+          monitoring ! GetReportQuery
 
         }
       }

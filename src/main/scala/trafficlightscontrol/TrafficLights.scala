@@ -21,6 +21,7 @@ object TimeoutEvent extends Event
 object GetReportQuery extends Query
 case class ReportEvent(report: Map[String, Light]) extends Event
 object TickCommand extends Command
+case class RegisterMonitorCommand(monitor: ActorRef) extends Command
 
 sealed abstract class Light(colour: String) {
   override val toString: String = s"${colour}Light"
@@ -38,8 +39,14 @@ class TrafficLight(
   delay: FiniteDuration = 1 seconds)
     extends Actor with ActorLogging with Stash {
 
+  var monitor: Option[ActorRef] = None
+
   def receive = {
     case GetStatusQuery => sender ! StatusEvent(id, status)
+    case RegisterMonitorCommand(monitor) => {
+      this.monitor = Option(monitor)
+      notifyMonitor()
+    }
     case msg => status match {
       case RedLight => receiveWhenRed(msg)
       case GreenLight => receiveWhenGreen(msg)
@@ -52,7 +59,7 @@ class TrafficLight(
       sender ! ChangedToRedEvent
     }
     case ChangeToGreenCommand(id) => {
-      status = OrangeLight
+      changeStatus(OrangeLight)
       logStatusChange()
       context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToGreenCommand(sender))(context.system.dispatcher)
     }
@@ -60,7 +67,7 @@ class TrafficLight(
 
   def receiveWhenGreen: Receive = {
     case ChangeToRedCommand => {
-      status = OrangeLight
+      changeStatus(OrangeLight)
       logStatusChange()
       context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToRedCommand(sender))(context.system.dispatcher)
     }
@@ -71,13 +78,13 @@ class TrafficLight(
 
   def receiveWhenOrange: Receive = {
     case ChangeFromOrangeToRedCommand(origin) => {
-      status = RedLight
+      changeStatus(RedLight)
       logStatusChange()
       origin ! ChangedToRedEvent
       unstashAll()
     }
     case ChangeFromOrangeToGreenCommand(origin) => {
-      status = GreenLight
+      changeStatus(GreenLight)
       logStatusChange()
       origin ! ChangedToGreenEvent(id)
       unstashAll()
@@ -85,6 +92,11 @@ class TrafficLight(
     case msg => stash()
   }
 
+  def changeStatus(light: Light) = {
+    status = light
+    notifyMonitor()
+  }
+  def notifyMonitor() = monitor foreach (_ ! StatusEvent(id, status))
   def logStatusChange() = log.info(s"$id changed to $status")
 
 }
