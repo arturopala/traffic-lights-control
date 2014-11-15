@@ -14,6 +14,8 @@ case class ChangeToGreenCommand(id: String)
 object ChangedToRedEvent
 case class ChangedToGreenEvent(id: String)
 object TimeoutEvent
+object GetReportQuery
+case class ReportEvent(report: Map[String, Light])
 
 sealed abstract class Light(colour: String) {
   override val toString: String = s"${colour}Light"
@@ -28,7 +30,7 @@ private case class ChangeFromOrangeToGreenCommand(sender: ActorRef)
 class TrafficLight(
   id: String,
   var status: Light = RedLight,
-  delay: FiniteDuration = 1 seconds)(implicit executionContext: ExecutionContext)
+  delay: FiniteDuration = 1 seconds)
     extends Actor with ActorLogging with Stash {
 
   def receive = {
@@ -47,7 +49,7 @@ class TrafficLight(
     case ChangeToGreenCommand(id) => {
       status = OrangeLight
       logStatusChange()
-      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToGreenCommand(sender))
+      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToGreenCommand(sender))(context.system.dispatcher)
     }
   }
 
@@ -55,7 +57,7 @@ class TrafficLight(
     case ChangeToRedCommand => {
       status = OrangeLight
       logStatusChange()
-      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToRedCommand(sender))
+      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToRedCommand(sender))(context.system.dispatcher)
     }
     case ChangeToGreenCommand(id) => {
       sender ! ChangedToGreenEvent(id)

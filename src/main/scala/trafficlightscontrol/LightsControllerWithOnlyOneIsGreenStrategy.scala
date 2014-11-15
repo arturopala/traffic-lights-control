@@ -6,7 +6,7 @@ import scala.collection._
 import scala.concurrent._
 import scala.concurrent.duration._
 
-class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 seconds)(implicit executionContext: ExecutionContext) extends Actor with ActorLogging with Stash {
+class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenFree
 
@@ -19,11 +19,11 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
         {
           responses = Set()
           workers.values foreach (_ ! ChangeToRedCommand)
-          val timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)
+          val timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
           val orginalSender = sender
           context.become(receiveRedEvents(sender, timeoutTask) {
             target ! ChangeToGreenCommand(id)
-            val nextTimeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)
+            val nextTimeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
             context.become(receiveFinalGreenEventWhenBusy(id, orginalSender, nextTimeoutTask))
           })
         }
@@ -33,7 +33,7 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
       responses = Set()
       workers.values foreach (_ ! ChangeToRedCommand)
       val orginalSender = sender
-      val timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)
+      val timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
       context.become(receiveRedEvents(orginalSender, timeoutTask) {
         timeoutTask.cancel()
         orginalSender ! ChangedToRedEvent
