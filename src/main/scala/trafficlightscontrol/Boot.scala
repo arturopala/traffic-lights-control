@@ -16,7 +16,7 @@ object Boot extends App {
 
   implicit val system = ActorSystem("app")
 
-  val traffic: ActorRef = system.actorOf(Props(classOf[TrafficSystem], 10.seconds), "traffic")
+  val traffic: ActorRef = system.actorOf(Props(classOf[DemoTrafficSystem], 10.seconds), "traffic")
   val monitoring: ActorRef = system.actorOf(Props(classOf[MonitoringActor], traffic, 250.millis), "monitoring")
   val httpService: ActorRef = system.actorOf(Props(classOf[HttpServiceActor], monitoring), "httpservice")
 
