@@ -37,6 +37,7 @@ class LightsManager(workers: Map[String, ActorRef], timeout: FiniteDuration = 10
         timeoutTask.cancel()
         orginalSender ! ChangedToRedEvent
         context.become(receiveWhenFree)
+        unstashAll()
       })
     }
   }
