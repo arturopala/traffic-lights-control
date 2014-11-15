@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>TrafficLights manager</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+    <style>
+
+        .row {
+            height: 50px;
+        }
+        .row.center {
+            margin: 0 auto;
+            width : 50px;
+        }
+        .tf {
+            background: url("images/traffic-lights-red-icon.png") no-repeat;
+            width : 32px;
+            height : 32px;
+        }
+        .RedLight {
+            background: url("images/traffic-lights-red-icon.png") no-repeat;
+        }
+        .OrangeLight {
+            background: url("images/traffic-lights-yellow-icon.png") no-repeat;
+        }
+        .GreenLight {
+            background: url("images/traffic-lights-green-icon.png") no-repeat;
+        }
+        .tf.east {
+            float : right;
+        }
+
+        .tf.west {
+            float : left
+        }
+        .main {
+            width: 400px;
+            height: 800px;
+        }
+
+    </style>
+</head>
+<body>
+  <div class="main" ng-app="" ng-controller="trafficLightsController">
+
+   <div class="row center"><div id="north-tf" class="tf {{northColor}}" ></div></div>
+   <div class="row"><div id="west-tf" class="tf west {{westColor}}"></div><div id="east-tf" class="tf east {{eastColor}}"></div></div>
+   <div class="row center"><div id="south-tf" class="tf {{southColor}}"></div></div>
+
+
+      <button ng-click="toggleLights()">{{autoRefreshing? 'Stop' : 'Start'}}</button>
+  </div>
+
+</body>
+
+<script>
+function trafficLightsController($scope,$timeout,$http) {
+
+    $scope.autoRefreshing = false;
+    $scope.toggleLights = function(){
+
+        var promise = null;
+        if($scope.autoRefreshing){
+            $scope.autoRefreshing = false;
+            return;
+        }
+        $scope.autoRefreshing = true;
+       callFnOnInterval(2000);
+    };
+
+    function callFnOnInterval( timeInterval) {
+            $scope.updateTrafficLightsModel();
+            if($scope.autoRefreshing) {
+                $timeout(function () {
+                    callFnOnInterval(timeInterval);
+                }, timeInterval);
+            }
+    };
+
+    $scope.updateTrafficLightsModel = function(){
+        $http.get('/status').
+                success(function (data, status, headers, config) {
+                   var statuses =  data.status;
+                   $scope.northColor = statuses[0];
+                   $scope.eastColor = statuses[1];
+                   $scope.southColor = statuses[2];
+                   $scope.westColor = statuses[3];
+                });
+    };
+ }
+
+
+</script>
+
+</html>

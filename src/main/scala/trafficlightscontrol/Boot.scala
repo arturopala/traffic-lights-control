@@ -57,7 +57,10 @@ trait TrafficHttpService extends HttpService {
           get {
             streamStatusResponse(monitoring)
           }
-        }
+        } ~
+          pathPrefix("") {
+            getFromResourceDirectory("")
+          }
       }
     }
 
@@ -68,7 +71,7 @@ trait TrafficHttpService extends HttpService {
 
           monitoring ! GetReportQuery
 
-          val responseStart = HttpResponse(entity = HttpEntity(`application/json`, "{status:{"))
+          val responseStart = HttpResponse(entity = HttpEntity(`application/json`, "{\"status\":{"))
           ctx.responder ! ChunkedResponseStart(responseStart)
 
           def receive = {
