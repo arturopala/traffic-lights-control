@@ -28,13 +28,13 @@ class TrafficLight(
   id: String,
   var status: Light = RedLight,
   delay: FiniteDuration = 1 seconds)(implicit executionContext: ExecutionContext)
-  extends Actor with ActorLogging with Stash {
+    extends Actor with ActorLogging with Stash {
 
   def receive = {
     case GetStatusQuery => sender ! status
     case msg => status match {
-      case RedLight    => receiveWhenRed(msg)
-      case GreenLight  => receiveWhenGreen(msg)
+      case RedLight => receiveWhenRed(msg)
+      case GreenLight => receiveWhenGreen(msg)
       case OrangeLight => receiveWhenOrange(msg)
     }
   }

@@ -33,7 +33,7 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
   object TestLightManager {
     def apply(lights: Seq[Light], timeout: FiniteDuration = 10 seconds)(implicit system: ActorSystem, executionContext: ExecutionContext) = {
       val workers = lights zip (1 to lights.size) map { case (l, c) => ("" + c -> TestTrafficLight("" + c, l)) }
-      TestActorRef(new LightsManagerWithOnlyOneStrategy(workers.toMap, timeout))
+      TestActorRef(new LightsGroupWithOnlyOneIsGreenStrategy(workers.toMap, timeout))
     }
   }
 
@@ -72,7 +72,7 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
     clean
   }
 
-  "A LightsManagerWithOnlyOneStrategy actor" should "change status of Light#1 from red to green" in new ActorsTest {
+  "A LightsGroupWithOnlyOneIsGreenStrategy actor" should "change status of Light#1 from red to green" in new ActorsTest {
     val tested = TestLightManager(Seq(RedLight, RedLight, RedLight, RedLight))
     val probe = TestProbe()
     implicit val sender = probe.ref
