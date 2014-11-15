@@ -13,6 +13,7 @@ import akka.testkit.TestProbe
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import java.util.concurrent.atomic.AtomicInteger
+import akka.actor.ActorRef
 
 @RunWith(classOf[JUnitRunner])
 class TrafficLightsSpec extends FlatSpecLike with Matchers {
@@ -30,6 +31,13 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
       TestActorRef(new TrafficLight(id, status, delay))
   }
 
+  object TestLightManager {
+    def apply(timeout: FiniteDuration = 100 milliseconds)(implicit system: ActorSystem, executionContext: ExecutionContext) = {
+      val workers = Map[String, ActorRef]("1" -> TestTrafficLight("1"), "2" -> TestTrafficLight("2"))
+      TestActorRef(new LightsManager(workers, timeout))
+    }
+  }
+
   abstract class ActorsTest extends TestKit(ActorSystem("test", actorSystemConfig)) with ImplicitSender {
     implicit val executionContext: ExecutionContext = system.dispatcher
 
@@ -41,8 +49,10 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
 
   "A TrafficLight actor" should "change status from red to green" in new ActorsTest {
     val tested = TestTrafficLight()
+    val probe = TestProbe()
+    implicit val sender = probe.ref
     tested ! ChangeToGreenCommand
-    expectMsg(ChangedToGreenEvent)
+    probe.expectMsg(ChangedToGreenEvent)
     clean
   }
 
@@ -63,5 +73,8 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
     clean
   }
 
-  //  it should "first change to orange and then to red"
+  "A LightsManager actor" should "change status from red to green" in new ActorsTest {
+    val tested = TestLightManager()
+  }
+
 }
