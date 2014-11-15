@@ -8,6 +8,7 @@ import akka.actor.ActorLogging
 import akka.actor.Stash
 
 object GetStatusQuery
+case class StatusEvent(id: String, status: Light)
 object ChangeToRedCommand
 case class ChangeToGreenCommand(id: String)
 object ChangedToRedEvent
@@ -31,7 +32,7 @@ class TrafficLight(
     extends Actor with ActorLogging with Stash {
 
   def receive = {
-    case GetStatusQuery => sender ! status
+    case GetStatusQuery => sender ! StatusEvent(id, status)
     case msg => status match {
       case RedLight => receiveWhenRed(msg)
       case GreenLight => receiveWhenGreen(msg)

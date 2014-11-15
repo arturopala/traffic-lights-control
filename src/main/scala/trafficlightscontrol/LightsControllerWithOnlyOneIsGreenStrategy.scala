@@ -13,6 +13,7 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
   var responses: Set[ActorRef] = Set()
 
   def receiveWhenFree: Receive = {
+    case m @ GetStatusQuery => workers.values foreach (_ forward m)
     case ChangeToGreenCommand(id) => {
       workers.get(id) foreach { target: ActorRef =>
         {

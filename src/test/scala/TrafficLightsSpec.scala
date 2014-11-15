@@ -63,12 +63,12 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
   }
 
   it should "return current status" in new ActorsTest {
-    val greenLight = TestTrafficLight(status = GreenLight)
-    val redLight = TestTrafficLight(status = RedLight)
+    val greenLight = TestTrafficLight(id = "A", status = GreenLight)
+    val redLight = TestTrafficLight(id = "B", status = RedLight)
     greenLight ! GetStatusQuery
-    expectMsg(GreenLight)
+    expectMsg(StatusEvent("A", GreenLight))
     redLight ! GetStatusQuery
-    expectMsg(RedLight)
+    expectMsg(StatusEvent("B", RedLight))
     clean
   }
 
