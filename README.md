@@ -31,7 +31,7 @@ Project proposed and implemented during [Scala Hackaton in Berlin](http://www.me
 
 run command: $sbt re-start
 
-open url in browser: (http://localhost:8080/)
+[open url in browser](http://localhost:8080/)
 
 
 
