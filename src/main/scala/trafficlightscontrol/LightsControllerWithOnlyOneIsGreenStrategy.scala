@@ -44,6 +44,7 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
   }
 
   def receiveRedEvents(originalSender: ActorRef, timeoutTask: Cancellable)(execute: => Unit): Receive = {
+    case m @ GetStatusQuery => workers.values foreach (_ forward m)
     case ChangedToRedEvent => {
       responses += sender
       if (responses.size == workers.size) {
@@ -58,6 +59,7 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
   }
 
   def receiveFinalGreenEventWhenBusy(id: String, originalSender: ActorRef, timeoutTask: Cancellable): Receive = {
+    case m @ GetStatusQuery => workers.values foreach (_ forward m)
     case ChangedToGreenEvent(targetId) => {
       if (targetId == id) {
         timeoutTask.cancel()
