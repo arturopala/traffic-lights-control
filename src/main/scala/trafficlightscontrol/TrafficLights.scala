@@ -12,6 +12,8 @@ object ChangeToGreenCommand
 object GetStatusQuery
 object ChangedToRedEvent
 object ChangedToGreenEvent
+case class ChangeToGreenCommand(id: String)
+object Timeout
 
 sealed abstract class Light(colour: String) {
   override val toString: String = s"${colour}Light"
