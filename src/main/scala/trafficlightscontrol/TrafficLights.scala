@@ -23,7 +23,10 @@ object OrangeLight extends Light("Orange")
 private case class ChangeFromOrangeToRedCommand(sender: ActorRef)
 private case class ChangeFromOrangeToGreenCommand(sender: ActorRef)
 
-class TrafficLight(var status: Light = RedLight, delay: FiniteDuration = 1 seconds)(implicit executionContext: ExecutionContext)
+class TrafficLight(
+  id: String,
+  var status: Light = RedLight,
+  delay: FiniteDuration = 1 seconds)(implicit executionContext: ExecutionContext)
     extends Actor with ActorLogging with Stash {
 
   def receive = {
@@ -73,6 +76,6 @@ class TrafficLight(var status: Light = RedLight, delay: FiniteDuration = 1 secon
     case msg => stash()
   }
 
-  def logStatusChange() = log.info(s"${self.path} : changed to $status")
+  def logStatusChange() = log.info(s"$id changed to $status")
 
 }
