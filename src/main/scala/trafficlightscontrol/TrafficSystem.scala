@@ -8,22 +8,23 @@ import akka.actor.ActorLogging
 
 class TrafficSystem(period: FiniteDuration = 10.seconds) extends Actor with ActorLogging {
 
-  object TickLightCommand
-
   val lights1: Map[String, ActorRef] = (0 to 3) map { c => ("" + c -> context.actorOf(Props(classOf[TrafficLight], "" + c, RedLight, period / 10))) } toMap
   val group1: ActorRef = context.actorOf(Props(classOf[LightsGroupWithOnlyOneIsGreenStrategy], lights1, period))
+  val detectors: Set[(ActorRef, String)] = (0 to 3) map { c => (context.actorOf(Props(classOf[TrafficDetector], "" + c)), "" + c) } toSet
+  val toplevel: ActorRef = context.actorOf(Props(classOf[TrafficDirector], group1, detectors, period, period / 10))
 
   var counter = 0
 
   def receive = {
-    case TickLightCommand => {
+    /*case TickCommand => {
       group1 ! ChangeToGreenCommand("" + counter)
       counter = counter + 1
       if (counter >= lights1.size) counter = 0
-    }
-    case msg => group1 forward msg
+    }*/
+    case msg: Command => toplevel forward msg
+    case msg: Query => toplevel forward msg
   }
 
-  context.system.scheduler.schedule(period / 10, period, self, TickLightCommand)(context.system.dispatcher, self)
+  context.system.scheduler.schedule(period / 10, period, self, TickCommand)(context.system.dispatcher, self)
 
 }

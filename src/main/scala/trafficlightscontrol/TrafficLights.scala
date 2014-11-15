@@ -7,15 +7,20 @@ import scala.concurrent.ExecutionContext
 import akka.actor.ActorLogging
 import akka.actor.Stash
 
-object GetStatusQuery
-case class StatusEvent(id: String, status: Light)
-object ChangeToRedCommand
-case class ChangeToGreenCommand(id: String)
-object ChangedToRedEvent
-case class ChangedToGreenEvent(id: String)
-object TimeoutEvent
-object GetReportQuery
-case class ReportEvent(report: Map[String, Light])
+trait Command
+trait Query
+trait Event
+
+object GetStatusQuery extends Query
+case class StatusEvent(id: String, status: Light) extends Event
+object ChangeToRedCommand extends Command
+case class ChangeToGreenCommand(id: String) extends Command
+object ChangedToRedEvent extends Event
+case class ChangedToGreenEvent(id: String) extends Event
+object TimeoutEvent extends Event
+object GetReportQuery extends Query
+case class ReportEvent(report: Map[String, Light]) extends Event
+object TickCommand extends Command
 
 sealed abstract class Light(colour: String) {
   override val toString: String = s"${colour}Light"

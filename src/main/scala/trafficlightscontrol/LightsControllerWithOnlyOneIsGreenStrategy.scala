@@ -11,21 +11,23 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
   def receive = receiveWhenFree
 
   var responses: Set[ActorRef] = Set()
+  var currentGreenId: String = ""
 
   def receiveWhenFree: Receive = {
-    case m @ GetStatusQuery => workers.values foreach (_ forward m)
     case ChangeToGreenCommand(id) => {
-      workers.get(id) foreach { target: ActorRef =>
-        {
-          responses = Set()
-          workers.values foreach (_ ! ChangeToRedCommand)
-          val timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
-          val orginalSender = sender
-          context.become(receiveRedEvents(sender, timeoutTask) {
-            target ! ChangeToGreenCommand(id)
-            val nextTimeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
-            context.become(receiveFinalGreenEventWhenBusy(id, orginalSender, nextTimeoutTask))
-          })
+      if (id != currentGreenId) {
+        workers.get(id) foreach { target: ActorRef =>
+          {
+            responses = Set()
+            workers.values foreach (_ ! ChangeToRedCommand)
+            val timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
+            val orginalSender = sender
+            context.become(receiveRedEvents(sender, timeoutTask) {
+              target ! ChangeToGreenCommand(id)
+              val nextTimeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
+              context.become(receiveFinalGreenEventWhenBusy(id, orginalSender, nextTimeoutTask))
+            })
+          }
         }
       }
     }
@@ -41,10 +43,11 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
         unstashAll()
       })
     }
+    case msg: Command => workers.values foreach (_ forward msg)
+    case msg: Query => workers.values foreach (_ forward msg)
   }
 
   def receiveRedEvents(originalSender: ActorRef, timeoutTask: Cancellable)(execute: => Unit): Receive = {
-    case m @ GetStatusQuery => workers.values foreach (_ forward m)
     case ChangedToRedEvent => {
       responses += sender
       if (responses.size == workers.size) {
@@ -55,15 +58,16 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
     case TimeoutEvent => {
       throw new Exception(s"timeout waiting for all red events")
     }
+    case m @ GetStatusQuery => workers.values foreach (_ forward m)
     case msg => stash()
   }
 
   def receiveFinalGreenEventWhenBusy(id: String, originalSender: ActorRef, timeoutTask: Cancellable): Receive = {
-    case m @ GetStatusQuery => workers.values foreach (_ forward m)
     case ChangedToGreenEvent(targetId) => {
       if (targetId == id) {
         timeoutTask.cancel()
         originalSender ! ChangedToGreenEvent(id)
+        currentGreenId = id
         context.become(receiveWhenFree)
         unstashAll()
       } else {
@@ -73,6 +77,7 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
     case TimeoutEvent => {
       throw new Exception()
     }
+    case m @ GetStatusQuery => workers.values foreach (_ forward m)
     case msg => stash()
   }
 
