@@ -55,7 +55,10 @@ trait TrafficHttpService extends HttpService {
               streamStatusResponse(trafficSystem)
             }
           }
-        }
+        } ~
+          pathPrefix("") {
+            getFromResourceDirectory("")
+          }
       }
     }
 

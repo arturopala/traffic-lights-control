@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>TrafficLights manager</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+    <style>
+
+        .row {
+            display: block;
+        }
+        .row.center {
+            margin: 0 auto;
+            width : 50px;
+        }
+        .tf {
+            background-image: url("tf.jpg")
+            width : 50px;
+            height : 50px;
+        }
+        .red {
+            background-image: url("tf-r.jpg")
+        }
+        .orange {
+            background-image: url("tf-o.jpg")
+        }
+        .green {
+            background-image: url("tf-g.jpg")
+        }
+        .tf.east {
+            float : right;
+        }
+
+        .tf.west {
+            float : left
+        }
+        .main {
+            width: 800px;
+            height: 800px;
+        }
+
+    </style>
+</head>
+<body>
+  <div class="main" ng-app="" ng-controller="trafficLightsController">
+
+   <div class="row center"><div id="north-tf" ng-class="tf {{northColor}}" ></div></div>
+   <div class="row"><div id="west-tf" class="tf west"></div><div id="east-tf" class="tf east"></div></div>
+   <div class="row center"><div id="south-tf" class="tf"></div></div>
+
+
+      <button ng-click="toggleLights()">test</button>
+  </div>
+
+</body>
+
+<script>
+function trafficLightsController($scope,$timeout) {
+
+    $scope.autoRefreshing = false;
+    $scope.handle = function(){
+        console.log("red");
+        $scope.northColor = 'red';
+    };
+    $scope.toggleLights = function(){
+
+        var promise = null;
+        if($scope.autoRefreshing){
+            $scope.autoRefreshing = false;
+            return;
+        }
+        $scope.autoRefreshing = true;
+       callFnOnInterval(2000);
+    };
+
+    function callFnOnInterval( timeInterval) {
+            $scope.handle();
+            if($scope.autoRefreshing) {
+                $timeout(function () {
+                    callFnOnInterval(timeInterval);
+                }, timeInterval);
+            }
+    };
+
+
+ }
+
+
+</script>
+
+</html>
