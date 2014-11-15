@@ -6,12 +6,12 @@ import spray.can.Http
 import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent.duration._
-
 import akka.actor.Actor
 import spray.routing._
 import spray.http._
 import MediaTypes._
 import akka.actor.ActorRef
+import akka.actor.ActorLogging
 
 object Boot extends App {
   implicit val system = ActorSystem("app")
@@ -21,15 +21,16 @@ object Boot extends App {
   IO(Http) ? Http.Bind(service, interface = "0.0.0.0", port = 8080)
 }
 
-class HttpServiceActor(trafficSystem: ActorRef) extends Actor with HttpService {
+class HttpServiceActor(trafficSystem: ActorRef) extends Actor with TrafficHttpService {
   def actorRefFactory = context
-  val route = Routes.route(trafficSystem)
+  val route = createRoutes(trafficSystem)
   def receive = runRoute(route)
 }
 
-object Routes {
+trait TrafficHttpService extends HttpService {
 
   import Directives._
+  implicit def executionContext = actorRefFactory.dispatcher
 
   val exceptionHandler = {
     ExceptionHandler {
@@ -45,17 +46,45 @@ object Routes {
     }
   }
 
-  def route(trafficSystem: ActorRef) =
+  def createRoutes(trafficSystem: ActorRef) =
     handleRejections(rejectionHandler) {
       handleExceptions(exceptionHandler) {
         path("status") {
           get {
             respondWithMediaType(`text/plain`) {
-              complete {
-                trafficSystem ! GetStatusQuery
-                "OK"
-              }
+              streamStatusResponse(trafficSystem)
             }
+          }
+        }
+      }
+    }
+
+  object Started
+
+  def streamStatusResponse(trafficSystem: ActorRef)(ctx: RequestContext): Unit =
+    actorRefFactory.actorOf {
+      Props {
+        new Actor with ActorLogging {
+
+          trafficSystem ! GetStatusQuery
+
+          val responseStart = HttpResponse(entity = HttpEntity(`text/plain`, ""))
+          ctx.responder ! ChunkedResponseStart(responseStart).withAck(Started)
+
+          def receive = {
+            case Started =>
+              ctx.responder ! MessageChunk("OK")
+              ctx.responder ! ChunkedMessageEnd
+              context.stop(self)
+
+            /*case Ok(remaining) =>
+              in(500.millis) {
+                val nextChunk = MessageChunk("<li>" + DateTime.now.toIsoDateTimeString + "</li>")
+                ctx.responder ! nextChunk.withAck(Sent)
+              }*/
+
+            case ev: Http.ConnectionClosed =>
+              log.warning("Stopping response streaming due to {}", ev)
           }
         }
       }

@@ -24,5 +24,9 @@ libraryDependencies ++= Seq(
 
 com.typesafe.sbt.SbtScalariform.scalariformSettings
 
+Revolver.settings
+
+scoverage.ScoverageSbtPlugin.instrumentSettings
+
 mainClass in (Compile, run) := Some("trafficlightscontrol.Boot")
 
