@@ -60,6 +60,9 @@ trait TrafficHttpService extends HttpService {
         } ~
           pathPrefix("") {
             getFromResourceDirectory("")
+          } ~
+          path("") {
+            getFromResource("index.html")
           }
       }
     }

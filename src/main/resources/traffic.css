@@ -10,6 +10,8 @@
     background: url("images/traffic-lights-all-icon.png") no-repeat;
     width : 32px;
     height : 32px;
+    text-align: right;
+    padding-left: 10px;
 }
 .RedLight {
     background: url("images/traffic-lights-red-icon.png") no-repeat;
@@ -25,10 +27,10 @@
 }
 
 .tf.west {
-    float : left
+    float : left;
 }
 .main {
-    width: 312px;
+    width: 332px;
     height: 800px;
     margin : 50px 100px;
     background: url("images/crossroad.png") no-repeat center 30px;
@@ -51,7 +53,9 @@
 .from-0 {
     display: block;
     top: 76px;
-    left: 229px;
+    left: 180px;
+    transform: rotate(90deg);
+    -webkit-transform : rotate(90deg);
     animation: move-down 3s infinite ;
     -webkit-animation: move-down 3s ease infinite ;
 }
@@ -97,23 +101,28 @@
 .from-2 {
     display: block;
     top: 370px;
-    left: 261px;
+    left: 270px;
+    -webkit-transform : rotate(270deg);
+    transform: rotate(270deg);
     animation: move-up 3s ease infinite ;
     -webkit-animation: move-up 3s ease infinite ;
 }
 
 @-webkit-keyframes move-up {
     0% {
-        top: 370px;
+        top: 300px;
     }
     100% {
-        top: 76px;
+        top: 0px;
     }
 }
 
 @keyframes move-up {
+    0% {
+        top: 300px;
+    }
     100% {
-        top: 76px;
+        top: 0px;
     }
 }
 
@@ -130,12 +139,12 @@
       left: 100px;
     }
     100% {
-        left: 384px;
+        left: 400px;
     }
 }
 
 @keyframes move-right {
     100% {
-        left: 384px;
+        left: 400px;
     }
 }

@@ -10,9 +10,9 @@
 <div class="car {{car}}"></div>
 <button ng-click="toggleLights()">{{autoRefreshing? 'Stop' : 'Start'}}</button>
 <div class="main" >
-   <div class="row center"><div id="north-tf" class="tf {{lightColor[0]}}" ></div></div>
-   <div class="row"><div id="west-tf" class="tf west {{lightColor[3]}}"></div><div id="east-tf" class="tf east {{lightColor[1]}}"></div></div>
-   <div class="row center"><div id="south-tf" class="tf {{lightColor[2]}}"></div></div>
+   <div class="row center"><div id="north-tf" class="tf {{lightColor[0]}}" >0</div></div>
+   <div class="row"><div id="west-tf" class="tf west {{lightColor[3]}}">3</div><div id="east-tf" class="tf east {{lightColor[1]}}">1</div></div>
+   <div class="row center"><div id="south-tf" class="tf {{lightColor[2]}}">2</div></div>
   </div>
 
 </body>
@@ -24,7 +24,6 @@ function trafficLightsController($scope,$timeout,$http) {
     $scope.lightColor = new Array(4);
     $scope.toggleLights = function(){
 
-        var promise = null;
         if($scope.autoRefreshing){
             $scope.autoRefreshing = false;
             for(var i=0;i < $scope.lightColor.length;i++ ) {
@@ -50,11 +49,18 @@ function trafficLightsController($scope,$timeout,$http) {
         $http.get('/status').
                 success(function (data, status, headers, config) {
                    var statuses =  data.status;
-                   for(var i=0;i < $scope.lightColor.length;i++ ) {
-                       if(statuses[i] == "GreenLight") {
-                           $scope.car = "from-" + i;
+                   if(typeof statuses[0] !== undefined) {
+                        var isGreen = false;
+                       for (var i = 0; i < $scope.lightColor.length; i++) {
+                           if (statuses[i] == "GreenLight") {
+                               $scope.car = "from-" + i;
+                               isGreen = true;
+                           }
+                           if(!isGreen) {
+                               $scope.car = "";
+                           }
+                           $scope.lightColor[i] = statuses[i];
                        }
-                       $scope.lightColor[i] = statuses[i];
                    }
                 });
     };
