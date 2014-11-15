@@ -16,10 +16,13 @@ libraryDependencies ++= Seq(
   "junit" % "junit" % "4.+" % Test,
   "com.novocode" % "junit-interface" % "0.10" % Test,
   "org.slf4j" % "slf4j-api" % "1.7.+",
-  "org.slf4j" % "slf4j-simple" % "1.7.+"
+  "org.slf4j" % "slf4j-simple" % "1.7.+",
+  "io.spray"  %%  "spray-can"     % "1.3.+",
+  "io.spray"  %%  "spray-routing" % "1.3.+",
+  "io.spray"  %%  "spray-json"    % "1.3.0"
 )
 
 com.typesafe.sbt.SbtScalariform.scalariformSettings
 
-//mainClass in (Compile, run) := Some("SimpleApp")
+mainClass in (Compile, run) := Some("trafficlightscontrol.Boot")
 
