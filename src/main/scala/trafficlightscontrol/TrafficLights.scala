@@ -1,55 +1,78 @@
 package trafficlightscontrol
 
 import akka.actor.Actor
-import TrafficLights._
 import scala.concurrent.duration._
 import akka.actor.ActorRef
-import TrafficLights._
 import scala.concurrent.ExecutionContext
 import akka.actor.ActorLogging
+import akka.actor.Stash
 
-object TrafficLights {
+object ChangeToRedCommand
+object ChangeToGreenCommand
+object GetStatusQuery
+object ChangedToRedEvent
+object ChangedToGreenEvent
 
-  object ChangeToRedCommand
-  object ChangeToGreenCommand
-  object GetStatusQuery
-  object ChangedToRedEvent
-  object ChangedToGreenEvent
-
-  sealed abstract class Light(colour: String) {
-    override val toString: String = s"${colour}Light"
-  }
-  object RedLight extends Light("Red")
-  object GreenLight extends Light("Green")
-  object OrangeLight extends Light("Orange")
-
+sealed abstract class Light(colour: String) {
+  override val toString: String = s"${colour}Light"
 }
+object RedLight extends Light("Red")
+object GreenLight extends Light("Green")
+object OrangeLight extends Light("Orange")
 
-class TrafficLight(var status: Light = RedLight, period: FiniteDuration = 1 seconds)(implicit executionContext: ExecutionContext) extends Actor with ActorLogging {
+private case class ChangeFromOrangeToRedCommand(sender: ActorRef)
+private case class ChangeFromOrangeToGreenCommand(sender: ActorRef)
 
-  case class ChangeFromOrangeToRedCommand(sender: ActorRef)
+class TrafficLight(var status: Light = RedLight, delay: FiniteDuration = 1 seconds)(implicit executionContext: ExecutionContext)
+    extends Actor with ActorLogging with Stash {
 
   def receive = {
-    case ChangeToRedCommand => {
-      status = OrangeLight
-      logStatus()
-      context.system.scheduler.scheduleOnce(period, self, ChangeFromOrangeToRedCommand(sender))
-    }
-    case ChangeFromOrangeToRedCommand(origin) => {
-      status = RedLight
-      logStatus()
-      origin ! ChangedToRedEvent
-    }
-    case ChangeToGreenCommand => {
-      status = GreenLight
-      logStatus()
-      sender ! ChangedToGreenEvent
-    }
-    case GetStatusQuery => {
-      sender ! status
+    case GetStatusQuery => sender ! status
+    case msg => status match {
+      case RedLight => receiveWhenRed(msg)
+      case GreenLight => receiveWhenGreen(msg)
+      case OrangeLight => receiveWhenOrange(msg)
     }
   }
 
-  def logStatus() = log.info(s"${self.path} : lights changed to $status")
+  def receiveWhenRed: Receive = {
+    case ChangeToRedCommand => {
+      sender ! ChangedToRedEvent
+    }
+    case ChangeToGreenCommand => {
+      status = OrangeLight
+      logStatusChange()
+      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToGreenCommand(sender))
+    }
+  }
+
+  def receiveWhenGreen: Receive = {
+    case ChangeToRedCommand => {
+      status = OrangeLight
+      logStatusChange()
+      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToRedCommand(sender))
+    }
+    case ChangeToGreenCommand => {
+      sender ! ChangedToGreenEvent
+    }
+  }
+
+  def receiveWhenOrange: Receive = {
+    case ChangeFromOrangeToRedCommand(origin) => {
+      status = RedLight
+      logStatusChange()
+      origin ! ChangedToRedEvent
+      unstashAll()
+    }
+    case ChangeFromOrangeToGreenCommand(origin) => {
+      status = GreenLight
+      logStatusChange()
+      origin ! ChangedToGreenEvent
+      unstashAll()
+    }
+    case msg => stash()
+  }
+
+  def logStatusChange() = log.info(s"${self.path} : changed to $status")
 
 }
