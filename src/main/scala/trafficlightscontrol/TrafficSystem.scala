@@ -22,9 +22,9 @@ class TrafficSystem(period: FiniteDuration = 10.seconds) extends Actor with Acto
       if (counter >= lights1.size) counter = 0
     }*/
     case msg: Command => toplevel forward msg
-    case msg: Query => toplevel forward msg
+    case msg: Query   => toplevel forward msg
   }
 
-  context.system.scheduler.schedule(period / 10, period, self, TickCommand)(context.system.dispatcher, self)
+  context.system.scheduler.schedule(period / 10, period / 2, self, TickCommand)(context.system.dispatcher, self)
 
 }
