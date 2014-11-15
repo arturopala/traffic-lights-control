@@ -18,10 +18,10 @@ object Boot extends App {
 
   val traffic: ActorRef = system.actorOf(Props(classOf[TrafficSystem], 10.seconds), "traffic")
   val monitoring: ActorRef = system.actorOf(Props(classOf[MonitoringActor], traffic, 250.millis), "monitoring")
-  val service: ActorRef = system.actorOf(Props(classOf[HttpServiceActor], monitoring), "httpservice")
+  val httpService: ActorRef = system.actorOf(Props(classOf[HttpServiceActor], monitoring), "httpservice")
 
   implicit val timeout = Timeout(5.seconds)
-  IO(Http) ? Http.Bind(service, interface = "0.0.0.0", port = 8080)
+  IO(Http) ? Http.Bind(httpService, interface = "0.0.0.0", port = 8080)
 }
 
 class HttpServiceActor(monitoring: ActorRef) extends Actor with TrafficHttpService {

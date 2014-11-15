@@ -31,8 +31,8 @@ class TrafficDirectorSpec extends FlatSpecLike with Matchers {
   }
 
   object TestTrafficDetector {
-    def apply(implicit system: ActorSystem) = {
-      TestActorRef(new TrafficDetector())
+    def apply()(implicit system: ActorSystem) = {
+      TestActorRef(new TrafficDetector(""))
     }
   }
 
@@ -46,9 +46,8 @@ class TrafficDirectorSpec extends FlatSpecLike with Matchers {
   object TestTrafficDirector {
     def apply(lights: Seq[Light], timeout: FiniteDuration = 10 seconds)(implicit system: ActorSystem) = {
       val lightManager = TestLightManager(lights, timeout)
-      val detectors = lights zip (1 to lights.size) map { case (l, c) => (TestTrafficDetector, "" + c) }
-      //TestActorRef(new TrafficDirector(lightManager, Set(detectors: _*)))
-      Nil
+      val detectors = lights zip (1 to lights.size) map { case (l, c) => (TestTrafficDetector(), "" + c) }
+      TestActorRef(new TrafficDirector(lightManager, Set(detectors: _*)))
     }
   }
 
