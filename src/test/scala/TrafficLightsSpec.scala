@@ -26,19 +26,18 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers {
   val actorSystemConfig = ConfigFactory.parseString(config).withFallback(ConfigFactory.load)
 
   object TestTrafficLight {
-    def apply(id: String = "1", status: Light = RedLight, delay: FiniteDuration = 100 milliseconds)(implicit system: ActorSystem, executionContext: ExecutionContext) =
+    def apply(id: String = "1", status: Light = RedLight, delay: FiniteDuration = 100 milliseconds)(implicit system: ActorSystem) =
       TestActorRef(new TrafficLight(id, status, delay))
   }
 
   object TestLightManager {
-    def apply(lights: Seq[Light], timeout: FiniteDuration = 10 seconds)(implicit system: ActorSystem, executionContext: ExecutionContext) = {
+    def apply(lights: Seq[Light], timeout: FiniteDuration = 10 seconds)(implicit system: ActorSystem) = {
       val workers = lights zip (1 to lights.size) map { case (l, c) => ("" + c -> TestTrafficLight("" + c, l)) }
       TestActorRef(new LightsGroupWithOnlyOneIsGreenStrategy(workers.toMap, timeout))
     }
   }
 
   abstract class ActorsTest extends TestKit(ActorSystem("test", actorSystemConfig)) with ImplicitSender {
-    implicit val executionContext: ExecutionContext = system.dispatcher
 
     def clean(implicit system: ActorSystem): Unit = {
       Thread.sleep(100)
