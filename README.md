@@ -11,9 +11,12 @@ Project proposed and implemented during [Scala Hackaton in Berlin](http://www.me
 
 ##Technologies:
 + Scala
-+ Akka
-+ Spray
++ Akka (main logic flow)
++ Spray (http service)
 + Html5 + AngularJs (frontend)
++ ScalaTest (tests)
++ Akka TestKit (tests)
++ SBT (build)
 
 ##Design:
 
@@ -29,7 +32,8 @@ Project proposed and implemented during [Scala Hackaton in Berlin](http://www.me
 
 ##How to run demo app?
 
-run command: $sbt re-start
+run command: 
+    $sbt re-start
 
 [open url in browser](http://localhost:8080/)
 
