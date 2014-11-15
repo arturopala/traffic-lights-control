@@ -5,7 +5,7 @@ import akka.actor.ActorRef
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
-class MonitoringActor(trafficSystem: ActorRef) extends Actor {
+class MonitoringActor(trafficSystem: ActorRef, period: FiniteDuration = 1.seconds) extends Actor {
 
   var report: Map[String, Light] = Map()
 
@@ -18,6 +18,6 @@ class MonitoringActor(trafficSystem: ActorRef) extends Actor {
     }
   }
 
-  context.system.scheduler.schedule(0.milliseconds, 1.seconds, trafficSystem, GetStatusQuery)(context.system.dispatcher, self)
+  context.system.scheduler.schedule(0.milliseconds, period, trafficSystem, GetStatusQuery)(context.system.dispatcher, self)
 
 }

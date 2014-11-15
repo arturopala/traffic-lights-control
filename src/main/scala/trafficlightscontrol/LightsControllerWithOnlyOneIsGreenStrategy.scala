@@ -52,7 +52,7 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
       }
     }
     case TimeoutEvent => {
-      throw new Exception()
+      throw new Exception(s"timeout waiting for all red events")
     }
     case msg => stash()
   }
@@ -65,7 +65,7 @@ class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], 
         context.become(receiveWhenFree)
         unstashAll()
       } else {
-        throw new Exception()
+        throw new Exception(s"expected green event from $targetId but received from $id")
       }
     }
     case TimeoutEvent => {
