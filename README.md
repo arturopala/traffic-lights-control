@@ -25,10 +25,12 @@ Project proposed and implemented during [Scala Hackaton in Berlin](http://www.me
 
 ##How to run demo app?
 
-run command
+run command:
+
   $sbt re-start
   
-open url in browser
+open url in browser:
+
   http://localhost:8080/
 
 
