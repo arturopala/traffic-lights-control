@@ -37,6 +37,11 @@ run command:
 
 [open url in browser](http://localhost:8080/)
 
+##Description
+
+Traffic control app uses message passing between asynchronous actors as a tool to model real-time traffic lights system. Few commands, querries and events forms control and supervision protocol. Demo implemented at hackaton represents simple crossroad but we took approach that allows design systems of a larger scale. 
+
+The innermost primitive component of a traffic system is a [TrafficLight](https://github.com/arturopala/traffic-lights-control/blob/master/src/main/scala/trafficlightscontrol/TrafficLights.scala) actor simulating red/orange/green signals using finite state machine. TrafficLight processes ChangeToRed, ChangeToGreen and GetStatusQuery. Light switching with orange blink phase is handled internally with scheduler. Externally are exposed ACK events: ChangedToRedEvent and ChangedToGreenEvent. StatusEvent is used by [MonitoringActor](https://github.com/arturopala/traffic-lights-control/blob/master/src/main/scala/trafficlightscontrol/MonitoringActor.scala) to report system state via http service. TrafficLights are intended to be grouped by outer components like groups, managers, directors, etc.
 
 
 
