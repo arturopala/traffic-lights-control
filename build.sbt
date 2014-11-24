@@ -19,7 +19,8 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-simple" % "1.7.+",
   "io.spray"  %%  "spray-can"     % "1.3.+",
   "io.spray"  %%  "spray-routing" % "1.3.+",
-  "io.spray"  %%  "spray-json"    % "1.3.0"
+  "io.spray"  %%  "spray-json"    % "1.3.0",
+  "com.softwaremill.macwire" %% "macros" % "0.7.3"
 )
 
 com.typesafe.sbt.SbtScalariform.scalariformSettings

@@ -15,13 +15,10 @@ import akka.actor.ActorLogging
 object Boot extends App {
 
   implicit val system = ActorSystem("app")
-
-  val traffic: ActorRef = system.actorOf(Props(classOf[DemoTrafficSystem], 10.seconds), "traffic")
-  val monitoring: ActorRef = system.actorOf(Props(classOf[MonitoringActor], traffic, 250.millis), "monitoring")
-  val httpService: ActorRef = system.actorOf(Props(classOf[HttpServiceActor], monitoring), "httpservice")
+  implicit val module = new Module {}
 
   implicit val timeout = Timeout(5.seconds)
-  IO(Http) ? Http.Bind(httpService, interface = "0.0.0.0", port = 8080)
+  IO(Http) ? Http.Bind(module.httpServiceActor, interface = "0.0.0.0", port = 8080)
 }
 
 class HttpServiceActor(monitoring: ActorRef) extends Actor with TrafficHttpService {

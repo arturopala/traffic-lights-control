@@ -4,6 +4,7 @@ import akka.actor.Actor
 import akka.actor.ActorRef
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import akka.actor.ActorPath
 
 class MonitoringActor(target: ActorRef, period: FiniteDuration = 1.seconds) extends Actor {
 
