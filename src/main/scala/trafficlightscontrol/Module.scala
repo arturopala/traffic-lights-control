@@ -9,17 +9,18 @@ import akka.actor.ActorContext
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.actor.ActorRefFactory
+import scala.reflect.ClassTag
 
-class Module(implicit system: ActorSystem) extends Macwire {
+class Module(implicit system: ActorSystem) extends Macwire with ActorOf {
 
   val period: FiniteDuration = 10.seconds
 
-  lazy val demoTrafficActor = ActorOf("traffic", classOf[DemoTrafficSystem])
-  lazy val monitoringActor = ActorOf("monitoring", classOf[MonitoringActor], demoTrafficActor, period)
-  lazy val httpServiceActor = ActorOf("httpservice", classOf[HttpServiceActor], monitoringActor)
+  lazy val demoTrafficActor = actorOf[DemoTrafficSystem]("traffic", period)
+  lazy val monitoringActor = actorOf[MonitoringActor]("monitoring", demoTrafficActor)
+  lazy val httpServiceActor = actorOf[HttpServiceActor]("httpservice", monitoringActor)
 
 }
 
-object ActorOf {
-  def apply(name: String, actorClass: Class[_], args: Any*)(implicit factory: ActorRefFactory): ActorRef = factory.actorOf(Props(actorClass, args: _*), name)
+trait ActorOf {
+  def actorOf[T](name: String, args: Any*)(implicit factory: ActorRefFactory, ct: ClassTag[T]): ActorRef = factory.actorOf(Props(ct.runtimeClass, args: _*), name)
 }
