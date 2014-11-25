@@ -11,34 +11,41 @@ import spray.can.websocket.FrameCommandFailed
 
 final case class Push(msg: String)
 
-class WebSocketServiceActor(httpFallback: ActorRef) extends Actor with ActorLogging {
+class WebSocketServiceActor(webSocketActor: ActorRef, httpActor: ActorRef) extends Actor with ActorLogging {
   def receive = {
     // when a new connection comes in we register a WebSocketConnection actor
     // as the per connection handler
     case Http.Connected(remoteAddress, localAddress) =>
       val serverConnection = sender()
-      val conn = context.actorOf(Props(classOf[WebSocketWorker], serverConnection, httpFallback))
+      val conn = context.actorOf(Props(classOf[WebSocketWorker], serverConnection, webSocketActor, httpActor))
       serverConnection ! Http.Register(conn)
   }
 }
 
-class WebSocketWorker(val serverConnection: ActorRef, httpFallback: ActorRef) extends spray.routing.HttpServiceActor with websocket.WebSocketServerWorker {
+class WebSocketWorker(val serverConnection: ActorRef, webSocketActor: ActorRef, httpActor: ActorRef) extends spray.routing.HttpServiceActor with websocket.WebSocketServerWorker {
   override def receive = handshaking orElse businessLogicNoUpgrade orElse closeLogic
 
   def businessLogic: Receive = {
-    // just bounce frames back
-    case x @ (_: BinaryFrame | _: TextFrame) =>
-      sender() ! x
+
+    case msg @ (_: BinaryFrame | _: TextFrame) =>
+      webSocketActor forward msg
 
     case Push(msg) => send(TextFrame(msg))
 
-    case x: FrameCommandFailed =>
-      log.error("frame command failed", x)
+    case msg: FrameCommandFailed =>
+      log.error("frame command failed", msg)
 
-    case x: HttpRequest => // do something
+    case msg: HttpRequest => httpActor forward msg
   }
 
   def businessLogicNoUpgrade: Receive = {
-    case msg => httpFallback forward msg
+    case msg => httpActor forward msg
+  }
+}
+
+class WebServiceActor extends Actor {
+  def receive = {
+    case TextFrame(msg) => println(msg)
+    case BinaryFrame(bytes) => println(bytes.mkString("[", ",", "]"))
   }
 }

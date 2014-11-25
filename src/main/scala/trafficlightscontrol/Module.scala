@@ -18,7 +18,8 @@ class Module(implicit system: ActorSystem) extends Macwire with ActorOf {
   lazy val demoTrafficActor: ActorRef = actorOf[DemoTrafficSystem]("traffic", period)
   lazy val monitoringActor: ActorRef = actorOf[MonitoringActor]("monitoring", demoTrafficActor)
   lazy val httpServiceActor: ActorRef = actorOf[HttpServiceActor]("httpservice", monitoringActor)
-  lazy val webSocketServiceActor: ActorRef = actorOf[WebSocketServiceActor]("websocket", httpServiceActor)
+  lazy val webServiceActor: ActorRef = actorOf[WebServiceActor]("wsservice")
+  lazy val webSocketServiceActor: ActorRef = actorOf[WebSocketServiceActor]("websocket", webServiceActor, httpServiceActor)
 
 }
 
