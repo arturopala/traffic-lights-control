@@ -22,13 +22,14 @@ object GetReportQuery extends Query
 case class ReportEvent(report: Map[String, Light]) extends Event
 object TickCommand extends Command
 case class RegisterMonitorCommand(monitor: ActorRef) extends Command
+object UnregisterMonitorCommand extends Command
 
-sealed abstract class Light(colour: String) {
+sealed abstract class Light(val colour: String, val id: String) {
   override val toString: String = s"${colour}Light"
 }
-object RedLight extends Light("Red")
-object GreenLight extends Light("Green")
-object OrangeLight extends Light("Orange")
+object RedLight extends Light("Red", "R")
+object GreenLight extends Light("Green", "G")
+object OrangeLight extends Light("Orange", "O")
 
 private case class ChangeFromOrangeToRedCommand(sender: ActorRef)
 private case class ChangeFromOrangeToGreenCommand(sender: ActorRef)
@@ -37,7 +38,7 @@ class TrafficLight(
   id: String,
   var status: Light = RedLight,
   delay: FiniteDuration = 1 seconds)
-    extends Actor with ActorLogging with Stash {
+  extends Actor with ActorLogging with Stash {
 
   var monitor: Option[ActorRef] = None
 
@@ -47,9 +48,12 @@ class TrafficLight(
       this.monitor = Option(monitor)
       notifyMonitor()
     }
+    case UnregisterMonitorCommand => {
+      this.monitor = None
+    }
     case msg => status match {
-      case RedLight => receiveWhenRed(msg)
-      case GreenLight => receiveWhenGreen(msg)
+      case RedLight    => receiveWhenRed(msg)
+      case GreenLight  => receiveWhenGreen(msg)
       case OrangeLight => receiveWhenOrange(msg)
     }
   }
@@ -60,7 +64,6 @@ class TrafficLight(
     }
     case ChangeToGreenCommand(id) => {
       changeStatus(OrangeLight)
-      logStatusChange()
       context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToGreenCommand(sender))(context.system.dispatcher)
     }
   }
@@ -68,7 +71,6 @@ class TrafficLight(
   def receiveWhenGreen: Receive = {
     case ChangeToRedCommand => {
       changeStatus(OrangeLight)
-      logStatusChange()
       context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToRedCommand(sender))(context.system.dispatcher)
     }
     case ChangeToGreenCommand(id) => {
@@ -79,13 +81,11 @@ class TrafficLight(
   def receiveWhenOrange: Receive = {
     case ChangeFromOrangeToRedCommand(origin) => {
       changeStatus(RedLight)
-      logStatusChange()
       origin ! ChangedToRedEvent
       unstashAll()
     }
     case ChangeFromOrangeToGreenCommand(origin) => {
       changeStatus(GreenLight)
-      logStatusChange()
       origin ! ChangedToGreenEvent(id)
       unstashAll()
     }
@@ -96,7 +96,7 @@ class TrafficLight(
     status = light
     notifyMonitor()
   }
+
   def notifyMonitor() = monitor foreach (_ ! StatusEvent(id, status))
-  def logStatusChange() = log.info(s"$id changed to $status")
 
 }

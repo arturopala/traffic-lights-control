@@ -11,25 +11,43 @@ import spray.can.websocket.FrameCommandFailed
 import spray.http.Uri
 import spray.can.websocket.`package`.FrameCommand
 import spray.http.Uri.Path
+import scala.util.matching.Regex
+import java.util.regex.Pattern
 
-final case class WsPush(msg: String)
-final case class WsPull(path: String, msg: String)
+object ws {
+  final case class Push(msg: String)
+  final case class Pull(path: String, msg: String)
+  final case class Open(path: String, origin: ActorRef)
 
-class WebSocketServiceActor(webSocketListenerActor: ActorRef, httpListenerActor: ActorRef) extends Actor with ActorLogging {
+  type Route[T] = PartialFunction[String, T]
+  case class RouteMatcher[T](pattern: String, value: T) extends Route[T] {
+    val regex: Pattern = Pattern.compile(pattern.replace("*", ".*?"))
+    def apply(path: String): T = value
+    def isDefinedAt(path: String): Boolean = regex.matcher(path).matches()
+  }
+  object Routes {
+    def apply[T](routes: (String, T)*): Route[T] = {
+      routes map { case (p, a) => RouteMatcher(p, a) } reduce[Route[T]] { case (f, p) => f orElse p }
+    }
+  }
+}
+
+class WebSocketServiceActor(webSocketRoute: ws.Route[ActorRef], httpListenerActor: ActorRef) extends Actor with ActorLogging {
   def receive = {
     // when a new connection comes in we register a WebSocketConnection actor
     // as the per connection handler
     case Http.Connected(remoteAddress, localAddress) =>
       val serverConnection = sender()
-      val conn = context.actorOf(Props(classOf[WebSocketServiceWorker], serverConnection, webSocketListenerActor, httpListenerActor))
+      val conn = context.actorOf(Props(classOf[WebSocketServiceWorker], serverConnection, webSocketRoute, httpListenerActor))
       serverConnection ! Http.Register(conn)
   }
 }
 
-class WebSocketServiceWorker(val serverConnection: ActorRef, webSocketListenerActor: ActorRef, httpListenerActor: ActorRef) extends spray.routing.HttpServiceActor with websocket.WebSocketServerWorker {
+class WebSocketServiceWorker(val serverConnection: ActorRef, webSocketRoute: ws.Route[ActorRef], httpListenerActor: ActorRef) extends spray.routing.HttpServiceActor with websocket.WebSocketServerWorker {
   override def receive = preHandshaking orElse handshaking orElse businessLogicNoUpgrade orElse closeLogic
 
-  var path: String = "???"
+  var path: String = _
+  var target: ActorRef = _
 
   def preHandshaking: Receive = {
 
@@ -38,19 +56,23 @@ class WebSocketServiceWorker(val serverConnection: ActorRef, webSocketListenerAc
         case wsFailure: websocket.HandshakeFailure => handshaking(msg)
         case wsContext: websocket.HandshakeContext =>
           path = wsContext.request.uri.path.toString
+          target = webSocketRoute(path)
           handshaking(msg)
       }
   }
 
   def businessLogic: Receive = {
 
+    case websocket.UpgradedToWebSocket =>
+      target ! ws.Open(path, serverConnection)
+
     case TextFrame(bytes) =>
-      webSocketListenerActor ! WsPull(path, bytes.decodeString("utf-8"))
+      target forward ws.Pull(path, bytes.decodeString("utf-8"))
 
     case BinaryFrame(bytes) =>
-      webSocketListenerActor ! WsPull(path, bytes.decodeString("utf-8"))
+      target forward ws.Pull(path, bytes.decodeString("utf-8"))
 
-    case WsPush(msg) => send(TextFrame(msg))
+    case ws.Push(msg) => send(TextFrame(msg))
 
     case msg: FrameCommandFailed =>
       log.error("frame command failed", msg)
@@ -64,9 +86,16 @@ class WebSocketServiceWorker(val serverConnection: ActorRef, webSocketListenerAc
 
 }
 
-class WebServiceActor extends Actor {
+trait WebSocketProducerActor{
+  _:Actor =>
+    def push(target:ActorRef, message:String) {
+      target ! FrameCommand(TextFrame(message))
+    }
+}
+
+class EchoWebServiceListenerActor extends Actor {
   def receive = {
-    case WsPull(path, text) =>
-      sender ! WsPush(s"$path: $text")
+    case ws.Pull(path, text) =>
+      sender ! ws.Push(s"$path: $text")
   }
 }

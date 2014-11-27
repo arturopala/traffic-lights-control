@@ -9,3 +9,5 @@ addSbtPlugin("org.scoverage" %% "sbt-scoverage" % "0.99.10.2")
 addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.5.0")
 
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.5.2")
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.0.3")

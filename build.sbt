@@ -34,3 +34,5 @@ scoverage.ScoverageSbtPlugin.instrumentSettings
 
 mainClass in (Compile, run) := Some("trafficlightscontrol.Boot")
 
+lazy val root = (project in file(".")).enablePlugins(SbtTwirl)
+
