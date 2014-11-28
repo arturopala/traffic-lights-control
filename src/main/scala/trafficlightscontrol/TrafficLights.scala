@@ -38,7 +38,7 @@ class TrafficLight(
   id: String,
   var status: Light = RedLight,
   delay: FiniteDuration = 1 seconds)
-  extends Actor with ActorLogging with Stash {
+    extends Actor with ActorLogging with Stash {
 
   var monitor: Option[ActorRef] = None
 
@@ -52,8 +52,8 @@ class TrafficLight(
       this.monitor = None
     }
     case msg => status match {
-      case RedLight    => receiveWhenRed(msg)
-      case GreenLight  => receiveWhenGreen(msg)
+      case RedLight => receiveWhenRed(msg)
+      case GreenLight => receiveWhenGreen(msg)
       case OrangeLight => receiveWhenOrange(msg)
     }
   }

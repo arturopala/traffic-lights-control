@@ -33,6 +33,7 @@ object ws {
 }
 
 class WebSocketServiceActor(webSocketRoute: ws.Route[ActorRef], httpListenerActor: ActorRef) extends Actor with ActorLogging {
+
   def receive = {
     // when a new connection comes in we register a WebSocketConnection actor
     // as the per connection handler
