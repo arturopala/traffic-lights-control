@@ -13,13 +13,13 @@
     text-align: right;
     padding-left: 10px;
 }
-.RedLight {
+.RedLight, .R {
     background: url("images/traffic-lights-red-icon.png") no-repeat;
 }
-.OrangeLight {
+.OrangeLight, .O {
     background: url("images/traffic-lights-yellow-icon.png") no-repeat;
 }
-.GreenLight {
+.GreenLight, .G {
     background: url("images/traffic-lights-green-icon.png") no-repeat;
 }
 .tf.east {

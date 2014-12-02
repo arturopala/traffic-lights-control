@@ -6,66 +6,64 @@
     <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
     <link rel="stylesheet" href="traffic.css">
 </head>
-<body ng-app="" ng-controller="trafficLightsController">
+<body ng-app="traffic" ng-controller="trafficLightsController">
 <div class="car {{car}}"></div>
-<button ng-click="toggleLights()">{{autoRefreshing? 'Stop' : 'Start'}}</button>
 <div class="main" >
    <div class="row center"><div id="north-tf" class="tf {{lightColor[0]}}" >0</div></div>
    <div class="row"><div id="west-tf" class="tf west {{lightColor[3]}}">3</div><div id="east-tf" class="tf east {{lightColor[1]}}">1</div></div>
    <div class="row center"><div id="south-tf" class="tf {{lightColor[2]}}">2</div></div>
   </div>
-
 </body>
 
 <script>
-function trafficLightsController($scope,$timeout,$http) {
+angular.module('traffic', [])
+.controller('trafficLightsController', function($scope,$timeout,$http) {
 
-    $scope.autoRefreshing = false;
     $scope.lightColor = new Array(4);
-    $scope.toggleLights = function(){
 
-        if($scope.autoRefreshing){
-            $scope.autoRefreshing = false;
-            for(var i=0;i < $scope.lightColor.length;i++ ) {
-                $scope.lightColor[i] = null;
-            }
-            $scope.car = "";
-            return;
-        }
-        $scope.autoRefreshing = true;
-       callFnOnInterval(1000);
-    };
-
-    function callFnOnInterval( timeInterval) {
-        if($scope.autoRefreshing) {
-                $scope.updateTrafficLightsModel();
-                $timeout(function () {
-                    if($scope.autoRefreshing){callFnOnInterval(timeInterval);}
-                }, timeInterval);
-            }
-    };
-
-    $scope.updateTrafficLightsModel = function(){
+    $scope.initializeTrafficLightsModel = function(){
         $http.get('/status').
-                success(function (data, status, headers, config) {
-                   var statuses =  data.status;
-                   if(typeof statuses[0] !== undefined) {
-                        var isGreen = false;
-                       for (var i = 0; i < $scope.lightColor.length; i++) {
-                           if (statuses[i] == "GreenLight") {
-                               $scope.car = "from-" + i;
-                               isGreen = true;
-                           }
-                           if(!isGreen) {
-                               $scope.car = "";
-                           }
-                           $scope.lightColor[i] = statuses[i];
-                       }
+            success(function (data, status, headers, config) {
+               var statuses =  data.status;
+               if(typeof statuses[0] !== undefined) {
+                   for (var i = 0; i < $scope.lightColor.length; i++) {
+                       $scope.updateLightStatus(i,statuses[i]);
                    }
-                });
+               }
+            });
     };
- }
 
+    $scope.startListening = function(){
+      var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket;
+       var socket = new WS("ws://"+window.location.host+"/light/stream/ws");
+       socket.onmessage = function (event) {
+        if(typeof event.data !== undefined){
+          var message = event.data.split(':');
+          var lightId = message[0];
+          var color = message[1];
+          $scope.updateLightStatus(lightId,color);
+          $scope.$apply();
+          console.log('Light #'+lightId+' changed to '+color);
+        }
+       };
+    };
+
+    $scope.updateLightStatus = function(lightId,color) {
+      $scope.lightColor[lightId] = color;
+      var isGreen = false;
+      if (color == "G") {
+           $scope.car = "from-" + lightId;
+           isGreen = true;
+       }
+       if(!isGreen) {
+           $scope.car = "";
+       }
+    };
+
+    $scope.initializeTrafficLightsModel();
+    $scope.startListening();
+
+ });
 
 </script>
 
