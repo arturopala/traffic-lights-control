@@ -10,7 +10,7 @@ import spray.routing._
 import spray.http._
 import MediaTypes._
 
-class HttpServiceActor(monitoring: ActorRef) extends Actor with TrafficHttpService {
+class HttpServiceActor(monitoring: Monitoring) extends Actor with TrafficHttpService {
   def actorRefFactory = context
   val route = createRoutes(monitoring)
   def receive = runRoute(route)
@@ -36,7 +36,7 @@ trait TrafficHttpService extends HttpService {
     }
   }
 
-  def createRoutes(monitoring: ActorRef) =
+  def createRoutes(monitoring: Monitoring) =
     handleRejections(rejectionHandler) {
       handleExceptions(exceptionHandler) {
         path("status") {
@@ -53,7 +53,7 @@ trait TrafficHttpService extends HttpService {
       }
     }
 
-  def streamStatusResponse(monitoring: ActorRef)(ctx: RequestContext): Unit =
+  def streamStatusResponse(monitoring: Monitoring)(ctx: RequestContext): Unit =
     actorRefFactory.actorOf {
       Props {
         new Actor with ActorLogging {
@@ -82,7 +82,7 @@ trait TrafficHttpService extends HttpService {
 
           val timeoutTask = context.system.scheduler.scheduleOnce(1.seconds, self, GetReportQueryTimeout)(context.system.dispatcher)
 
-          monitoring ! GetReportQuery
+          monitoring.report
 
         }
       }

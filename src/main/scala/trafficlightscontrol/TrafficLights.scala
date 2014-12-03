@@ -21,8 +21,8 @@ object TimeoutEvent extends Event
 object GetReportQuery extends Query
 case class ReportEvent(report: Map[String, Light]) extends Event
 object TickCommand extends Command
-case class RegisterMonitorCommand(monitor: ActorRef) extends Command
-object UnregisterMonitorCommand extends Command
+case class RegisterMonitoringCommand(monitoring: Monitoring) extends Command
+object UnregisterMonitoringCommand extends Command
 
 sealed abstract class Light(val colour: String, val id: String) {
   override val toString: String = s"${colour}Light"
@@ -40,16 +40,16 @@ class TrafficLight(
   delay: FiniteDuration = 1 seconds)
     extends Actor with ActorLogging with Stash {
 
-  var monitor: Option[ActorRef] = None
+  var monitoring: Option[Monitoring] = None
 
   def receive = {
     case GetStatusQuery => sender ! StatusEvent(id, status)
-    case RegisterMonitorCommand(monitor) => {
-      this.monitor = Option(monitor)
-      notifyMonitor()
+    case RegisterMonitoringCommand(monitoring) => {
+      this.monitoring = Option(monitoring)
+      notifyMonitoring()
     }
-    case UnregisterMonitorCommand => {
-      this.monitor = None
+    case RegisterMonitoringCommand => {
+      this.monitoring = None
     }
     case msg => status match {
       case RedLight => receiveWhenRed(msg)
@@ -94,9 +94,9 @@ class TrafficLight(
 
   def changeStatus(light: Light) = {
     status = light
-    notifyMonitor()
+    notifyMonitoring()
   }
 
-  def notifyMonitor() = monitor foreach (_ ! StatusEvent(id, status))
+  def notifyMonitoring() = monitoring foreach (_.notify(id, status))
 
 }

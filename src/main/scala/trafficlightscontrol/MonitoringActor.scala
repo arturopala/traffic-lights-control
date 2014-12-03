@@ -29,6 +29,11 @@ class MonitoringActor(target: ActorRef) extends Actor with WebSocketProducerActo
       listeners -= origin
   }
 
-  context.system.scheduler.scheduleOnce(1 seconds, target, RegisterMonitorCommand(self))(context.system.dispatcher)
+  context.system.scheduler.scheduleOnce(1 seconds, target, RegisterMonitoringCommand(Monitoring(self)))(context.system.dispatcher)
 
+}
+
+case class Monitoring(actor: ActorRef) {
+  def notify(id: String, status: Light) = actor ! StatusEvent(id, status)
+  def report = actor ! GetReportQuery
 }
