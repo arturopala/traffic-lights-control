@@ -35,5 +35,4 @@ class MonitoringActor(target: ActorRef) extends Actor with WebSocketProducerActo
 
 case class Monitoring(actor: ActorRef) {
   def notify(id: String, status: Light) = actor ! StatusEvent(id, status)
-  def report = actor ! GetReportQuery
 }

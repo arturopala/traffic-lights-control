@@ -32,14 +32,12 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     expectMsg(StatusEvent("A", GreenLight))
     redLight ! GetStatusQuery
     expectMsg(StatusEvent("B", RedLight))
-
   }
 
   "A LightsGroupWithOnlyOneIsGreenStrategy actor" should "change status of Light#1 from red to green" in new ActorSystemTest {
     val tested = TestLightManager(Seq(RedLight, RedLight, RedLight, RedLight))
     tested ! ChangeToGreenCommand("1")
     expectMsg(ChangedToGreenEvent("1"))
-
   }
 
   it should "change status of Light#1 from red to green and status of others to red" in new ActorSystemTest {
@@ -57,7 +55,6 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     statusOfTrafficLight(workers("2")) should equal(RedLight)
     statusOfTrafficLight(workers("3")) should equal(RedLight)
     statusOfTrafficLight(workers("4")) should equal(RedLight)
-
   }
 
   it should "change status of Light#1 from red to green and status of others to red (2)" in new ActorSystemTest {
@@ -75,7 +72,6 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     statusOfTrafficLight(workers("2")) should equal(RedLight)
     statusOfTrafficLight(workers("3")) should equal(RedLight)
     statusOfTrafficLight(workers("4")) should equal(RedLight)
-
   }
 
   it should "change status of all lights to red" in new ActorSystemTest {
@@ -93,7 +89,6 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     statusOfTrafficLight(workers("2")) should equal(RedLight)
     statusOfTrafficLight(workers("3")) should equal(RedLight)
     statusOfTrafficLight(workers("4")) should equal(RedLight)
-
   }
 
 }

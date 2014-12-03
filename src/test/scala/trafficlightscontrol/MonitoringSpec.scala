@@ -58,7 +58,17 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     tested.underlyingActor.listeners should contain(probe.ref)
     system.stop(probe.ref)
     awaitAssert(tested.underlyingActor.listeners should not contain (probe.ref), 5.seconds, 500.millis)
+  }
 
+  it should "report current system status" in new MonitoringTest {
+    tested ! GetReportQuery
+    expectMsgAnyClassOf(classOf[ReportEvent])
+  }
+
+  "A Monitoring facade" should "notify MonitoringActor with status event" in new MonitoringTest {
+    val m = Monitoring(tested)
+    m.notify("1", OrangeLight)
+    tested.underlyingActor.report("1") should equal(OrangeLight)
   }
 
 }

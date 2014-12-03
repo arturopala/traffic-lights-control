@@ -20,6 +20,7 @@ libraryDependencies ++= Seq(
   "io.spray"  %%  "spray-can"     % "1.3.2",
   "io.spray"  %%  "spray-routing" % "1.3.2",
   "io.spray"  %%  "spray-json"    % "1.3.0",
+  "io.spray"  %%  "spray-testkit"    % "1.3.2" % Test,
   "com.softwaremill.macwire" %% "macros" % "0.7.3",
   "com.wandoulabs.akka" %% "spray-websocket" % "0.1.3" excludeAll(
     ExclusionRule(organization = "io.spray")

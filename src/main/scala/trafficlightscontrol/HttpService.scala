@@ -10,13 +10,13 @@ import spray.routing._
 import spray.http._
 import MediaTypes._
 
-class HttpServiceActor(monitoring: Monitoring) extends Actor with TrafficHttpService {
-  def actorRefFactory = context
-  val route = createRoutes(monitoring)
-  def receive = runRoute(route)
+class TrafficHttpServiceActor(trafficHttpService: TrafficHttpService) extends HttpServiceActor {
+  def receive = runRoute(trafficHttpService.route)
 }
 
-trait TrafficHttpService extends HttpService {
+class TrafficHttpService(monitoring: Monitoring)(implicit system: ActorSystem) extends HttpService {
+
+  val actorRefFactory = system
 
   import Directives._
 
@@ -36,7 +36,7 @@ trait TrafficHttpService extends HttpService {
     }
   }
 
-  def createRoutes(monitoring: Monitoring) =
+  val route =
     handleRejections(rejectionHandler) {
       handleExceptions(exceptionHandler) {
         path("status") {
@@ -64,7 +64,7 @@ trait TrafficHttpService extends HttpService {
           def receive = {
             case ReportEvent(report) => {
               timeoutTask.cancel()
-              ctx.responder ! MessageChunk(report map { case (k, v) => s""""$k":"$v"""" } mkString ("", ",", "}}"))
+              ctx.responder ! MessageChunk(report map { case (k, v) => s""""$k":"${v.id}"""" } mkString ("", ",", "}}"))
               ctx.responder ! ChunkedMessageEnd
               context.stop(self)
             }
@@ -82,7 +82,7 @@ trait TrafficHttpService extends HttpService {
 
           val timeoutTask = context.system.scheduler.scheduleOnce(1.seconds, self, GetReportQueryTimeout)(context.system.dispatcher)
 
-          monitoring.report
+          monitoring.actor ! GetReportQuery
 
         }
       }
