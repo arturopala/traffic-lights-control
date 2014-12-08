@@ -1,3 +1,6 @@
+import io.gatling.sbt.GatlingPlugin
+import io.gatling.sbt.GatlingPlugin._
+
 organization := "hackaton"
 
 name := "traffic-lights-control"
@@ -35,5 +38,7 @@ scoverage.ScoverageSbtPlugin.instrumentSettings
 
 mainClass in (Compile, run) := Some("trafficlightscontrol.Boot")
 
-lazy val root = (project in file(".")).enablePlugins(SbtTwirl)
+lazy val loadtester = (project in file("loadtester")).enablePlugins(GatlingPlugin)
+
+lazy val root = (project in file(".")).enablePlugins(SbtTwirl).aggregate(loadtester)
 
