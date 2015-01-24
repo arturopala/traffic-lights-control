@@ -22,7 +22,7 @@ object ws {
   type Route[T] = PartialFunction[String, T]
   case class RouteMatcher[T](pattern: String, value: T) extends Route[T] {
     val regex: Pattern = Pattern.compile(pattern.replace("*", ".*?"))
-    def apply(path: String): T = value
+    def apply(path: String): T = applyOrElse(path,{p:String => throw new Exception})
     def isDefinedAt(path: String): Boolean = regex.matcher(path).matches()
     override def applyOrElse[A1 <: String, B1 >: T](x: A1, default: A1 => B1): B1 = if (isDefinedAt(x)) value else default(x)
   }

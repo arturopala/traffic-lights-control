@@ -70,4 +70,13 @@ class WebSocketSpec extends FlatSpecLike with Matchers {
     m.isDefinedAt("*") should be(false)
   }
 
+  "A ws.Routes" should "prepare Route from mappings" in {
+    val mappings = Seq("/a" -> 1, "/aa" -> 2, "/a/b" -> 3)
+    val route = ws.Routes(mappings: _*)
+    route("/a/b") should be(3)
+    route("/aa") should be(2)
+    route("/a") should be(1)
+    an[Exception] should be thrownBy route("/f")
+  }
+
 }
