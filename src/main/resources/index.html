@@ -35,7 +35,7 @@ angular.module('traffic', [])
 
     $scope.startListening = function(){
       var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket;
-       var socket = new WS("ws://"+window.location.host+"/light/stream/ws");
+       var socket = new WS("ws://"+window.location.host+"/light/status/stream");
        socket.onmessage = function (event) {
         if(typeof event.data !== undefined){
           var message = event.data.split(':');

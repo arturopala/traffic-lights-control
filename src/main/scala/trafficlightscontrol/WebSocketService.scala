@@ -24,6 +24,7 @@ object ws {
     val regex: Pattern = Pattern.compile(pattern.replace("*", ".*?"))
     def apply(path: String): T = value
     def isDefinedAt(path: String): Boolean = regex.matcher(path).matches()
+    override def applyOrElse[A1 <: String, B1 >: T](x: A1, default: A1 => B1): B1 = if (isDefinedAt(x)) value else default(x)
   }
   object Routes {
     def apply[T](routes: (String, T)*): Route[T] = {
@@ -57,8 +58,15 @@ class WebSocketServiceWorker(val serverConnection: ActorRef, webSocketRoute: ws.
         case wsFailure: websocket.HandshakeFailure => handshaking(msg)
         case wsContext: websocket.HandshakeContext =>
           path = wsContext.request.uri.path.toString
-          target = webSocketRoute(path)
-          handshaking(msg)
+          webSocketRoute.lift(path) match {
+            case Some(ref) => {
+              target = ref
+              handshaking(msg)
+            }
+            case None => {
+              sender ! Http.Close
+            }
+          }
       }
   }
 
