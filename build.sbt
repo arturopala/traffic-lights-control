@@ -7,7 +7,7 @@ name := "traffic-lights-control"
 
 version := "0.1.0-SNAPSHOT"
 
-scalaVersion := "2.11.4"
+scalaVersion := "2.11.5"
 
 resolvers += Resolver.mavenLocal
 
