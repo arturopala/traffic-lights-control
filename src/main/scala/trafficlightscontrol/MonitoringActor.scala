@@ -6,33 +6,32 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import akka.actor.ActorPath
 import akka.actor.Terminated
+import akka.actor.ActorLogging
 
-class MonitoringActor(target: ActorRef) extends Actor with WebSocketProducerActor {
+class MonitoringActor extends Actor with WebSocketProducerActor with ActorLogging {
 
   var report: Map[String, Light] = Map()
-  var listeners: Set[ActorRef] = Set()
+  val listeners: scala.collection.mutable.Set[ActorRef] = scala.collection.mutable.Set()
 
   def receive = {
     case GetReportQuery =>
       sender ! ReportEvent(report)
 
-    case StatusEvent(id, status) =>
+    case event @ StatusEvent(id, status) =>
       report += (id -> status)
       val msg = s"$id:${status.id}"
       listeners foreach (l => push(l, msg))
+    //log.info(s"new event $event sent to ${listeners.size} listener(s)")
 
     case ws.Open(_, origin) =>
-      listeners += origin
+      listeners add origin
       context watch origin
 
     case Terminated(origin) =>
-      listeners -= origin
+      listeners remove origin
   }
 
-  context.system.scheduler.scheduleOnce(1 seconds, target, RegisterMonitoringCommand(Monitoring(self)))(context.system.dispatcher)
-
+  context.system.eventStream.subscribe(self, classOf[StatusEvent])
 }
 
-case class Monitoring(actor: ActorRef) {
-  def notify(id: String, status: Light) = actor ! StatusEvent(id, status)
-}
+case class Monitoring(actor: ActorRef)

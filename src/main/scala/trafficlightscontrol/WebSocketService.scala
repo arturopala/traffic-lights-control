@@ -64,7 +64,7 @@ class WebSocketServiceWorker(val serverConnection: ActorRef, webSocketRoute: ws.
               handshaking(msg)
             }
             case None => {
-              sender ! Http.Close
+              throw new Exception(s"route for $path does not exists")
             }
           }
       }

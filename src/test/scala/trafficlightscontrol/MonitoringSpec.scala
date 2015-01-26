@@ -20,7 +20,7 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
 
   class MonitoringTest extends ActorSystemTest {
     val trafficSystem = TestProbe()
-    val tested = TestActorRef(new MonitoringActor(trafficSystem.ref))
+    val tested = TestActorRef(new MonitoringActor())
   }
 
   "A Monitoring actor" should "register status events" in new MonitoringTest {
@@ -63,12 +63,6 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
   it should "report current system status" in new MonitoringTest {
     tested ! GetReportQuery
     expectMsgAnyClassOf(classOf[ReportEvent])
-  }
-
-  "A Monitoring facade" should "notify MonitoringActor with status event" in new MonitoringTest {
-    val m = Monitoring(tested)
-    m.notify("1", OrangeLight)
-    tested.underlyingActor.report("1") should equal(OrangeLight)
   }
 
 }
