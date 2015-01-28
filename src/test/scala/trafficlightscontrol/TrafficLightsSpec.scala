@@ -103,4 +103,37 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     stateOfTrafficLight(workers("4")) should equal(RedLight)
   }
 
+  "A TrafficLightFSM" should "change status from red to green" in new ActorSystemTest {
+    val tested = TestTrafficLightFSM(initialState = RedLight)
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", RedLight))
+    tested ! ChangeToGreenCommand("1")
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", OrangeLight))
+    expectMsg(testLightChangeDelay * 2, ChangedToGreenEvent("1"))
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", GreenLight))
+  }
+
+  it should "change status from green to red" in new ActorSystemTest {
+    val tested = TestTrafficLightFSM(initialState = GreenLight)
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", GreenLight))
+    tested ! ChangeToRedCommand
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", OrangeLight))
+    expectMsg(testLightChangeDelay * 2, ChangedToRedEvent)
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", RedLight))
+  }
+
+  it should "reply current state event" in new ActorSystemTest {
+    val greenLight = TestTrafficLightFSM(id = "A", initialState = GreenLight)
+    val redLight = TestTrafficLightFSM(id = "B", initialState = RedLight)
+    greenLight ! GetStatusQuery
+    expectMsg(StatusEvent("A", GreenLight))
+    redLight ! GetStatusQuery
+    expectMsg(StatusEvent("B", RedLight))
+  }
+
 }

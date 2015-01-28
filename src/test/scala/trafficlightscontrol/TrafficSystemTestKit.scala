@@ -14,6 +14,11 @@ trait TrafficSystemTestKit {
       TestActorRef(new TrafficLight(id, initialState, delay))
   }
 
+  object TestTrafficLightFSM {
+    def apply(id: String = "1", initialState: Light = RedLight, delay: FiniteDuration = testLightChangeDelay)(implicit system: ActorSystem) =
+      TestActorRef(new TrafficLightFSM(id, initialState, delay))
+  }
+
   object TestTrafficDetector {
     def apply()(implicit system: ActorSystem) = {
       TestActorRef(new TrafficDetector(""))
