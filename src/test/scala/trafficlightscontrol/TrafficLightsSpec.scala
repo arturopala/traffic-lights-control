@@ -14,7 +14,7 @@ import org.scalatest.junit.JUnitRunner
 class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with TrafficSystemTestKit {
 
   "A TrafficLight" should "change status from red to green" in new ActorSystemTest {
-    val tested = TestTrafficLight(status = RedLight)
+    val tested = TestTrafficLight(initialState = RedLight)
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", RedLight))
     tested ! ChangeToGreenCommand("1")
@@ -26,7 +26,7 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
   }
 
   it should "change status from green to red" in new ActorSystemTest {
-    val tested = TestTrafficLight(status = GreenLight)
+    val tested = TestTrafficLight(initialState = GreenLight)
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", GreenLight))
     tested ! ChangeToRedCommand
@@ -38,8 +38,8 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
   }
 
   it should "return current status" in new ActorSystemTest {
-    val greenLight = TestTrafficLight(id = "A", status = GreenLight)
-    val redLight = TestTrafficLight(id = "B", status = RedLight)
+    val greenLight = TestTrafficLight(id = "A", initialState = GreenLight)
+    val redLight = TestTrafficLight(id = "B", initialState = RedLight)
     greenLight ! GetStatusQuery
     expectMsg(StatusEvent("A", GreenLight))
     redLight ! GetStatusQuery
@@ -55,52 +55,52 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
   it should "change status of Light#1 from red to green and status of others to red" in new ActorSystemTest {
     val tested = TestLightManager(Seq(RedLight, GreenLight, RedLight, RedLight))
     val workers = tested.underlyingActor.workers
-    statusOfTrafficLight(workers("1")) should equal(RedLight)
-    statusOfTrafficLight(workers("2")) should equal(GreenLight)
-    statusOfTrafficLight(workers("3")) should equal(RedLight)
-    statusOfTrafficLight(workers("4")) should equal(RedLight)
+    stateOfTrafficLight(workers("1")) should equal(RedLight)
+    stateOfTrafficLight(workers("2")) should equal(GreenLight)
+    stateOfTrafficLight(workers("3")) should equal(RedLight)
+    stateOfTrafficLight(workers("4")) should equal(RedLight)
 
     tested ! ChangeToGreenCommand("1")
 
     expectMsg(ChangedToGreenEvent("1"))
-    statusOfTrafficLight(workers("1")) should equal(GreenLight)
-    statusOfTrafficLight(workers("2")) should equal(RedLight)
-    statusOfTrafficLight(workers("3")) should equal(RedLight)
-    statusOfTrafficLight(workers("4")) should equal(RedLight)
+    stateOfTrafficLight(workers("1")) should equal(GreenLight)
+    stateOfTrafficLight(workers("2")) should equal(RedLight)
+    stateOfTrafficLight(workers("3")) should equal(RedLight)
+    stateOfTrafficLight(workers("4")) should equal(RedLight)
   }
 
   it should "change status of Light#1 from red to green and status of others to red (2)" in new ActorSystemTest {
     val tested = TestLightManager(Seq(RedLight, GreenLight, GreenLight, GreenLight))
     val workers = tested.underlyingActor.workers
-    statusOfTrafficLight(workers("1")) should equal(RedLight)
-    statusOfTrafficLight(workers("2")) should equal(GreenLight)
-    statusOfTrafficLight(workers("3")) should equal(GreenLight)
-    statusOfTrafficLight(workers("4")) should equal(GreenLight)
+    stateOfTrafficLight(workers("1")) should equal(RedLight)
+    stateOfTrafficLight(workers("2")) should equal(GreenLight)
+    stateOfTrafficLight(workers("3")) should equal(GreenLight)
+    stateOfTrafficLight(workers("4")) should equal(GreenLight)
 
     tested ! ChangeToGreenCommand("1")
 
     expectMsg(ChangedToGreenEvent("1"))
-    statusOfTrafficLight(workers("1")) should equal(GreenLight)
-    statusOfTrafficLight(workers("2")) should equal(RedLight)
-    statusOfTrafficLight(workers("3")) should equal(RedLight)
-    statusOfTrafficLight(workers("4")) should equal(RedLight)
+    stateOfTrafficLight(workers("1")) should equal(GreenLight)
+    stateOfTrafficLight(workers("2")) should equal(RedLight)
+    stateOfTrafficLight(workers("3")) should equal(RedLight)
+    stateOfTrafficLight(workers("4")) should equal(RedLight)
   }
 
   it should "change status of all lights to red" in new ActorSystemTest {
     val tested = TestLightManager(Seq(GreenLight, GreenLight, RedLight, GreenLight))
     val workers = tested.underlyingActor.workers
-    statusOfTrafficLight(workers("1")) should equal(GreenLight)
-    statusOfTrafficLight(workers("2")) should equal(GreenLight)
-    statusOfTrafficLight(workers("3")) should equal(RedLight)
-    statusOfTrafficLight(workers("4")) should equal(GreenLight)
+    stateOfTrafficLight(workers("1")) should equal(GreenLight)
+    stateOfTrafficLight(workers("2")) should equal(GreenLight)
+    stateOfTrafficLight(workers("3")) should equal(RedLight)
+    stateOfTrafficLight(workers("4")) should equal(GreenLight)
 
     tested ! ChangeToRedCommand
 
     expectMsg(ChangedToRedEvent)
-    statusOfTrafficLight(workers("1")) should equal(RedLight)
-    statusOfTrafficLight(workers("2")) should equal(RedLight)
-    statusOfTrafficLight(workers("3")) should equal(RedLight)
-    statusOfTrafficLight(workers("4")) should equal(RedLight)
+    stateOfTrafficLight(workers("1")) should equal(RedLight)
+    stateOfTrafficLight(workers("2")) should equal(RedLight)
+    stateOfTrafficLight(workers("3")) should equal(RedLight)
+    stateOfTrafficLight(workers("4")) should equal(RedLight)
   }
 
 }

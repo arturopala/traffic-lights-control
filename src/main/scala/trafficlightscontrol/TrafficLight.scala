@@ -12,7 +12,7 @@ trait Query
 trait Event
 
 object GetStatusQuery extends Query
-case class StatusEvent(id: String, status: Light) extends Event
+case class StatusEvent(id: String, state: Light) extends Event
 object ChangeToRedCommand extends Command
 case class ChangeToGreenCommand(id: String) extends Command
 object ChangedToRedEvent extends Event
@@ -34,13 +34,15 @@ private case class ChangeFromOrangeToGreenCommand(sender: ActorRef)
 
 class TrafficLight(
   id: String,
-  var status: Light = RedLight,
+  initialState: Light = RedLight,
   delay: FiniteDuration = 1 seconds)
     extends Actor with ActorLogging with Stash {
 
+  var state: Light = initialState
+
   def receive = {
-    case GetStatusQuery => sender ! StatusEvent(id, status)
-    case msg => status match {
+    case GetStatusQuery => sender ! StatusEvent(id, state)
+    case msg => state match {
       case RedLight => receiveWhenRed(msg)
       case GreenLight => receiveWhenGreen(msg)
       case OrangeLight => receiveWhenOrange(msg)
@@ -82,10 +84,10 @@ class TrafficLight(
   }
 
   def changeStateTo(light: Light) = {
-    status = light
-    context.system.eventStream.publish(StatusEvent(id, status))
+    state = light
+    context.system.eventStream.publish(StatusEvent(id, state))
   }
 
-  changeStateTo(status)
+  changeStateTo(state)
 
 }

@@ -10,8 +10,8 @@ trait TrafficSystemTestKit {
   val testLightChangeDelay: FiniteDuration = 100 milliseconds
 
   object TestTrafficLight {
-    def apply(id: String = "1", status: Light = RedLight, delay: FiniteDuration = testLightChangeDelay)(implicit system: ActorSystem) =
-      TestActorRef(new TrafficLight(id, status, delay))
+    def apply(id: String = "1", initialState: Light = RedLight, delay: FiniteDuration = testLightChangeDelay)(implicit system: ActorSystem) =
+      TestActorRef(new TrafficLight(id, initialState, delay))
   }
 
   object TestTrafficDetector {
@@ -35,6 +35,6 @@ trait TrafficSystemTestKit {
     }
   }
 
-  def statusOfTrafficLight(ref: ActorRef): Light = ref.asInstanceOf[TestActorRef[TrafficLight]].underlyingActor.status
+  def stateOfTrafficLight(ref: ActorRef): Light = ref.asInstanceOf[TestActorRef[TrafficLight]].underlyingActor.state
 
 }
