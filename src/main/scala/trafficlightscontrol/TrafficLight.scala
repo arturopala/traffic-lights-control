@@ -52,14 +52,14 @@ class TrafficLight(
       sender ! ChangedToRedEvent
     }
     case ChangeToGreenCommand(id) => {
-      changeStatus(OrangeLight)
+      changeStateTo(OrangeLight)
       context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToGreenCommand(sender))(context.system.dispatcher)
     }
   }
 
   def receiveWhenGreen: Receive = {
     case ChangeToRedCommand => {
-      changeStatus(OrangeLight)
+      changeStateTo(OrangeLight)
       context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToRedCommand(sender))(context.system.dispatcher)
     }
     case ChangeToGreenCommand(id) => {
@@ -69,23 +69,23 @@ class TrafficLight(
 
   def receiveWhenOrange: Receive = {
     case ChangeFromOrangeToRedCommand(origin) => {
-      changeStatus(RedLight)
+      changeStateTo(RedLight)
       origin ! ChangedToRedEvent
       unstashAll()
     }
     case ChangeFromOrangeToGreenCommand(origin) => {
-      changeStatus(GreenLight)
+      changeStateTo(GreenLight)
       origin ! ChangedToGreenEvent(id)
       unstashAll()
     }
     case msg => stash()
   }
 
-  def changeStatus(light: Light) = {
+  def changeStateTo(light: Light) = {
     status = light
     context.system.eventStream.publish(StatusEvent(id, status))
   }
 
-  changeStatus(status)
+  changeStateTo(status)
 
 }

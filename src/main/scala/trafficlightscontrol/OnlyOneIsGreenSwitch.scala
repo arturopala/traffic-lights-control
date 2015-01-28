@@ -6,7 +6,7 @@ import scala.collection._
 import scala.concurrent._
 import scala.concurrent.duration._
 
-class LightsGroupWithOnlyOneIsGreenStrategy(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
+class OnlyOneIsGreenSwitch(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenFree
 

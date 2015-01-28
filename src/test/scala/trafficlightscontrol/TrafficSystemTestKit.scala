@@ -21,7 +21,7 @@ trait TrafficSystemTestKit {
   object TestLightManager {
     def apply(lights: Seq[Light], timeout: FiniteDuration = 10 seconds)(implicit system: ActorSystem) = {
       val workers = lights zip (1 to lights.size) map { case (l, c) => ("" + c -> TestTrafficLight("" + c, l)) }
-      TestActorRef(new LightsGroupWithOnlyOneIsGreenStrategy(workers.toMap, timeout))
+      TestActorRef(new OnlyOneIsGreenSwitch(workers.toMap, timeout))
     }
   }
 

@@ -13,7 +13,7 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with TrafficSystemTestKit {
 
-  "A TrafficLight actor" should "change status from red to green" in new ActorSystemTest {
+  "A TrafficLight" should "change status from red to green" in new ActorSystemTest {
     val tested = TestTrafficLight()
     tested ! ChangeToGreenCommand("1")
     expectMsg(ChangedToGreenEvent("1"))
@@ -34,7 +34,7 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     expectMsg(StatusEvent("B", RedLight))
   }
 
-  "A LightsGroupWithOnlyOneIsGreenStrategy actor" should "change status of Light#1 from red to green" in new ActorSystemTest {
+  "A OnlyOneIsGreenSwitch" should "change status of Light#1 from red to green" in new ActorSystemTest {
     val tested = TestLightManager(Seq(RedLight, RedLight, RedLight, RedLight))
     tested ! ChangeToGreenCommand("1")
     expectMsg(ChangedToGreenEvent("1"))
