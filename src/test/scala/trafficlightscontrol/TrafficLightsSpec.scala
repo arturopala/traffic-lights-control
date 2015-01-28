@@ -14,15 +14,27 @@ import org.scalatest.junit.JUnitRunner
 class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with TrafficSystemTestKit {
 
   "A TrafficLight" should "change status from red to green" in new ActorSystemTest {
-    val tested = TestTrafficLight()
+    val tested = TestTrafficLight(status = RedLight)
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", RedLight))
     tested ! ChangeToGreenCommand("1")
-    expectMsg(ChangedToGreenEvent("1"))
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", OrangeLight))
+    expectMsg(testLightChangeDelay * 2, ChangedToGreenEvent("1"))
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", GreenLight))
   }
 
   it should "change status from green to red" in new ActorSystemTest {
     val tested = TestTrafficLight(status = GreenLight)
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", GreenLight))
     tested ! ChangeToRedCommand
-    expectMsg(ChangedToRedEvent)
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", OrangeLight))
+    expectMsg(testLightChangeDelay * 2, ChangedToRedEvent)
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", RedLight))
   }
 
   it should "return current status" in new ActorSystemTest {

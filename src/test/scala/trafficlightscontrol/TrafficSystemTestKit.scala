@@ -7,8 +7,10 @@ import akka.actor.ActorRef
 
 trait TrafficSystemTestKit {
 
+  val testLightChangeDelay: FiniteDuration = 100 milliseconds
+
   object TestTrafficLight {
-    def apply(id: String = "1", status: Light = RedLight, delay: FiniteDuration = 100 milliseconds)(implicit system: ActorSystem) =
+    def apply(id: String = "1", status: Light = RedLight, delay: FiniteDuration = testLightChangeDelay)(implicit system: ActorSystem) =
       TestActorRef(new TrafficLight(id, status, delay))
   }
 
