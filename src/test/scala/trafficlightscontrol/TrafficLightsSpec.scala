@@ -136,4 +136,18 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     expectMsg(StatusEvent("B", RedLight))
   }
 
+  it should "stash commands when orange light" in new ActorSystemTest {
+    val tested = TestTrafficLightFSM(initialState = OrangeLight)
+    tested ! GetStatusQuery
+    expectMsg(StatusEvent("1", OrangeLight))
+    tested ! ChangeToGreenCommand("1")
+    tested ! ChangeToRedCommand
+    expectNoMsg(1.second)
+    tested ! ChangeFromOrangeToGreenCommand
+    tested ! GetStatusQuery
+    expectMsg(ChangedToGreenEvent("1"))
+    expectMsg(StatusEvent("1", OrangeLight))
+    expectMsg(ChangedToRedEvent)
+  }
+
 }

@@ -13,29 +13,29 @@ class TrafficLightFSM(
   id: String,
   initialState: Light = RedLight,
   delay: FiniteDuration = 1 seconds)
-    extends Actor with ActorLogging with FSM[Light, ActorRef] with Stash {
+  extends Actor with ActorLogging with FSM[Light, Option[ActorRef]] with Stash {
 
-  startWith(initialState, ActorRef.noSender)
+  startWith(initialState, None)
 
   when(RedLight) {
     case Event(ChangeToRedCommand, _) =>
-      stay
+      stay replying (ChangedToRedEvent)
     case Event(ChangeToGreenCommand(_), _) =>
-      goto(OrangeLight) using sender
+      goto(OrangeLight) using Some(sender)
   }
 
   when(GreenLight) {
-    case Event(ChangeToGreenCommand(i), _) =>
-      stay
+    case Event(ChangeToGreenCommand(_), _) =>
+      stay replying (ChangedToGreenEvent(id))
     case Event(ChangeToRedCommand, _) =>
-      goto(OrangeLight) using sender
+      goto(OrangeLight) using Some(sender)
   }
 
   when(OrangeLight) {
     case Event(ChangeFromOrangeToGreenCommand, _) =>
-      goto(GreenLight) using ActorRef.noSender
+      goto(GreenLight) using None
     case Event(ChangeFromOrangeToRedCommand, _) =>
-      goto(RedLight) using ActorRef.noSender
+      goto(RedLight) using None
     case Event(ChangeToRedCommand, _) =>
       stash()
       stay
@@ -45,10 +45,10 @@ class TrafficLightFSM(
   }
 
   onTransition {
-    case OrangeLight -> GreenLight =>
-      stateData ! ChangedToGreenEvent(id)
-    case OrangeLight -> RedLight =>
-      stateData ! ChangedToRedEvent
+    case _ -> GreenLight =>
+      stateData map (_ ! ChangedToGreenEvent(id))
+    case _ -> RedLight =>
+      stateData map (_ ! ChangedToRedEvent)
     case RedLight -> OrangeLight =>
       setTimer("changeToGreen", ChangeFromOrangeToGreenCommand, delay, false)
     case GreenLight -> OrangeLight =>
@@ -56,13 +56,14 @@ class TrafficLightFSM(
   }
 
   onTransition {
-    case OrangeLight -> _ =>
-      unstashAll()
+    case oldState -> newState =>
+      log.debug(s"transition of $id from $oldState to $newState")
+      context.system.eventStream.publish(StatusEvent(id, newState))
   }
 
   onTransition {
-    case (_, newState) =>
-      context.system.eventStream.publish(StatusEvent(id, newState))
+    case OrangeLight -> _ =>
+      unstashAll()
   }
 
   whenUnhandled {
