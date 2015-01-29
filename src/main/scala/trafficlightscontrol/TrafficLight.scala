@@ -49,8 +49,8 @@ class TrafficLight(
   def receive = {
     case GetStatusQuery => sender ! StatusEvent(id, state)
     case msg => state match {
-      case RedLight => receiveWhenRed(msg)
-      case GreenLight => receiveWhenGreen(msg)
+      case RedLight    => receiveWhenRed(msg)
+      case GreenLight  => receiveWhenGreen(msg)
       case OrangeLight => receiveWhenOrange(msg)
     }
   }

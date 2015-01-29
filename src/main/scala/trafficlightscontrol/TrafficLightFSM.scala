@@ -13,7 +13,7 @@ class TrafficLightFSM(
   id: String,
   initialState: Light = RedLight,
   delay: FiniteDuration = 1 seconds)
-  extends Actor with ActorLogging with FSM[Light, Option[ActorRef]] with Stash {
+    extends Actor with ActorLogging with FSM[Light, Option[ActorRef]] with Stash {
 
   startWith(initialState, None)
 
@@ -36,12 +36,15 @@ class TrafficLightFSM(
       goto(GreenLight) using None
     case Event(ChangeFromOrangeToRedCommand, _) =>
       goto(RedLight) using None
-    case Event(ChangeToRedCommand, _) =>
+    case Event(_: Command, _) =>
       stash()
       stay
-    case Event(ChangeToGreenCommand(_), _) =>
-      stash()
-      stay
+  }
+
+  onTransition {
+    case oldState -> newState =>
+      //log.info(s"transition of $id from $oldState to $newState")
+      context.system.eventStream.publish(StatusEvent(id, newState))
   }
 
   onTransition {
@@ -53,12 +56,6 @@ class TrafficLightFSM(
       setTimer("changeToGreen", ChangeFromOrangeToGreenCommand, delay, false)
     case GreenLight -> OrangeLight =>
       setTimer("changeToRed", ChangeFromOrangeToRedCommand, delay, false)
-  }
-
-  onTransition {
-    case oldState -> newState =>
-      log.debug(s"transition of $id from $oldState to $newState")
-      context.system.eventStream.publish(StatusEvent(id, newState))
   }
 
   onTransition {

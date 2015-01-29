@@ -63,11 +63,11 @@ class TrafficDirector(val target: ActorRef, val detectors: Set[(ActorRef, String
     }
 
     case AllDetectorsInfo(traffics: List[TrafficInfo], lights: List[StatusEvent]) => {
-      traffics.find(_.status == HighTraffic) foreach { ti => target ! ChangeToGreenCommand("" + ti.lightId) }
+      traffics.find(_.status == HighTraffic) foreach { ti => target ! ChangeToGreenCommand(""+ti.lightId) }
     }
 
     case msg: Command => target forward msg
-    case msg: Query => target forward msg
+    case msg: Query   => target forward msg
   }
 
 }

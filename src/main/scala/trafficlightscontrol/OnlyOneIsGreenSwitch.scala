@@ -44,7 +44,7 @@ class OnlyOneIsGreenSwitch(val workers: Map[String, ActorRef], timeout: FiniteDu
       })
     }
     case msg: Command => workers.values foreach (_ forward msg)
-    case msg: Query => workers.values foreach (_ forward msg)
+    case msg: Query   => workers.values foreach (_ forward msg)
   }
 
   def receiveRedEvents(originalSender: ActorRef, timeoutTask: Cancellable)(execute: => Unit): Receive = {
@@ -59,7 +59,7 @@ class OnlyOneIsGreenSwitch(val workers: Map[String, ActorRef], timeout: FiniteDu
       throw new Exception(s"timeout waiting for all red events")
     }
     case m @ GetStatusQuery => workers.values foreach (_ forward m)
-    case msg => stash()
+    case msg                => stash()
   }
 
   def receiveFinalGreenEventWhenBusy(id: String, originalSender: ActorRef, timeoutTask: Cancellable): Receive = {
@@ -70,7 +70,8 @@ class OnlyOneIsGreenSwitch(val workers: Map[String, ActorRef], timeout: FiniteDu
         currentGreenId = id
         context.become(receiveWhenFree)
         unstashAll()
-      } else {
+      }
+      else {
         throw new Exception(s"expected green event from $targetId but received from $id")
       }
     }
@@ -78,7 +79,7 @@ class OnlyOneIsGreenSwitch(val workers: Map[String, ActorRef], timeout: FiniteDu
       throw new Exception()
     }
     case m @ GetStatusQuery => workers.values foreach (_ forward m)
-    case msg => stash()
+    case msg                => stash()
   }
 
 }

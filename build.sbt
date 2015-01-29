@@ -1,5 +1,6 @@
 import io.gatling.sbt.GatlingPlugin
 import io.gatling.sbt.GatlingPlugin._
+import scalariform.formatter.preferences._
 
 organization := "hackaton"
 
@@ -30,7 +31,11 @@ libraryDependencies ++= Seq(
   )
 ).map(_.withSources())
 
+scoverage.ScoverageSbtPlugin.instrumentSettings
+
 com.typesafe.sbt.SbtScalariform.scalariformSettings
+
+ScalariformKeys.preferences := PreferencesImporterExporter.loadPreferences(baseDirectory.value / "project" / "formatterPreferences.properties" toString)
 
 Revolver.settings
 

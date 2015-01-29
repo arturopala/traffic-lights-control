@@ -25,21 +25,28 @@ trait TrafficSystemTestKit {
     }
   }
 
-  object TestLightManager {
-    def apply(lights: Seq[Light], timeout: FiniteDuration = 10 seconds)(implicit system: ActorSystem) = {
-      val workers = lights zip (1 to lights.size) map { case (l, c) => ("" + c -> TestTrafficLight("" + c, l)) }
+  object TestOnlyOneIsGreenSwitch {
+    def apply(lights: Seq[Light], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
+      val workers = lights zip (1 to lights.size) map { case (l, c) => (""+c -> TestTrafficLight(""+c, l, testLightChangeDelay)) }
       TestActorRef(new OnlyOneIsGreenSwitch(workers.toMap, timeout))
     }
   }
 
+  object TestOnlyOneIsGreenSwitchFSM {
+    def apply(lights: Seq[Light], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
+      val workers = lights zip (1 to lights.size) map { case (l, c) => (""+c -> TestTrafficLightFSM(""+c, l, testLightChangeDelay)) }
+      TestActorRef(new OnlyOneIsGreenSwitchFSM(workers.toMap, timeout))
+    }
+  }
+
   object TestTrafficDirector {
-    def apply(lights: Seq[Light], timeout: FiniteDuration = 10 seconds)(implicit system: ActorSystem) = {
-      val lightManager = TestLightManager(lights, timeout)
-      val detectors = lights zip (1 to lights.size) map { case (l, c) => (TestTrafficDetector(), "" + c) }
+    def apply(lights: Seq[Light], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
+      val lightManager = TestOnlyOneIsGreenSwitch(lights, timeout)
+      val detectors = lights zip (1 to lights.size) map { case (l, c) => (TestTrafficDetector(), ""+c) }
       TestActorRef(new TrafficDirector(lightManager, Set(detectors: _*)))
     }
   }
 
   def stateOfTrafficLight(ref: ActorRef): Light = ref.asInstanceOf[TestActorRef[TrafficLight]].underlyingActor.state
-
+  def stateOfTrafficLightFSM(ref: ActorRef): Light = ref.asInstanceOf[TestActorRef[TrafficLightFSM]].underlyingActor.stateName
 }
