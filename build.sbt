@@ -8,7 +8,7 @@ name := "traffic-lights-control"
 
 version := "0.1.0-SNAPSHOT"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.6"
 
 resolvers += Resolver.mavenLocal
 
@@ -45,5 +45,5 @@ mainClass in (Compile, run) := Some("trafficlightscontrol.Boot")
 
 lazy val loadtester = (project in file("loadtester")).enablePlugins(GatlingPlugin)
 
-lazy val root = (project in file(".")).enablePlugins(SbtTwirl).aggregate(loadtester)
+lazy val root = (project in file(".")).enablePlugins(SbtTwirl)
 
