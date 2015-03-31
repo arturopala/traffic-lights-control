@@ -19,14 +19,14 @@ class TrafficLightFSM(
 
   when(RedLight) {
     case Event(ChangeToRedCommand, _) =>
-      stay replying (ChangedToRedEvent)
+      stay replying ChangedToRedEvent
     case Event(ChangeToGreenCommand(_), _) =>
       goto(OrangeLight) using Some(sender)
   }
 
   when(GreenLight) {
     case Event(ChangeToGreenCommand(_), _) =>
-      stay replying (ChangedToGreenEvent(id))
+      stay replying ChangedToGreenEvent
     case Event(ChangeToRedCommand, _) =>
       goto(OrangeLight) using Some(sender)
   }
@@ -49,7 +49,7 @@ class TrafficLightFSM(
 
   onTransition {
     case _ -> GreenLight =>
-      stateData map (_ ! ChangedToGreenEvent(id))
+      stateData map (_ ! ChangedToGreenEvent)
     case _ -> RedLight =>
       stateData map (_ ! ChangedToRedEvent)
     case RedLight -> OrangeLight =>

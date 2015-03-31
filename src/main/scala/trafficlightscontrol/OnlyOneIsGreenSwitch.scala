@@ -63,21 +63,14 @@ class OnlyOneIsGreenSwitch(val workers: Map[String, ActorRef], timeout: FiniteDu
   }
 
   def receiveFinalGreenEventWhenBusy(id: String, originalSender: ActorRef, timeoutTask: Cancellable): Receive = {
-    case ChangedToGreenEvent(targetId) => {
-      if (targetId == id) {
-        timeoutTask.cancel()
-        originalSender ! ChangedToGreenEvent(id)
-        currentGreenId = id
-        context.become(receiveWhenFree)
-        unstashAll()
-      }
-      else {
-        throw new Exception(s"expected green event from $targetId but received from $id")
-      }
+    case ChangedToGreenEvent => {
+      timeoutTask.cancel()
+      originalSender ! ChangedToGreenEvent
+      currentGreenId = id
+      context.become(receiveWhenFree)
+      unstashAll()
     }
-    case TimeoutEvent => {
-      throw new Exception()
-    }
+    case TimeoutEvent       => throw new Exception()
     case m @ GetStatusQuery => workers.values foreach (_ forward m)
     case msg                => stash()
   }

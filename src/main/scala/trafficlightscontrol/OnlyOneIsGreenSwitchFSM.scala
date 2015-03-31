@@ -64,11 +64,8 @@ class OnlyOneIsGreenSwitchFSM(
   }
 
   when(WaitingForGreen, stateTimeout = timeout) {
-    case Event(ChangedToGreenEvent(id), StateData(currentGreenId, _, _)) =>
-      currentGreenId.get == id match {
-        case false => stay
-        case true  => goto(Free) using StateData(currentGreenId = currentGreenId)
-      }
+    case Event(ChangedToGreenEvent, StateData(currentGreenId, _, _)) =>
+      goto(Free) using StateData(currentGreenId = currentGreenId)
     case Event(_: Command, _) =>
       stash()
       stay
@@ -108,6 +105,6 @@ class OnlyOneIsGreenSwitchFSM(
   def tellToMemberChangeToGreen(stateData: StateData): Unit = for (i <- stateData.currentGreenId; w <- members.get(i)) { w ! ChangeToGreenCommand(i) }
   def tellToMembers(msg: AnyRef): Unit = for (w <- memberSet) { w ! msg }
   def forwardToMembers(msg: AnyRef): Unit = for (w <- memberSet) { w forward msg }
-  def notifyOriginAboutGreen(stateData: StateData): Unit = stateData match { case StateData(Some(currentGreenId), _, origin) => origin ! ChangedToGreenEvent(currentGreenId) }
+  def notifyOriginAboutGreen(stateData: StateData): Unit = stateData match { case StateData(Some(currentGreenId), _, origin) => origin ! ChangedToGreenEvent }
   def notifyOriginAboutRed(stateData: StateData): Unit = stateData match { case StateData(None, _, origin) => origin ! ChangedToRedEvent }
 }

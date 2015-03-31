@@ -7,3 +7,6 @@ project/target/
 .settings/
 .idea/
 .idea_modules/
+*.sublime-project
+*.sublime-workspace
+*.class
