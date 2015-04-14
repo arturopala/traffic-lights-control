@@ -9,7 +9,7 @@ import akka.actor.Stash
 import akka.actor.FSM
 import sun.awt.X11.XBaseWindow.InitialiseState
 
-class TrafficLightFSM(
+class LightFSM(
   id: String,
   initialState: LightState = RedLight,
   delay: FiniteDuration = 1 seconds)

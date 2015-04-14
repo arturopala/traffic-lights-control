@@ -9,14 +9,14 @@ trait TrafficSystemTestKit {
 
   val testLightChangeDelay: FiniteDuration = 100 milliseconds
 
-  object TestTrafficLight {
+  object TestLight {
     def apply(id: String = "1", initialState: LightState = RedLight, delay: FiniteDuration = testLightChangeDelay)(implicit system: ActorSystem) =
-      TestActorRef(new TrafficLight(id, initialState, delay))
+      TestActorRef(new Light(id, initialState, delay))
   }
 
-  object TestTrafficLightFSM {
+  object TestLightFSM {
     def apply(id: String = "1", initialState: LightState = RedLight, delay: FiniteDuration = testLightChangeDelay)(implicit system: ActorSystem) =
-      TestActorRef(new TrafficLightFSM(id, initialState, delay))
+      TestActorRef(new LightFSM(id, initialState, delay))
   }
 
   object TestTrafficDetector {
@@ -27,14 +27,14 @@ trait TrafficSystemTestKit {
 
   object TestOnlyOneIsGreenSwitch {
     def apply(lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
-      val workers = lights zip (1 to lights.size) map { case (l, c) => (""+c -> TestTrafficLight(""+c, l, testLightChangeDelay)) }
+      val workers = lights zip (1 to lights.size) map { case (l, c) => (""+c -> TestLight(""+c, l, testLightChangeDelay)) }
       TestActorRef(new OnlyOneIsGreenSwitch(workers.toMap, timeout))
     }
   }
 
   object TestOnlyOneIsGreenSwitchFSM {
     def apply(lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
-      val workers = lights zip (1 to lights.size) map { case (l, c) => (""+c -> TestTrafficLightFSM(""+c, l, testLightChangeDelay)) }
+      val workers = lights zip (1 to lights.size) map { case (l, c) => (""+c -> TestLightFSM(""+c, l, testLightChangeDelay)) }
       TestActorRef(new OnlyOneIsGreenSwitchFSM(workers.toMap, timeout))
     }
   }
@@ -47,6 +47,6 @@ trait TrafficSystemTestKit {
     }
   }
 
-  def stateOfTrafficLight(ref: ActorRef): LightState = ref.asInstanceOf[TestActorRef[TrafficLight]].underlyingActor.state
-  def stateOfTrafficLightFSM(ref: ActorRef): LightState = ref.asInstanceOf[TestActorRef[TrafficLightFSM]].underlyingActor.stateName
+  def stateOfLight(ref: ActorRef): LightState = ref.asInstanceOf[TestActorRef[Light]].underlyingActor.state
+  def stateOfLightFSM(ref: ActorRef): LightState = ref.asInstanceOf[TestActorRef[LightFSM]].underlyingActor.stateName
 }

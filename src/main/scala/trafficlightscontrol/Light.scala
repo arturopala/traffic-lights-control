@@ -7,7 +7,7 @@ import scala.concurrent.ExecutionContext
 import akka.actor.ActorLogging
 import akka.actor.Stash
 
-class TrafficLight(
+class Light(
   id: String,
   initialState: LightState = RedLight,
   delay: FiniteDuration = 1 seconds)
