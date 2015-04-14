@@ -11,9 +11,9 @@ import sun.awt.X11.XBaseWindow.InitialiseState
 
 class TrafficLightFSM(
   id: String,
-  initialState: Light = RedLight,
+  initialState: LightState = RedLight,
   delay: FiniteDuration = 1 seconds)
-    extends Actor with ActorLogging with FSM[Light, Option[ActorRef]] with Stash {
+    extends Actor with ActorLogging with FSM[LightState, Option[ActorRef]] with Stash {
 
   startWith(initialState, None)
 

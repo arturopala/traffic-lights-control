@@ -17,17 +17,17 @@ object ChangeFromOrangeToRedCommand
 object ChangeFromOrangeToGreenCommand
 
 object GetStatusQuery extends Query
-case class StatusEvent(id: String, state: Light) extends Event
+case class StatusEvent(id: String, state: LightState) extends Event
 
 object GetReportQuery extends Query
-case class ReportEvent(report: Map[String, Light]) extends Event
+case class ReportEvent(report: Map[String, LightState]) extends Event
 
 object TimeoutEvent extends Event
 object TickCommand extends Command
 
-sealed abstract class Light(val colour: String, val id: String) {
-  override val toString: String = s"${colour}Light"
+sealed abstract class LightState(val colour: String, val id: String) {
+  override val toString: String = s"${colour}LightState"
 }
-object RedLight extends Light("Red", "R")
-object GreenLight extends Light("Green", "G")
-object OrangeLight extends Light("Orange", "O")
+object RedLight extends LightState("Red", "R")
+object GreenLight extends LightState("Green", "G")
+object OrangeLight extends LightState("Orange", "O")

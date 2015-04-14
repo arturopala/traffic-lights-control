@@ -93,13 +93,13 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     expectMsg(ChangedToRedEvent)
   }
 
-  "A OnlyOneIsGreenSwitch" should "change status of Light#1 from red to green" in new ActorSystemTest {
+  "A OnlyOneIsGreenSwitch" should "change status of LightState#1 from red to green" in new ActorSystemTest {
     val tested = TestOnlyOneIsGreenSwitch(Seq(RedLight, RedLight, RedLight, RedLight))
     tested ! ChangeToGreenCommand("1")
     expectMsg(ChangedToGreenEvent)
   }
 
-  it should "change status of Light#1 from red to green and status of others to red" in new ActorSystemTest {
+  it should "change status of LightState#1 from red to green and status of others to red" in new ActorSystemTest {
     val tested = TestOnlyOneIsGreenSwitch(Seq(RedLight, GreenLight, RedLight, RedLight))
     val workers = tested.underlyingActor.workers
     stateOfTrafficLight(workers("1")) should equal(RedLight)
@@ -116,7 +116,7 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     stateOfTrafficLight(workers("4")) should equal(RedLight)
   }
 
-  it should "change status of Light#1 from red to green and status of others to red (2)" in new ActorSystemTest {
+  it should "change status of LightState#1 from red to green and status of others to red (2)" in new ActorSystemTest {
     val tested = TestOnlyOneIsGreenSwitch(Seq(RedLight, GreenLight, GreenLight, GreenLight))
     val workers = tested.underlyingActor.workers
     stateOfTrafficLight(workers("1")) should equal(RedLight)
@@ -150,13 +150,13 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     stateOfTrafficLight(workers("4")) should equal(RedLight)
   }
 
-  "A OnlyOneIsGreenSwitchFSM" should "change status of Light#1 from red to green" in new ActorSystemTest {
+  "A OnlyOneIsGreenSwitchFSM" should "change status of LightState#1 from red to green" in new ActorSystemTest {
     val tested = TestOnlyOneIsGreenSwitchFSM(Seq(RedLight, RedLight, RedLight, RedLight))
     tested ! ChangeToGreenCommand("1")
     expectMsg(ChangedToGreenEvent)
   }
 
-  it should "change status of Light#1 from red to green and status of others to red" in new ActorSystemTest {
+  it should "change status of LightState#1 from red to green and status of others to red" in new ActorSystemTest {
     val tested = TestOnlyOneIsGreenSwitchFSM(Seq(RedLight, GreenLight, RedLight, RedLight))
     val workers = tested.underlyingActor.members
     stateOfTrafficLightFSM(workers("1")) should equal(RedLight)
@@ -174,7 +174,7 @@ class TrafficLightsSpec extends FlatSpecLike with Matchers with ActorSystemTestK
     stateOfTrafficLightFSM(workers("4")) should equal(RedLight)
   }
 
-  it should "change status of Light#1 from red to green and status of others to red (2)" in new ActorSystemTest {
+  it should "change status of LightState#1 from red to green and status of others to red (2)" in new ActorSystemTest {
     val tested = TestOnlyOneIsGreenSwitchFSM(Seq(RedLight, GreenLight, GreenLight, GreenLight))
     val workers = tested.underlyingActor.members
     stateOfTrafficLightFSM(workers("1")) should equal(RedLight)

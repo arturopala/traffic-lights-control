@@ -10,7 +10,7 @@ import akka.actor.ActorLogging
 
 class MonitoringActor extends Actor with WebSocketProducerActor with ActorLogging {
 
-  var report: Map[String, Light] = Map()
+  var report: Map[String, LightState] = Map()
   val listeners: scala.collection.mutable.Set[ActorRef] = scala.collection.mutable.Set()
 
   def receive = {

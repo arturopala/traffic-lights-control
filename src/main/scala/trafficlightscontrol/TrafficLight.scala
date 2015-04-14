@@ -9,11 +9,11 @@ import akka.actor.Stash
 
 class TrafficLight(
   id: String,
-  initialState: Light = RedLight,
+  initialState: LightState = RedLight,
   delay: FiniteDuration = 1 seconds)
     extends Actor with ActorLogging with Stash {
 
-  var state: Light = initialState
+  var state: LightState = initialState
   var origin: ActorRef = _
 
   def receive = {
@@ -61,7 +61,7 @@ class TrafficLight(
     case msg => stash()
   }
 
-  def changeStateTo(light: Light) = {
+  def changeStateTo(light: LightState) = {
     state = light
     context.system.eventStream.publish(StatusEvent(id, state))
   }
