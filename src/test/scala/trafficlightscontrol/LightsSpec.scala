@@ -93,14 +93,14 @@ class LightsSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with
     expectMsg(ChangedToRedEvent)
   }
 
-  "A OnlyOneIsGreenSwitch" should "change status of LightState#1 from red to green" in new ActorSystemTest {
-    val tested = TestOnlyOneIsGreenSwitch(Seq(RedLight, RedLight, RedLight, RedLight))
+  "A Switch" should "change status of LightState#1 from red to green" in new ActorSystemTest {
+    val tested = TestSwitch(Seq(RedLight, RedLight, RedLight, RedLight))
     tested ! ChangeToGreenCommand("1")
     expectMsg(ChangedToGreenEvent)
   }
 
   it should "change status of LightState#1 from red to green and status of others to red" in new ActorSystemTest {
-    val tested = TestOnlyOneIsGreenSwitch(Seq(RedLight, GreenLight, RedLight, RedLight))
+    val tested = TestSwitch(Seq(RedLight, GreenLight, RedLight, RedLight))
     val workers = tested.underlyingActor.workers
     stateOfLight(workers("1")) should equal(RedLight)
     stateOfLight(workers("2")) should equal(GreenLight)
@@ -117,7 +117,7 @@ class LightsSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with
   }
 
   it should "change status of LightState#1 from red to green and status of others to red (2)" in new ActorSystemTest {
-    val tested = TestOnlyOneIsGreenSwitch(Seq(RedLight, GreenLight, GreenLight, GreenLight))
+    val tested = TestSwitch(Seq(RedLight, GreenLight, GreenLight, GreenLight))
     val workers = tested.underlyingActor.workers
     stateOfLight(workers("1")) should equal(RedLight)
     stateOfLight(workers("2")) should equal(GreenLight)
@@ -134,7 +134,7 @@ class LightsSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with
   }
 
   it should "change status of all lights to red" in new ActorSystemTest {
-    val tested = TestOnlyOneIsGreenSwitch(Seq(GreenLight, GreenLight, RedLight, GreenLight))
+    val tested = TestSwitch(Seq(GreenLight, GreenLight, RedLight, GreenLight))
     val workers = tested.underlyingActor.workers
     stateOfLight(workers("1")) should equal(GreenLight)
     stateOfLight(workers("2")) should equal(GreenLight)
@@ -150,14 +150,14 @@ class LightsSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with
     stateOfLight(workers("4")) should equal(RedLight)
   }
 
-  "A OnlyOneIsGreenSwitchFSM" should "change status of LightState#1 from red to green" in new ActorSystemTest {
-    val tested = TestOnlyOneIsGreenSwitchFSM(Seq(RedLight, RedLight, RedLight, RedLight))
+  "A SwitchFSM" should "change status of LightState#1 from red to green" in new ActorSystemTest {
+    val tested = TestSwitchFSM(Seq(RedLight, RedLight, RedLight, RedLight))
     tested ! ChangeToGreenCommand("1")
     expectMsg(ChangedToGreenEvent)
   }
 
   it should "change status of LightState#1 from red to green and status of others to red" in new ActorSystemTest {
-    val tested = TestOnlyOneIsGreenSwitchFSM(Seq(RedLight, GreenLight, RedLight, RedLight))
+    val tested = TestSwitchFSM(Seq(RedLight, GreenLight, RedLight, RedLight))
     val workers = tested.underlyingActor.members
     stateOfLightFSM(workers("1")) should equal(RedLight)
     stateOfLightFSM(workers("2")) should equal(GreenLight)
@@ -175,7 +175,7 @@ class LightsSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with
   }
 
   it should "change status of LightState#1 from red to green and status of others to red (2)" in new ActorSystemTest {
-    val tested = TestOnlyOneIsGreenSwitchFSM(Seq(RedLight, GreenLight, GreenLight, GreenLight))
+    val tested = TestSwitchFSM(Seq(RedLight, GreenLight, GreenLight, GreenLight))
     val workers = tested.underlyingActor.members
     stateOfLightFSM(workers("1")) should equal(RedLight)
     stateOfLightFSM(workers("2")) should equal(GreenLight)
@@ -193,7 +193,7 @@ class LightsSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with
   }
 
   it should "change status of all lights to red" in new ActorSystemTest {
-    val tested = TestOnlyOneIsGreenSwitchFSM(Seq(GreenLight, GreenLight, RedLight, GreenLight))
+    val tested = TestSwitchFSM(Seq(GreenLight, GreenLight, RedLight, GreenLight))
     val workers = tested.underlyingActor.members
     stateOfLightFSM(workers("1")) should equal(GreenLight)
     stateOfLightFSM(workers("2")) should equal(GreenLight)

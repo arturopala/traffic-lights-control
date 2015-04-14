@@ -7,6 +7,9 @@ import scala.concurrent.ExecutionContext
 import akka.actor.ActorLogging
 import akka.actor.Stash
 
+/**
+ * Light is a primitive building block of a traffic control system.
+ */
 class Light(
   id: String,
   initialState: LightState = RedLight,

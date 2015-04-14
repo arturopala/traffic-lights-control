@@ -8,10 +8,10 @@ import akka.actor.ActorLogging
 
 class DemoTrafficSystem(period: FiniteDuration = 10.seconds) extends Actor with ActorLogging {
 
-  val lights1: Map[String, ActorRef] = (0 to 3) map { c => (""+c -> context.actorOf(Props(classOf[LightFSM], ""+c, RedLight, period / 10))) } toMap
-  val group1: ActorRef = context.actorOf(Props(classOf[OnlyOneIsGreenSwitchFSM], lights1, period))
+  val lightSet1: Map[String, ActorRef] = (0 to 3) map { c => (""+c -> context.actorOf(Props(classOf[LightFSM], ""+c, RedLight, period / 10))) } toMap
+  val switch1: ActorRef = context.actorOf(Props(classOf[SwitchFSM], lightSet1, period))
   val detectors: Set[(ActorRef, String)] = (0 to 3) map { c => (context.actorOf(Props(classOf[TrafficDetector], ""+c)), ""+c) } toSet
-  val toplevel: ActorRef = context.actorOf(Props(classOf[TrafficDirector], group1, detectors, period, period / 10))
+  val toplevel: ActorRef = context.actorOf(Props(classOf[TrafficDirector], switch1, detectors, period, period / 10))
 
   var counter = 0
 

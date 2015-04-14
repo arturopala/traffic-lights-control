@@ -6,7 +6,7 @@ import scala.collection.mutable.Set
 import scala.concurrent._
 import scala.concurrent.duration._
 
-object Switch {
+object SwitchFSM {
   sealed trait State
   object Free extends State
   object WaitingForAllRed extends State
@@ -18,9 +18,9 @@ object Switch {
     origin: ActorRef = ActorRef.noSender)
 }
 
-import Switch._
+import SwitchFSM._
 
-class OnlyOneIsGreenSwitchFSM(
+class SwitchFSM(
     val members: Map[String, ActorRef],
     timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with FSM[State, StateData] with Stash {
 

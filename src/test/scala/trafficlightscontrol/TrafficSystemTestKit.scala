@@ -25,23 +25,23 @@ trait TrafficSystemTestKit {
     }
   }
 
-  object TestOnlyOneIsGreenSwitch {
+  object TestSwitch {
     def apply(lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
       val workers = lights zip (1 to lights.size) map { case (l, c) => (""+c -> TestLight(""+c, l, testLightChangeDelay)) }
-      TestActorRef(new OnlyOneIsGreenSwitch(workers.toMap, timeout))
+      TestActorRef(new Switch(workers.toMap, timeout))
     }
   }
 
-  object TestOnlyOneIsGreenSwitchFSM {
+  object TestSwitchFSM {
     def apply(lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
       val workers = lights zip (1 to lights.size) map { case (l, c) => (""+c -> TestLightFSM(""+c, l, testLightChangeDelay)) }
-      TestActorRef(new OnlyOneIsGreenSwitchFSM(workers.toMap, timeout))
+      TestActorRef(new SwitchFSM(workers.toMap, timeout))
     }
   }
 
   object TestTrafficDirector {
     def apply(lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
-      val lightManager = TestOnlyOneIsGreenSwitch(lights, timeout)
+      val lightManager = TestSwitch(lights, timeout)
       val detectors = lights zip (1 to lights.size) map { case (l, c) => (TestTrafficDetector(), ""+c) }
       TestActorRef(new TrafficDirector(lightManager, Set(detectors: _*)))
     }

@@ -6,7 +6,10 @@ import scala.collection._
 import scala.concurrent._
 import scala.concurrent.duration._
 
-class OnlyOneIsGreenSwitch(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
+/**
+ * Switch is a set of other components (eg. lights) amongst which only one may be green at once.
+ */
+class Switch(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenFree
 
