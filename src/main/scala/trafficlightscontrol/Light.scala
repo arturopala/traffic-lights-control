@@ -9,6 +9,7 @@ import akka.actor.Stash
 
 /**
  * Light is a primitive building block of a traffic control system.
+ * Possible states: GreenLight, OrangeThenRedLight, RedLight, OrangeThenGreenLight.
  */
 class Light(
   id: String,
@@ -22,45 +23,48 @@ class Light(
   def receive = {
     case GetStatusQuery => sender ! StatusEvent(id, state)
     case msg => state match {
-      case RedLight    => receiveWhenRed(msg)
-      case GreenLight  => receiveWhenGreen(msg)
-      case OrangeLight => receiveWhenOrange(msg)
+      case RedLight             => receiveWhenRed(msg)
+      case GreenLight           => receiveWhenGreen(msg)
+      case OrangeThenRedLight   => receiveWhenOrangeBeforeRed(msg)
+      case OrangeThenGreenLight => receiveWhenOrangeBeforeGreen(msg)
     }
   }
 
   def receiveWhenRed: Receive = {
-    case ChangeToRedCommand => {
+    case ChangeToRedCommand =>
       sender ! ChangedToRedEvent
-    }
-    case ChangeToGreenCommand(id) => {
-      changeStateTo(OrangeLight)
-      origin = sender
-      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToGreenCommand)(context.system.dispatcher)
-    }
+
+    case ChangeToGreenCommand(id) =>
+      changeStateTo(OrangeThenGreenLight)
+      origin = sender()
+      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeCommand)(context.system.dispatcher)
   }
 
   def receiveWhenGreen: Receive = {
-    case ChangeToRedCommand => {
-      changeStateTo(OrangeLight)
-      origin = sender
-      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeToRedCommand)(context.system.dispatcher)
-    }
+    case ChangeToRedCommand =>
+      changeStateTo(OrangeThenRedLight)
+      origin = sender()
+      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeCommand)(context.system.dispatcher)
     case ChangeToGreenCommand(id) => {
       sender ! ChangedToGreenEvent
     }
   }
 
-  def receiveWhenOrange: Receive = {
-    case ChangeFromOrangeToRedCommand => {
+  def receiveWhenOrangeBeforeRed: Receive = {
+    case ChangeFromOrangeCommand =>
       changeStateTo(RedLight)
       origin ! ChangedToRedEvent
       unstashAll()
-    }
-    case ChangeFromOrangeToGreenCommand => {
+    case msg => stash()
+  }
+
+  def receiveWhenOrangeBeforeGreen: Receive = {
+    case ChangeFromOrangeCommand =>
       changeStateTo(GreenLight)
       origin ! ChangedToGreenEvent
       unstashAll()
-    }
+    case ChangeToRedCommand =>
+      changeStateTo(OrangeThenRedLight)
     case msg => stash()
   }
 

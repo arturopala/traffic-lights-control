@@ -21,21 +21,27 @@ class LightFSM(
     case Event(ChangeToRedCommand, _) =>
       stay replying ChangedToRedEvent
     case Event(ChangeToGreenCommand(_), _) =>
-      goto(OrangeLight) using Some(sender)
+      goto(OrangeThenGreenLight) using Some(sender)
   }
 
   when(GreenLight) {
     case Event(ChangeToGreenCommand(_), _) =>
       stay replying ChangedToGreenEvent
     case Event(ChangeToRedCommand, _) =>
-      goto(OrangeLight) using Some(sender)
+      goto(OrangeThenRedLight) using Some(sender)
   }
 
-  when(OrangeLight) {
-    case Event(ChangeFromOrangeToGreenCommand, _) =>
-      goto(GreenLight) using None
-    case Event(ChangeFromOrangeToRedCommand, _) =>
+  when(OrangeThenRedLight) {
+    case Event(ChangeFromOrangeCommand, _) =>
       goto(RedLight) using None
+    case Event(_: Command, _) =>
+      stash()
+      stay
+  }
+
+  when(OrangeThenGreenLight) {
+    case Event(ChangeFromOrangeCommand, _) =>
+      goto(GreenLight) using None
     case Event(_: Command, _) =>
       stash()
       stay
@@ -52,14 +58,16 @@ class LightFSM(
       stateData map (_ ! ChangedToGreenEvent)
     case _ -> RedLight =>
       stateData map (_ ! ChangedToRedEvent)
-    case RedLight -> OrangeLight =>
-      setTimer("changeToGreen", ChangeFromOrangeToGreenCommand, delay, false)
-    case GreenLight -> OrangeLight =>
-      setTimer("changeToRed", ChangeFromOrangeToRedCommand, delay, false)
+    case RedLight -> OrangeThenGreenLight =>
+      setTimer("changeToGreen", ChangeFromOrangeCommand, delay, false)
+    case GreenLight -> OrangeThenRedLight =>
+      setTimer("changeToRed", ChangeFromOrangeCommand, delay, false)
   }
 
   onTransition {
-    case OrangeLight -> _ =>
+    case OrangeThenGreenLight -> _ =>
+      unstashAll()
+    case OrangeThenRedLight -> _ =>
       unstashAll()
   }
 
