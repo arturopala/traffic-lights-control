@@ -10,13 +10,13 @@ trait TrafficSystemTestKit {
   val testLightChangeDelay: FiniteDuration = 100 milliseconds
 
   object TestLight {
-    def apply(id: String = "1", initialState: LightState = RedLight, delay: FiniteDuration = testLightChangeDelay)(implicit system: ActorSystem) =
-      TestActorRef(new Light(id, initialState, delay))
+    def apply(id: String = "1", initialState: LightState = RedLight, delay: FiniteDuration = testLightChangeDelay, automatic: Boolean = true)(implicit system: ActorSystem) =
+      TestActorRef(new Light(id, initialState, delay, automatic))
   }
 
   object TestLightFSM {
-    def apply(id: String = "1", initialState: LightState = RedLight, delay: FiniteDuration = testLightChangeDelay)(implicit system: ActorSystem) =
-      TestActorRef(new LightFSM(id, initialState, delay))
+    def apply(id: String = "1", initialState: LightState = RedLight, delay: FiniteDuration = testLightChangeDelay, automatic: Boolean = true)(implicit system: ActorSystem) =
+      TestActorRef(new LightFSM(id, initialState, delay, automatic))
   }
 
   object TestTrafficDetector {

@@ -21,11 +21,13 @@ object SwitchFSM {
 import SwitchFSM._
 
 class SwitchFSM(
-    val members: Map[String, ActorRef],
+    val subordinates: Map[String, ActorRef],
     timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with FSM[State, StateData] with Stash {
 
   def initialState = StateData()
-  val memberSet: scala.collection.Set[ActorRef] = members.values.toSet
+  val memberSet: scala.collection.Set[ActorRef] = subordinates.values.toSet
+
+  for (w <- subordinates.values) w ! SetDirectorCommand(self)
 
   startWith(Free, initialState)
 
@@ -102,7 +104,7 @@ class SwitchFSM(
 
   initialize()
 
-  def tellToMemberChangeToGreen(stateData: StateData): Unit = for (i <- stateData.currentGreenId; w <- members.get(i)) { w ! ChangeToGreenCommand(i) }
+  def tellToMemberChangeToGreen(stateData: StateData): Unit = for (i <- stateData.currentGreenId; w <- subordinates.get(i)) { w ! ChangeToGreenCommand(i) }
   def tellToMembers(msg: AnyRef): Unit = for (w <- memberSet) { w ! msg }
   def forwardToMembers(msg: AnyRef): Unit = for (w <- memberSet) { w forward msg }
   def notifyOriginAboutGreen(stateData: StateData): Unit = stateData match { case StateData(Some(currentGreenId), _, origin) => origin ! ChangedToGreenEvent }

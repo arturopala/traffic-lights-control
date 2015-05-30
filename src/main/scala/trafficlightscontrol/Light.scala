@@ -9,18 +9,23 @@ import akka.actor.Stash
 
 /**
  * Light is a primitive building block of a traffic control system.
- * Possible states: GreenLight, OrangeThenRedLight, RedLight, OrangeThenGreenLight.
+ * Possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
+ * @param id UUID
+ * @param initalState initial state of the light
+ * @param delay green <-> red switch delay
+ * @param automatic should switch from orange to red or green automatically or manually?
  */
 class Light(
   id: String,
   initialState: LightState = RedLight,
-  delay: FiniteDuration = 1 seconds)
+  delay: FiniteDuration = 1 seconds,
+  automatic: Boolean = true)
     extends Actor with ActorLogging {
 
   var state: LightState = initialState
   var director: Option[ActorRef] = None
 
-  def receive = akka.event.LoggingReceive {
+  def receive = /*akka.event.LoggingReceive*/ {
 
     case GetStatusQuery => director ! StatusEvent(id, state)
     case SetDirectorCommand(newDirector, ack) =>
@@ -30,8 +35,8 @@ class Light(
     case cmd: Command => state match {
       case RedLight             => receiveWhenRed(cmd)
       case GreenLight           => receiveWhenGreen(cmd)
-      case OrangeThenRedLight   => receiveWhenOrangeBeforeRed(cmd)
-      case OrangeThenGreenLight => receiveWhenOrangeBeforeGreen(cmd)
+      case ChangingToRedLight   => receiveWhenChangingToRed(cmd)
+      case ChangingToGreenLight => receiveWhenChangingToGreen(cmd)
     }
   }
 
@@ -40,34 +45,34 @@ class Light(
       director ! ChangedToRedEvent
 
     case ChangeToGreenCommand(id) =>
-      changeStateTo(OrangeThenGreenLight)
-      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeCommand)(context.system.dispatcher)
+      changeStateTo(ChangingToGreenLight)
+      if (automatic) context.system.scheduler.scheduleOnce(delay, self, FinalizeChange)(context.system.dispatcher)
   }
 
   def receiveWhenGreen: Receive = {
     case ChangeToRedCommand =>
-      changeStateTo(OrangeThenRedLight)
-      context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeCommand)(context.system.dispatcher)
+      changeStateTo(ChangingToRedLight)
+      if (automatic) context.system.scheduler.scheduleOnce(delay, self, FinalizeChange)(context.system.dispatcher)
     case ChangeToGreenCommand(id) => {
       director ! ChangedToGreenEvent
     }
   }
 
-  def receiveWhenOrangeBeforeRed: Receive = {
-    case ChangeFromOrangeCommand =>
+  def receiveWhenChangingToRed: Receive = {
+    case FinalizeChange =>
       changeStateTo(RedLight)
       director ! ChangedToRedEvent
     case ChangeToGreenCommand(id) =>
-      changeStateTo(OrangeThenGreenLight)
+      changeStateTo(ChangingToGreenLight)
     case _ => //ignore
   }
 
-  def receiveWhenOrangeBeforeGreen: Receive = {
-    case ChangeFromOrangeCommand =>
+  def receiveWhenChangingToGreen: Receive = {
+    case FinalizeChange =>
       changeStateTo(GreenLight)
       director ! ChangedToGreenEvent
     case ChangeToRedCommand =>
-      changeStateTo(OrangeThenRedLight)
+      changeStateTo(ChangingToRedLight)
     case _ => //ignore
   }
 

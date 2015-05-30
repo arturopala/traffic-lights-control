@@ -11,7 +11,8 @@ case class SetDirectorCommand(director: ActorRef, ack: Option[Event] = None) ext
 
 object ChangeToRedCommand extends Command
 case class ChangeToGreenCommand(id: String) extends Command
-object ChangeFromOrangeCommand extends Command
+
+object FinalizeChange extends Command
 
 object ChangedToRedEvent extends Event
 object ChangedToGreenEvent extends Event
@@ -35,5 +36,5 @@ sealed abstract class LightState(val colour: String, val id: String) {
 
 object RedLight extends LightState("Red", "R")
 object GreenLight extends LightState("Green", "G")
-object OrangeThenRedLight extends LightState("OrangeThenRed", "OTR")
-object OrangeThenGreenLight extends LightState("OrangeThenGreen", "OTG")
+object ChangingToRedLight extends LightState("OrangeThenRed", "OTR")
+object ChangingToGreenLight extends LightState("OrangeThenGreen", "OTG")

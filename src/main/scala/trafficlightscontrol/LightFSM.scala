@@ -9,73 +9,79 @@ import akka.actor.Stash
 import akka.actor.FSM
 import sun.awt.X11.XBaseWindow.InitialiseState
 
+/**
+ * LightFSM is a primitive building block of a traffic control system. R
+ * Represents single control point with possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
+ * @param id UUID
+ * @param initalState initial state of the light
+ * @param delay green <-> red switch delay
+ * @param automatic should switch from orange to red or green automatically or manually?
+ */
 class LightFSM(
   id: String,
   initialState: LightState = RedLight,
-  delay: FiniteDuration = 1 seconds)
-    extends Actor with ActorLogging with FSM[LightState, Option[ActorRef]] with Stash {
+  delay: FiniteDuration = 1 seconds,
+  automatic: Boolean = true)
+    extends Actor with ActorLogging with FSM[LightState, Option[ActorRef]] {
 
   startWith(initialState, None)
 
   when(RedLight) {
-    case Event(ChangeToRedCommand, _) =>
-      stay replying ChangedToRedEvent
+    case Event(ChangeToRedCommand, director) =>
+      director ! ChangedToRedEvent
+      stay
     case Event(ChangeToGreenCommand(_), _) =>
-      goto(OrangeThenGreenLight) using Some(sender)
+      goto(ChangingToGreenLight)
   }
 
   when(GreenLight) {
-    case Event(ChangeToGreenCommand(_), _) =>
-      stay replying ChangedToGreenEvent
+    case Event(ChangeToGreenCommand(_), director) =>
+      director ! ChangedToGreenEvent
+      stay
     case Event(ChangeToRedCommand, _) =>
-      goto(OrangeThenRedLight) using Some(sender)
+      goto(ChangingToRedLight)
   }
 
-  when(OrangeThenRedLight) {
-    case Event(ChangeFromOrangeCommand, _) =>
-      goto(RedLight) using None
-    case Event(_: Command, _) =>
-      stash()
-      stay
+  when(ChangingToRedLight) {
+    case Event(FinalizeChange, _) =>
+      goto(RedLight)
+    case Event(ChangeToGreenCommand(_), _) =>
+      goto(ChangingToGreenLight)
   }
 
-  when(OrangeThenGreenLight) {
-    case Event(ChangeFromOrangeCommand, _) =>
-      goto(GreenLight) using None
-    case Event(_: Command, _) =>
-      stash()
-      stay
+  when(ChangingToGreenLight) {
+    case Event(FinalizeChange, _) =>
+      goto(GreenLight)
+    case Event(ChangeToRedCommand, _) =>
+      goto(ChangingToRedLight)
   }
 
   onTransition {
     case oldState -> newState =>
-      //log.info(s"transition of $id from $oldState to $newState")
       context.system.eventStream.publish(StatusEvent(id, newState))
   }
 
   onTransition {
-    case _ -> GreenLight =>
+    case ChangingToGreenLight -> GreenLight =>
       stateData map (_ ! ChangedToGreenEvent)
-    case _ -> RedLight =>
+    case ChangingToRedLight -> RedLight =>
       stateData map (_ ! ChangedToRedEvent)
-    case RedLight -> OrangeThenGreenLight =>
-      setTimer("changeToGreen", ChangeFromOrangeCommand, delay, false)
-    case GreenLight -> OrangeThenRedLight =>
-      setTimer("changeToRed", ChangeFromOrangeCommand, delay, false)
-  }
-
-  onTransition {
-    case OrangeThenGreenLight -> _ =>
-      unstashAll()
-    case OrangeThenRedLight -> _ =>
-      unstashAll()
+    case RedLight -> ChangingToGreenLight =>
+      if (automatic) setTimer("changeToGreen", FinalizeChange, delay, false)
+    case GreenLight -> ChangingToRedLight =>
+      if (automatic) setTimer("changeToRed", FinalizeChange, delay, false)
   }
 
   whenUnhandled {
+    case Event(SetDirectorCommand(newDirector, ack), _) =>
+      val director = Option(newDirector)
+      for (a <- ack; d <- director) d ! a
+      stay using director
     case Event(GetStatusQuery, _) => {
       sender ! StatusEvent(id, stateName)
       stay
     }
+    case Event(_, _) => stay
   }
 
   initialize()

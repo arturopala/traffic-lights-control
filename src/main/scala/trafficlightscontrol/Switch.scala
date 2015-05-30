@@ -7,26 +7,28 @@ import scala.concurrent._
 import scala.concurrent.duration._
 
 /**
- * Switch is a set of other components (eg. lights) amongst which only one may be green at once.
+ * Switch is a set of other subordinates (eg. lights) amongst which only one may be green at once.
  */
-class Switch(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
+class Switch(
+    val subordinates: Map[String, ActorRef],
+    timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenFree
 
-  var responses: Set[ActorRef] = Set()
+  var responded: Set[ActorRef] = Set()
   var currentGreenId: String = ""
 
   override def preStart = {
-    for (w <- workers.values) w ! SetDirectorCommand(self)
+    for (w <- subordinates.values) w ! SetDirectorCommand(self)
   }
 
   def receiveWhenFree: Receive = {
     case ChangeToGreenCommand(id) => {
       if (id != currentGreenId) {
-        workers.get(id) foreach { target: ActorRef =>
+        subordinates.get(id) foreach { target: ActorRef =>
           {
-            responses = Set()
-            workers.values foreach (_ ! ChangeToRedCommand)
+            responded = Set()
+            subordinates.values foreach (_ ! ChangeToRedCommand)
             val timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
             val orginalSender = sender
             context.become(receiveRedEvents(sender, timeoutTask) {
@@ -39,8 +41,8 @@ class Switch(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 se
       }
     }
     case ChangeToRedCommand => {
-      responses = Set()
-      workers.values foreach (_ ! ChangeToRedCommand)
+      responded = Set()
+      subordinates.values foreach (_ ! ChangeToRedCommand)
       val orginalSender = sender
       val timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
       context.become(receiveRedEvents(orginalSender, timeoutTask) {
@@ -50,14 +52,14 @@ class Switch(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 se
         unstashAll()
       })
     }
-    case msg: Command => workers.values foreach (_ forward msg)
-    case msg: Query   => workers.values foreach (_ forward msg)
+    case msg: Command => subordinates.values foreach (_ forward msg)
+    case msg: Query   => subordinates.values foreach (_ forward msg)
   }
 
-  def receiveRedEvents(originalSender: ActorRef, timeoutTask: Cancellable)(execute: => Unit): Receive = akka.event.LoggingReceive {
+  def receiveRedEvents(originalSender: ActorRef, timeoutTask: Cancellable)(execute: => Unit): Receive = {
     case ChangedToRedEvent => {
-      responses = responses + sender
-      if (responses.size == workers.size) {
+      responded = responded + sender()
+      if (responded.size == subordinates.size) {
         timeoutTask.cancel()
         execute
       }
@@ -65,7 +67,7 @@ class Switch(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 se
     case TimeoutEvent => {
       throw new Exception(s"timeout waiting for all red events")
     }
-    case m @ GetStatusQuery => workers.values foreach (_ forward m)
+    case m @ GetStatusQuery => subordinates.values foreach (_ forward m)
     case msg                => stash()
   }
 
@@ -78,7 +80,7 @@ class Switch(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 se
       unstashAll()
     }
     case TimeoutEvent       => throw new Exception()
-    case m @ GetStatusQuery => workers.values foreach (_ forward m)
+    case m @ GetStatusQuery => subordinates.values foreach (_ forward m)
     case msg                => stash()
   }
 
