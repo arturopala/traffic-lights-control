@@ -11,7 +11,7 @@ import scala.concurrent.duration._
  */
 class Switch(
     val subordinates: Seq[ActorRef],
-    timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging {
+    timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenIdle
 
@@ -19,7 +19,6 @@ class Switch(
   var director: Option[ActorRef] = None
   var responded: Set[ActorRef] = Set()
   var timeoutTask: Cancellable = _
-  var nextGreen: Option[ActorRef] = None
 
   override def preStart = {
     subordinates ! SetDirectorCommand(self)
@@ -27,6 +26,9 @@ class Switch(
 
   val id = 0 //FIXME
 
+  /////////////////////////////////////////
+  // STATE 1: IDLE, WAITING FOR COMMANDS //
+  /////////////////////////////////////////
   def receiveWhenIdle: Receive = akka.event.LoggingReceive {
 
     case SetDirectorCommand(newDirector, ack) =>
@@ -34,10 +36,9 @@ class Switch(
       for (a <- ack; d <- director) d ! a
 
     case ChangeToGreenCommand =>
-      nextGreen = Option(subordinates(id))
       responded = Set()
       context.become(receiveWhileChangingToAllRedBeforeGreen)
-      subordinates foreach (_ ! ChangeToRedCommand)
+      subordinates ! ChangeToRedCommand
       scheduleTimeout()
 
     case ChangeToRedCommand =>
@@ -47,40 +48,65 @@ class Switch(
       scheduleTimeout()
   }
 
+  ///////////////////////////////////////////////////
+  // STATE 2: WAITING FOR ALL IS RED CONFIRMATION  //
+  ///////////////////////////////////////////////////
   def receiveWhileChangingToRed: Receive = akka.event.LoggingReceive {
+
     case ChangedToRedEvent =>
       responded = responded + sender()
       if (responded.size == subordinates.size) {
         timeoutTask.cancel()
-        nextGreen = None
         context.become(receiveWhenIdle)
         director ! ChangedToRedEvent
       }
+
+    case ChangeToGreenCommand =>
+      context.become(receiveWhileChangingToAllRedBeforeGreen)
+
+    case ChangeToRedCommand => //ignore
 
     case TimeoutEvent =>
       throw new TimeoutException("timeout occured when waiting for all final red acks")
   }
 
+  ////////////////////////////////////////////////////////
+  // STATE 3: WAITING FOR ALL IS RED BEFORE GOING GREEN //
+  ////////////////////////////////////////////////////////
   def receiveWhileChangingToAllRedBeforeGreen: Receive = akka.event.LoggingReceive {
+
     case ChangedToRedEvent =>
       responded = responded + sender()
       if (responded.size == subordinates.size) {
         timeoutTask.cancel()
         context.become(receiveWhileWaitingForGreenAck)
-        nextGreen ! ChangeToGreenCommand
+        subordinates(id) ! ChangeToGreenCommand
         scheduleTimeout()
       }
+
+    case ChangeToGreenCommand => //ignore
+
+    case ChangeToRedCommand =>
+      context.become(receiveWhileChangingToRed)
 
     case TimeoutEvent =>
       throw new TimeoutException("timeout occured when waiting for all red acks before changing to green")
   }
 
+  /////////////////////////////////////////////////////////
+  // STATE 4: WAITING FOR CONFIRMATION FROM GREEN MEMBER //
+  /////////////////////////////////////////////////////////
   def receiveWhileWaitingForGreenAck: Receive = akka.event.LoggingReceive {
+
     case ChangedToGreenEvent =>
       timeoutTask.cancel()
-      nextGreen = None
       context.become(receiveWhenIdle)
       director ! ChangedToGreenEvent
+      unstashAll()
+
+    case ChangeToGreenCommand => //ignore
+
+    case ChangeToRedCommand   => stash()
 
     case TimeoutEvent =>
       throw new TimeoutException("timeout occured when waiting for final green ack")
