@@ -13,9 +13,22 @@ import org.scalatest.BeforeAndAfterAll
 trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
 
   private val config = """
-                 |akka.log-dead-letters = 0
-                 |akka.log-dead-letters-during-shutdown = off
-               """.stripMargin
+      akka {
+        loglevel = "DEBUG"
+        stdout-loglevel = "DEBUG"
+        loggers = ["akka.testkit.TestEventListener"]
+        logging-filter = "akka.event.slf4j.Slf4jLoggingFilter"
+        log-dead-letters-during-shutdown = on
+        log-dead-letters = 5
+        actor {
+          debug {
+            receive = on
+            autoreceive = off
+            lifecycle = off
+          }
+        }
+      }
+  """
   private val actorSystemConfig = ConfigFactory.parseString(config).withFallback(ConfigFactory.load)
   val actorSystem = ActorSystem("test", actorSystemConfig)
 

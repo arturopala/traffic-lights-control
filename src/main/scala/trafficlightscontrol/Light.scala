@@ -15,57 +15,60 @@ class Light(
   id: String,
   initialState: LightState = RedLight,
   delay: FiniteDuration = 1 seconds)
-    extends Actor with ActorLogging with Stash {
+    extends Actor with ActorLogging {
 
   var state: LightState = initialState
-  var origin: ActorRef = _
+  var director: Option[ActorRef] = None
 
-  def receive = {
-    case GetStatusQuery => sender ! StatusEvent(id, state)
-    case msg => state match {
-      case RedLight             => receiveWhenRed(msg)
-      case GreenLight           => receiveWhenGreen(msg)
-      case OrangeThenRedLight   => receiveWhenOrangeBeforeRed(msg)
-      case OrangeThenGreenLight => receiveWhenOrangeBeforeGreen(msg)
+  def receive = akka.event.LoggingReceive {
+
+    case GetStatusQuery => director ! StatusEvent(id, state)
+    case SetDirectorCommand(newDirector, ack) =>
+      director = Option(newDirector)
+      for (a <- ack; d <- director) d ! a
+
+    case cmd: Command => state match {
+      case RedLight             => receiveWhenRed(cmd)
+      case GreenLight           => receiveWhenGreen(cmd)
+      case OrangeThenRedLight   => receiveWhenOrangeBeforeRed(cmd)
+      case OrangeThenGreenLight => receiveWhenOrangeBeforeGreen(cmd)
     }
   }
 
   def receiveWhenRed: Receive = {
     case ChangeToRedCommand =>
-      sender ! ChangedToRedEvent
+      director ! ChangedToRedEvent
 
     case ChangeToGreenCommand(id) =>
       changeStateTo(OrangeThenGreenLight)
-      origin = sender()
       context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeCommand)(context.system.dispatcher)
   }
 
   def receiveWhenGreen: Receive = {
     case ChangeToRedCommand =>
       changeStateTo(OrangeThenRedLight)
-      origin = sender()
       context.system.scheduler.scheduleOnce(delay, self, ChangeFromOrangeCommand)(context.system.dispatcher)
     case ChangeToGreenCommand(id) => {
-      sender ! ChangedToGreenEvent
+      director ! ChangedToGreenEvent
     }
   }
 
   def receiveWhenOrangeBeforeRed: Receive = {
     case ChangeFromOrangeCommand =>
       changeStateTo(RedLight)
-      origin ! ChangedToRedEvent
-      unstashAll()
-    case msg => stash()
+      director ! ChangedToRedEvent
+    case ChangeToGreenCommand(id) =>
+      changeStateTo(OrangeThenGreenLight)
+    case _ => //ignore
   }
 
   def receiveWhenOrangeBeforeGreen: Receive = {
     case ChangeFromOrangeCommand =>
       changeStateTo(GreenLight)
-      origin ! ChangedToGreenEvent
-      unstashAll()
+      director ! ChangedToGreenEvent
     case ChangeToRedCommand =>
       changeStateTo(OrangeThenRedLight)
-    case msg => stash()
+    case _ => //ignore
   }
 
   def changeStateTo(light: LightState) = {
@@ -74,5 +77,7 @@ class Light(
   }
 
   changeStateTo(state)
+
+  override val toString: String = s"Light($id,$state)"
 
 }

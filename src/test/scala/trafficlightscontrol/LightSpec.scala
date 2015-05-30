@@ -13,8 +13,12 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with TrafficSystemTestKit {
 
+  object Ack extends Event
+
   "A Light" should "change status from red to green" in new ActorSystemTest {
     val tested = TestLight(initialState = RedLight)
+    tested ! SetDirectorCommand(self, Some(Ack))
+    expectMsg(Ack)
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", RedLight))
     tested ! ChangeToGreenCommand("1")
@@ -27,6 +31,7 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
 
   it should "change status from green to red" in new ActorSystemTest {
     val tested = TestLight(initialState = GreenLight)
+    tested ! SetDirectorCommand(testActor)
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", GreenLight))
     tested ! ChangeToRedCommand
@@ -39,15 +44,18 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
 
   it should "return current status" in new ActorSystemTest {
     val greenLight = TestLight(id = "A", initialState = GreenLight)
+    greenLight ! SetDirectorCommand(testActor)
     val redLight = TestLight(id = "B", initialState = RedLight)
+    redLight ! SetDirectorCommand(testActor)
     greenLight ! GetStatusQuery
     expectMsg(StatusEvent("A", GreenLight))
     redLight ! GetStatusQuery
     expectMsg(StatusEvent("B", RedLight))
   }
 
-  /* it should "stash commands when orange light" in new ActorSystemTest {
+  it should "switch to red when orange light before green" in new ActorSystemTest {
     val tested = TestLight(initialState = OrangeThenGreenLight)
+    tested ! SetDirectorCommand(testActor)
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", OrangeThenGreenLight))
     tested ! ChangeToGreenCommand("1")
@@ -55,13 +63,13 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
     expectNoMsg(1.second)
     tested ! ChangeFromOrangeCommand
     tested ! GetStatusQuery
-    expectMsg(ChangedToGreenEvent)
-    expectMsg(StatusEvent("1", OrangeThenRedLight))
     expectMsg(ChangedToRedEvent)
-  }*/
+    expectMsg(StatusEvent("1", RedLight))
+  }
 
-  /*it should "stash commands when orange before red light" in new ActorSystemTest {
+  it should "stay red when orange before red light" in new ActorSystemTest {
     val tested = TestLight(initialState = OrangeThenRedLight)
+    tested ! SetDirectorCommand(testActor)
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", OrangeThenRedLight))
     tested ! ChangeToGreenCommand("1")
@@ -70,9 +78,8 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
     tested ! ChangeFromOrangeCommand
     tested ! GetStatusQuery
     expectMsg(ChangedToRedEvent)
-    expectMsg(StatusEvent("1", OrangeThenGreenLight))
-    expectMsg(ChangedToGreenEvent)
-  }*/
+    expectMsg(StatusEvent("1", RedLight))
+  }
 
   "A LightFSM" should "change status from red to green" in new ActorSystemTest {
     val tested = TestLightFSM(initialState = RedLight)

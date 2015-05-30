@@ -16,6 +16,10 @@ class Switch(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 se
   var responses: Set[ActorRef] = Set()
   var currentGreenId: String = ""
 
+  override def preStart = {
+    for (w <- workers.values) w ! SetDirectorCommand(self)
+  }
+
   def receiveWhenFree: Receive = {
     case ChangeToGreenCommand(id) => {
       if (id != currentGreenId) {
@@ -50,9 +54,9 @@ class Switch(val workers: Map[String, ActorRef], timeout: FiniteDuration = 10 se
     case msg: Query   => workers.values foreach (_ forward msg)
   }
 
-  def receiveRedEvents(originalSender: ActorRef, timeoutTask: Cancellable)(execute: => Unit): Receive = {
+  def receiveRedEvents(originalSender: ActorRef, timeoutTask: Cancellable)(execute: => Unit): Receive = akka.event.LoggingReceive {
     case ChangedToRedEvent => {
-      responses += sender
+      responses = responses + sender
       if (responses.size == workers.size) {
         timeoutTask.cancel()
         execute
