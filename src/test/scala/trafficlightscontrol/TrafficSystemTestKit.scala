@@ -19,16 +19,10 @@ trait TrafficSystemTestKit {
       TestActorRef(new LightFSM(id, initialState, delay, automatic))
   }
 
-  object TestTrafficDetector {
-    def apply()(implicit system: ActorSystem) = {
-      TestActorRef(new TrafficDetector(""))
-    }
-  }
-
   object TestSwitch {
     def apply(lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
-      val workers = lights zip (1 to lights.size) map { case (l, c) => (""+c -> TestLight(""+c, l, testLightChangeDelay)) }
-      TestActorRef(new Switch(workers.toMap, timeout))
+      val workers = lights zip (1 to lights.size) map { case (l, c) => TestLight(""+c, l, testLightChangeDelay) }
+      TestActorRef(new Switch(workers, timeout))
     }
   }
 
@@ -36,14 +30,6 @@ trait TrafficSystemTestKit {
     def apply(lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
       val workers = lights zip (1 to lights.size) map { case (l, c) => (""+c -> TestLightFSM(""+c, l, testLightChangeDelay)) }
       TestActorRef(new SwitchFSM(workers.toMap, timeout))
-    }
-  }
-
-  object TestTrafficDirector {
-    def apply(lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
-      val lightManager = TestSwitch(lights, timeout)
-      val detectors = lights zip (1 to lights.size) map { case (l, c) => (TestTrafficDetector(), ""+c) }
-      TestActorRef(new TrafficDirector(lightManager, Set(detectors: _*)))
     }
   }
 

@@ -16,10 +16,10 @@
 .RedLight, .R {
     background: url("images/traffic-lights-red-icon.png") no-repeat;
 }
-.OrangeLight, .OTG {
+.OrangeLight, .CTG {
     background: url("images/traffic-lights-yellow-icon.png") no-repeat;
 }
-.OrangeLight, .OTR {
+.OrangeLight, .CTR {
     background: url("images/traffic-lights-yellow-icon.png") no-repeat;
 }
 .GreenLight, .G {

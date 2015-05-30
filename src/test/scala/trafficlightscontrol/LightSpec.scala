@@ -21,7 +21,7 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
     expectMsg(Ack)
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", RedLight))
-    tested ! ChangeToGreenCommand("1")
+    tested ! ChangeToGreenCommand
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToGreenLight))
     expectMsg(testLightChangeDelay * 2, ChangedToGreenEvent)
@@ -58,7 +58,7 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
     tested ! SetDirectorCommand(testActor)
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToGreenLight))
-    tested ! ChangeToGreenCommand("1") //should be ignored
+    tested ! ChangeToGreenCommand //should be ignored
     tested ! ChangeToRedCommand //should change state immediately to ChangingToRedLight
     expectNoMsg(1.second)
     tested ! FinalizeChange
@@ -73,7 +73,7 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToRedLight))
     tested ! ChangeToRedCommand //should be ignored
-    tested ! ChangeToGreenCommand("1") //should change state immediately to ChangingToGreenLight
+    tested ! ChangeToGreenCommand //should change state immediately to ChangingToGreenLight
     expectNoMsg(1.second)
     tested ! FinalizeChange
     tested ! GetStatusQuery
@@ -87,7 +87,7 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToGreenLight))
     tested ! ChangeToRedCommand //should change state immediately to ChangingToRedLight
-    tested ! ChangeToGreenCommand("1") //should change state immediately back to ChangingToGreenLight
+    tested ! ChangeToGreenCommand //should change state immediately back to ChangingToGreenLight
     expectNoMsg(1.second)
     tested ! FinalizeChange
     tested ! GetStatusQuery
@@ -100,7 +100,7 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
     tested ! SetDirectorCommand(testActor)
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToRedLight))
-    tested ! ChangeToGreenCommand("1") //should change state immediately to ChangingToGreenLight
+    tested ! ChangeToGreenCommand //should change state immediately to ChangingToGreenLight
     tested ! ChangeToRedCommand //should change state immediately back to ChangingToRedLight
     expectNoMsg(1.second)
     tested ! FinalizeChange

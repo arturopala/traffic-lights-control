@@ -8,4 +8,8 @@ package object trafficlightscontrol {
     def !(msg: Any)(implicit sender: ActorRef): Unit = actorRefOpt.foreach(_.tell(msg, sender))
   }
 
+  implicit class ActorRefColl(actorRefColl: Iterable[ActorRef]) {
+    def !(msg: Any)(implicit sender: ActorRef): Unit = actorRefColl.foreach(_.tell(msg, sender))
+  }
+
 }

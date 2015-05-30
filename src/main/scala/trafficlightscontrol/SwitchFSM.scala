@@ -31,8 +31,10 @@ class SwitchFSM(
 
   startWith(Free, initialState)
 
+  val id = "1"
+
   when(Free) {
-    case Event(ChangeToGreenCommand(id), StateData(currentGreenId, recipientSet, origin)) => {
+    case Event(ChangeToGreenCommand, StateData(currentGreenId, recipientSet, origin)) => {
       currentGreenId match {
         case None               => goto(WaitingForAllRed) using StateData(currentGreenId = Some(id), origin = sender())
         case Some(i) if i != id => goto(WaitingForAllRed) using StateData(currentGreenId = Some(id), origin = sender())
@@ -104,7 +106,7 @@ class SwitchFSM(
 
   initialize()
 
-  def tellToMemberChangeToGreen(stateData: StateData): Unit = for (i <- stateData.currentGreenId; w <- subordinates.get(i)) { w ! ChangeToGreenCommand(i) }
+  def tellToMemberChangeToGreen(stateData: StateData): Unit = for (i <- stateData.currentGreenId; w <- subordinates.get(i)) { w ! ChangeToGreenCommand }
   def tellToMembers(msg: AnyRef): Unit = for (w <- memberSet) { w ! msg }
   def forwardToMembers(msg: AnyRef): Unit = for (w <- memberSet) { w forward msg }
   def notifyOriginAboutGreen(stateData: StateData): Unit = stateData match { case StateData(Some(currentGreenId), _, origin) => origin ! ChangedToGreenEvent }

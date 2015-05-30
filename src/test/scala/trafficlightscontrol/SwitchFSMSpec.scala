@@ -15,7 +15,7 @@ class SwitchFSMSpec extends FlatSpecLike with Matchers with ActorSystemTestKit w
 
   "A SwitchFSM" should "change status of LightState#1 from red to green" in new ActorSystemTest {
     val tested = TestSwitchFSM(Seq(RedLight, RedLight, RedLight, RedLight))
-    tested ! ChangeToGreenCommand("1")
+    tested ! ChangeToGreenCommand
     expectMsg(ChangedToGreenEvent)
   }
 
@@ -27,7 +27,7 @@ class SwitchFSMSpec extends FlatSpecLike with Matchers with ActorSystemTestKit w
     stateOfLightFSM(lights("3")) should equal(RedLight)
     stateOfLightFSM(lights("4")) should equal(RedLight)
 
-    tested ! ChangeToGreenCommand("1")
+    tested ! ChangeToGreenCommand
 
     expectMsg(ChangedToGreenEvent)
     expectNoMsg(200.millis)
@@ -45,7 +45,7 @@ class SwitchFSMSpec extends FlatSpecLike with Matchers with ActorSystemTestKit w
     stateOfLightFSM(lights("3")) should equal(GreenLight)
     stateOfLightFSM(lights("4")) should equal(GreenLight)
 
-    tested ! ChangeToGreenCommand("1")
+    tested ! ChangeToGreenCommand
 
     expectMsg(ChangedToGreenEvent)
     expectNoMsg(200.millis)

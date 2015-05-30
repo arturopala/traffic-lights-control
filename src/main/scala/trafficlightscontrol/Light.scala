@@ -44,7 +44,7 @@ class Light(
     case ChangeToRedCommand =>
       director ! ChangedToRedEvent
 
-    case ChangeToGreenCommand(id) =>
+    case ChangeToGreenCommand =>
       changeStateTo(ChangingToGreenLight)
       if (automatic) context.system.scheduler.scheduleOnce(delay, self, FinalizeChange)(context.system.dispatcher)
   }
@@ -53,7 +53,7 @@ class Light(
     case ChangeToRedCommand =>
       changeStateTo(ChangingToRedLight)
       if (automatic) context.system.scheduler.scheduleOnce(delay, self, FinalizeChange)(context.system.dispatcher)
-    case ChangeToGreenCommand(id) => {
+    case ChangeToGreenCommand => {
       director ! ChangedToGreenEvent
     }
   }
@@ -62,7 +62,7 @@ class Light(
     case FinalizeChange =>
       changeStateTo(RedLight)
       director ! ChangedToRedEvent
-    case ChangeToGreenCommand(id) =>
+    case ChangeToGreenCommand =>
       changeStateTo(ChangingToGreenLight)
     case _ => //ignore
   }

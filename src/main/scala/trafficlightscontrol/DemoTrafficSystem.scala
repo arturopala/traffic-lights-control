@@ -10,8 +10,8 @@ class DemoTrafficSystem(period: FiniteDuration = 10.seconds) extends Actor with 
 
   val lightSet1: Map[String, ActorRef] = (0 to 3) map { c => (""+c -> context.actorOf(Props(classOf[LightFSM], ""+c, RedLight, period / 10, true))) } toMap
   val switch1: ActorRef = context.actorOf(Props(classOf[SwitchFSM], lightSet1, period))
-  val detectors: Set[(ActorRef, String)] = (0 to 3) map { c => (context.actorOf(Props(classOf[TrafficDetector], ""+c)), ""+c) } toSet
-  val toplevel: ActorRef = context.actorOf(Props(classOf[TrafficDirector], switch1, detectors, period, period / 10))
+
+  val toplevel: ActorRef = switch1
 
   var counter = 0
 
@@ -20,6 +20,6 @@ class DemoTrafficSystem(period: FiniteDuration = 10.seconds) extends Actor with 
     case msg: Query   => toplevel forward msg
   }
 
-  context.system.scheduler.schedule(period / 10, period / 2, self, TickCommand)(context.system.dispatcher, self)
+  //context.system.scheduler.schedule(period / 10, period / 2, self, TickCommand)(context.system.dispatcher, self)
 
 }

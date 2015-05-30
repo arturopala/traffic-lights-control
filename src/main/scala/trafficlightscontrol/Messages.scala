@@ -9,22 +9,22 @@ trait Event extends Message
 
 case class SetDirectorCommand(director: ActorRef, ack: Option[Event] = None) extends Command
 
-object ChangeToRedCommand extends Command
-case class ChangeToGreenCommand(id: String) extends Command
+case object ChangeToRedCommand extends Command
+case object ChangeToGreenCommand extends Command
 
-object FinalizeChange extends Command
+case object FinalizeChange extends Command
 
-object ChangedToRedEvent extends Event
-object ChangedToGreenEvent extends Event
+case object ChangedToRedEvent extends Event
+case object ChangedToGreenEvent extends Event
 
-object GetStatusQuery extends Query
+case object GetStatusQuery extends Query
 case class StatusEvent(id: String, state: LightState) extends Event
 
-object GetReportQuery extends Query
+case object GetReportQuery extends Query
 case class ReportEvent(report: Map[String, LightState]) extends Event
 
-object TimeoutEvent extends Event
-object TickCommand extends Command
+case object TimeoutEvent extends Event
+case object TickCommand extends Command
 
 ///////////////////
 /// LIGHT STATES //
@@ -34,7 +34,7 @@ sealed abstract class LightState(val colour: String, val id: String) {
   override val toString: String = s"${colour}"
 }
 
-object RedLight extends LightState("Red", "R")
-object GreenLight extends LightState("Green", "G")
-object ChangingToRedLight extends LightState("OrangeThenRed", "OTR")
-object ChangingToGreenLight extends LightState("OrangeThenGreen", "OTG")
+case object RedLight extends LightState("Red", "R")
+case object GreenLight extends LightState("Green", "G")
+case object ChangingToRedLight extends LightState("OrangeThenRed", "CTR")
+case object ChangingToGreenLight extends LightState("OrangeThenGreen", "CTG")

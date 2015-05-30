@@ -30,12 +30,12 @@ class LightFSM(
     case Event(ChangeToRedCommand, director) =>
       director ! ChangedToRedEvent
       stay
-    case Event(ChangeToGreenCommand(_), _) =>
+    case Event(ChangeToGreenCommand, _) =>
       goto(ChangingToGreenLight)
   }
 
   when(GreenLight) {
-    case Event(ChangeToGreenCommand(_), director) =>
+    case Event(ChangeToGreenCommand, director) =>
       director ! ChangedToGreenEvent
       stay
     case Event(ChangeToRedCommand, _) =>
@@ -45,7 +45,7 @@ class LightFSM(
   when(ChangingToRedLight) {
     case Event(FinalizeChange, _) =>
       goto(RedLight)
-    case Event(ChangeToGreenCommand(_), _) =>
+    case Event(ChangeToGreenCommand, _) =>
       goto(ChangingToGreenLight)
   }
 
