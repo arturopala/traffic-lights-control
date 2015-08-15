@@ -12,7 +12,7 @@ import scala.collection.mutable.{ Set, Map }
  */
 class Switch(
     val memberProps: Seq[Props],
-    timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
+    baseTimeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenIdle
 
@@ -75,12 +75,12 @@ class Switch(
       }
 
     case ChangeToGreenCommand =>
-      context.become(receiveWhileChangingToAllRedBeforeGreen)
+      context.become(receiveWhileChangingToAllRedBeforeGreen) // enable going green in the next step
 
-    case ChangeToRedCommand => //ignore
+    case ChangeToRedCommand => //ignore, already changing to red
 
     case TimeoutEvent =>
-      throw new TimeoutException("timeout occured when waiting for all final red acks")
+      throw new TimeoutException("baseTimeout occured when waiting for all final red acks")
   }
 
   ////////////////////////////////////////////////////////
@@ -100,10 +100,10 @@ class Switch(
     case ChangeToGreenCommand => //ignore
 
     case ChangeToRedCommand =>
-      context.become(receiveWhileChangingToRed)
+      context.become(receiveWhileChangingToRed) // avoid going green in the next step
 
     case TimeoutEvent =>
-      throw new TimeoutException("timeout occured when waiting for all red acks before changing to green")
+      throw new TimeoutException("baseTimeout occured when waiting for all red acks before changing to green")
   }
 
   /////////////////////////////////////////////////////////
@@ -117,16 +117,16 @@ class Switch(
       director ! ChangedToGreenEvent
       unstashAll()
 
-    case ChangeToGreenCommand => //ignore
+    case ChangeToGreenCommand => //ignore, already changing to green
 
-    case ChangeToRedCommand   => stash()
+    case ChangeToRedCommand   => stash() // we can't avoid green at that point
 
     case TimeoutEvent =>
-      throw new TimeoutException("timeout occured when waiting for final green ack")
+      throw new TimeoutException("baseTimeout occured when waiting for final green ack")
   }
 
   def scheduleTimeout(factor: Int = 1): Unit = {
-    timeoutTask = context.system.scheduler.scheduleOnce(timeout * factor, self, TimeoutEvent)(context.system.dispatcher)
+    timeoutTask = context.system.scheduler.scheduleOnce(baseTimeout * factor, self, TimeoutEvent)(context.system.dispatcher)
   }
 
 }
