@@ -21,13 +21,13 @@ object SwitchFSM {
 import SwitchFSM._
 
 class SwitchFSM(
-    val subordinates: Map[String, ActorRef],
+    val members: Map[String, ActorRef],
     timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with FSM[State, StateData] with Stash {
 
   def initialState = StateData()
-  val memberSet: scala.collection.Set[ActorRef] = subordinates.values.toSet
+  val memberSet: scala.collection.Set[ActorRef] = members.values.toSet
 
-  for (w <- subordinates.values) w ! SetDirectorCommand(self)
+  for (w <- members.values) w ! RegisterDirectorCommand(self)
 
   startWith(Free, initialState)
 
@@ -45,7 +45,7 @@ class SwitchFSM(
       goto(WaitingForAllRed) using StateData(origin = sender())
   }
 
-  when(WaitingForAllRed, stateTimeout = timeout) {
+  when(WaitingForAllRed, stateTimeout = timeout * members.size * 2) {
     case Event(ChangedToRedEvent, state @ StateData(currentGreenId, recipientSet, origin)) =>
       memberSet.contains(sender) match {
         case false => stay
@@ -106,7 +106,7 @@ class SwitchFSM(
 
   initialize()
 
-  def tellToMemberChangeToGreen(stateData: StateData): Unit = for (i <- stateData.currentGreenId; w <- subordinates.get(i)) { w ! ChangeToGreenCommand }
+  def tellToMemberChangeToGreen(stateData: StateData): Unit = for (i <- stateData.currentGreenId; w <- members.get(i)) { w ! ChangeToGreenCommand }
   def tellToMembers(msg: AnyRef): Unit = for (w <- memberSet) { w ! msg }
   def forwardToMembers(msg: AnyRef): Unit = for (w <- memberSet) { w forward msg }
   def notifyOriginAboutGreen(stateData: StateData): Unit = stateData match { case StateData(Some(currentGreenId), _, origin) => origin ! ChangedToGreenEvent }

@@ -16,23 +16,34 @@ trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
       akka {
         loglevel = "DEBUG"
         stdout-loglevel = "DEBUG"
-        loggers = ["akka.testkit.TestEventListener"]
-        logging-filter = "akka.event.slf4j.Slf4jLoggingFilter"
         log-dead-letters-during-shutdown = on
         log-dead-letters = 5
         actor {
           debug {
-            receive = on
+            receive = off
             autoreceive = off
             lifecycle = off
           }
+          deployment {
+            "/*" {
+              dispatcher = akka.test.calling-thread-dispatcher
+            }
+          }
+        }
+        test {
+          timefactor = 1
         }
       }
   """
   private val actorSystemConfig = ConfigFactory.parseString(config).withFallback(ConfigFactory.load)
   val actorSystem = ActorSystem("test", actorSystemConfig)
 
-  class ActorSystemTest extends TestKit(actorSystem) with ImplicitSender
+  class ActorSystemTest extends TestKit(actorSystem) with ImplicitSender {
+
+    val eventListener = TestProbe()
+    actorSystem.eventStream.subscribe(eventListener.ref, classOf[StatusEvent])
+
+  }
 
   override def afterAll() {
     Thread.sleep(100)

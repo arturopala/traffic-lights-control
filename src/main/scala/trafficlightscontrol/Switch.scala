@@ -5,47 +5,60 @@ import akka.pattern.ask
 import scala.collection._
 import scala.concurrent._
 import scala.concurrent.duration._
+import scala.collection.mutable.{ Set, Map }
 
 /**
- * Switch is a set of subordinates (eg. lights, groups, other switches) amongst which only one may be green at once.
+ * Switch is a set of components (eg. lights, groups, other switches) amongst which only one may be green at once.
  */
 class Switch(
-    val subordinates: Seq[ActorRef],
+    val memberProps: Seq[Props],
     timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenIdle
 
-  // Internal switch state
   var director: Option[ActorRef] = None
-  var responded: Set[ActorRef] = Set()
+  val members: Map[String, ActorRef] = Map()
+
+  val responded: Set[ActorRef] = Set()
   var timeoutTask: Cancellable = _
 
   override def preStart = {
-    subordinates ! SetDirectorCommand(self)
+    for (prop <- memberProps) {
+      context.actorOf(prop) ! RegisterDirectorCommand(self)
+    }
   }
 
-  val id = 0 //FIXME
+  var currentGreenId: String = ""
+  var nextGreenId: String = _
 
   /////////////////////////////////////////
   // STATE 1: IDLE, WAITING FOR COMMANDS //
   /////////////////////////////////////////
   def receiveWhenIdle: Receive = akka.event.LoggingReceive {
 
-    case SetDirectorCommand(newDirector, ack) =>
-      director = Option(newDirector)
-      for (a <- ack; d <- director) d ! a
+    case RegisterDirectorCommand(newDirector) =>
+      if (director.isEmpty) {
+        director = Option(newDirector)
+        director ! DirectorRegisteredEvent("")
+      }
+
+    case DirectorRegisteredEvent(id) =>
+      members.getOrElseUpdate(id, sender())
 
     case ChangeToGreenCommand =>
-      responded = Set()
-      context.become(receiveWhileChangingToAllRedBeforeGreen)
-      subordinates ! ChangeToRedCommand
-      scheduleTimeout()
+      nextGreenId = "1" //FIXME
+      if (nextGreenId != currentGreenId && members.contains(nextGreenId)) {
+        responded.clear()
+        context.become(receiveWhileChangingToAllRedBeforeGreen)
+        members ! ChangeToRedCommand
+        scheduleTimeout()
+      }
 
     case ChangeToRedCommand =>
-      responded = Set()
+      responded.clear()
       context.become(receiveWhileChangingToRed)
-      subordinates ! ChangeToRedCommand
-      scheduleTimeout()
+      members ! ChangeToRedCommand
+      scheduleTimeout(members.size * 2)
   }
 
   ///////////////////////////////////////////////////
@@ -54,8 +67,8 @@ class Switch(
   def receiveWhileChangingToRed: Receive = akka.event.LoggingReceive {
 
     case ChangedToRedEvent =>
-      responded = responded + sender()
-      if (responded.size == subordinates.size) {
+      responded += sender()
+      if (responded.size == members.size) {
         timeoutTask.cancel()
         context.become(receiveWhenIdle)
         director ! ChangedToRedEvent
@@ -76,11 +89,11 @@ class Switch(
   def receiveWhileChangingToAllRedBeforeGreen: Receive = akka.event.LoggingReceive {
 
     case ChangedToRedEvent =>
-      responded = responded + sender()
-      if (responded.size == subordinates.size) {
+      responded += sender()
+      if (responded.size == members.size) {
         timeoutTask.cancel()
         context.become(receiveWhileWaitingForGreenAck)
-        subordinates(id) ! ChangeToGreenCommand
+        members(nextGreenId) ! ChangeToGreenCommand
         scheduleTimeout()
       }
 
@@ -112,8 +125,8 @@ class Switch(
       throw new TimeoutException("timeout occured when waiting for final green ack")
   }
 
-  def scheduleTimeout(): Unit = {
-    timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
+  def scheduleTimeout(factor: Int = 1): Unit = {
+    timeoutTask = context.system.scheduler.scheduleOnce(timeout * factor, self, TimeoutEvent)(context.system.dispatcher)
   }
 
 }

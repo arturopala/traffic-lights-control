@@ -7,7 +7,8 @@ trait Command extends Message
 trait Query extends Message
 trait Event extends Message
 
-case class SetDirectorCommand(director: ActorRef, ack: Option[Event] = None) extends Command
+case class RegisterDirectorCommand(director: ActorRef) extends Command
+case class DirectorRegisteredEvent(id: String) extends Event
 
 case object ChangeToRedCommand extends Command
 case object ChangeToGreenCommand extends Command

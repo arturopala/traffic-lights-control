@@ -73,10 +73,14 @@ class LightFSM(
   }
 
   whenUnhandled {
-    case Event(SetDirectorCommand(newDirector, ack), _) =>
-      val director = Option(newDirector)
-      for (a <- ack; d <- director) d ! a
-      stay using director
+    case Event(RegisterDirectorCommand(newDirector), _) =>
+      if (stateData.isEmpty) {
+        val director = Option(newDirector)
+        director ! DirectorRegisteredEvent(id)
+        stay using director
+      }
+      else stay
+
     case Event(GetStatusQuery, _) => {
       sender ! StatusEvent(id, stateName)
       stay

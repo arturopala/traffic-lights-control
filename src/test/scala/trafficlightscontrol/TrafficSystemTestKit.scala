@@ -1,13 +1,14 @@
 package trafficlightscontrol
 
-import akka.testkit.TestActorRef
+import akka.testkit._
 import scala.concurrent.duration._
-import akka.actor.ActorSystem
-import akka.actor.ActorRef
+import scala.concurrent.{ Future, Await }
+import akka.actor._
+import akka.pattern.{ ask, pipe }
 
 trait TrafficSystemTestKit {
 
-  val testLightChangeDelay: FiniteDuration = 100 milliseconds
+  val testLightChangeDelay: FiniteDuration = 50.milliseconds
 
   object TestLight {
     def apply(id: String = "1", initialState: LightState = RedLight, delay: FiniteDuration = testLightChangeDelay, automatic: Boolean = true)(implicit system: ActorSystem) =
@@ -21,7 +22,7 @@ trait TrafficSystemTestKit {
 
   object TestSwitch {
     def apply(lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
-      val workers = lights zip (1 to lights.size) map { case (l, c) => TestLight(""+c, l, testLightChangeDelay) }
+      val workers = lights zip (1 to lights.size) map { case (l, c) => Light.props(""+c, l, testLightChangeDelay, true) }
       TestActorRef(new Switch(workers, timeout))
     }
   }
@@ -33,6 +34,5 @@ trait TrafficSystemTestKit {
     }
   }
 
-  def stateOfLight(ref: ActorRef): LightState = ref.asInstanceOf[TestActorRef[Light]].underlyingActor.state
   def stateOfLightFSM(ref: ActorRef): LightState = ref.asInstanceOf[TestActorRef[LightFSM]].underlyingActor.stateName
 }

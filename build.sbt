@@ -47,3 +47,5 @@ lazy val loadtester = (project in file("loadtester")).enablePlugins(GatlingPlugi
 
 lazy val root = (project in file(".")).enablePlugins(SbtTwirl)
 
+fork := true
+

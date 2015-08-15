@@ -1,11 +1,8 @@
 package trafficlightscontrol
 
-import akka.actor.Actor
+import akka.actor._
 import scala.concurrent.duration._
-import akka.actor.ActorRef
 import scala.concurrent.ExecutionContext
-import akka.actor.ActorLogging
-import akka.actor.Stash
 
 /**
  * Light is a primitive building block of a traffic control system.
@@ -28,9 +25,12 @@ class Light(
   def receive = /*akka.event.LoggingReceive*/ {
 
     case GetStatusQuery => director ! StatusEvent(id, state)
-    case SetDirectorCommand(newDirector, ack) =>
-      director = Option(newDirector)
-      for (a <- ack; d <- director) d ! a
+
+    case RegisterDirectorCommand(newDirector) =>
+      if (director.isEmpty) {
+        director = Option(newDirector)
+        director ! DirectorRegisteredEvent(id)
+      }
 
     case cmd: Command => state match {
       case RedLight             => receiveWhenRed(cmd)
@@ -85,4 +85,13 @@ class Light(
 
   override val toString: String = s"Light($id,$state)"
 
+}
+
+object Light {
+
+  def props(
+    id: String,
+    initialState: LightState = RedLight,
+    delay: FiniteDuration = 1 seconds,
+    automatic: Boolean = true): Props = Props(classOf[Light], id, initialState, delay, automatic)
 }

@@ -17,8 +17,8 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
 
   "A Light" should "change status from red to green" in new ActorSystemTest {
     val tested = TestLight(initialState = RedLight)
-    tested ! SetDirectorCommand(self, Some(Ack))
-    expectMsg(Ack)
+    tested ! RegisterDirectorCommand(self)
+    expectMsg(DirectorRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", RedLight))
     tested ! ChangeToGreenCommand
@@ -31,7 +31,8 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
 
   it should "change status from green to red" in new ActorSystemTest {
     val tested = TestLight(initialState = GreenLight)
-    tested ! SetDirectorCommand(testActor)
+    tested ! RegisterDirectorCommand(testActor)
+    expectMsg(DirectorRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", GreenLight))
     tested ! ChangeToRedCommand
@@ -44,9 +45,11 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
 
   it should "return current status" in new ActorSystemTest {
     val greenLight = TestLight(id = "A", initialState = GreenLight)
-    greenLight ! SetDirectorCommand(testActor)
+    greenLight ! RegisterDirectorCommand(testActor)
+    expectMsg(DirectorRegisteredEvent("A"))
     val redLight = TestLight(id = "B", initialState = RedLight)
-    redLight ! SetDirectorCommand(testActor)
+    redLight ! RegisterDirectorCommand(testActor)
+    expectMsg(DirectorRegisteredEvent("B"))
     greenLight ! GetStatusQuery
     expectMsg(StatusEvent("A", GreenLight))
     redLight ! GetStatusQuery
@@ -55,7 +58,8 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
 
   it should "switch to red when orange light before green" in new ActorSystemTest {
     val tested = TestLight(initialState = ChangingToGreenLight)
-    tested ! SetDirectorCommand(testActor)
+    tested ! RegisterDirectorCommand(testActor)
+    expectMsg(DirectorRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToGreenLight))
     tested ! ChangeToGreenCommand //should be ignored
@@ -69,7 +73,8 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
 
   it should "switch to green when orange light before red" in new ActorSystemTest {
     val tested = TestLight(initialState = ChangingToRedLight)
-    tested ! SetDirectorCommand(testActor)
+    tested ! RegisterDirectorCommand(testActor)
+    expectMsg(DirectorRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToRedLight))
     tested ! ChangeToRedCommand //should be ignored
@@ -83,7 +88,8 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
 
   it should "stay green when orange before green light" in new ActorSystemTest {
     val tested = TestLight(initialState = ChangingToGreenLight)
-    tested ! SetDirectorCommand(testActor)
+    tested ! RegisterDirectorCommand(testActor)
+    expectMsg(DirectorRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToGreenLight))
     tested ! ChangeToRedCommand //should change state immediately to ChangingToRedLight
@@ -97,7 +103,8 @@ class LightSpec extends FlatSpecLike with Matchers with ActorSystemTestKit with 
 
   it should "stay red when orange before red light" in new ActorSystemTest {
     val tested = TestLight(initialState = ChangingToRedLight)
-    tested ! SetDirectorCommand(testActor)
+    tested ! RegisterDirectorCommand(testActor)
+    expectMsg(DirectorRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToRedLight))
     tested ! ChangeToGreenCommand //should change state immediately to ChangingToGreenLight
