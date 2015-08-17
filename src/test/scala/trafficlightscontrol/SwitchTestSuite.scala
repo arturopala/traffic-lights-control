@@ -14,7 +14,7 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
 
   def runSuite(name: String, switch: (String, Seq[LightState]) => TestActorRef[_]) {
 
-    s"A $name" should "change status of light #1 from red to green" in new ActorSystemTest {
+    s"A $name" should "change status of light #1 from red to green when all are red" in new ActorSystemTest {
       val tested = switch("s-1", Seq(RedLight, RedLight, RedLight, RedLight))
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
@@ -90,6 +90,31 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
         StatusEvent("4", ChangingToRedLight),
         StatusEvent("4", RedLight)
       )
+    }
+
+    it should "change status sequentially to green starting from light #1" in new ActorSystemTest {
+      val tested = switch("s-1", Seq(RedLight, RedLight, RedLight, GreenLight))
+      tested ! RegisterRecipientCommand(self)
+      expectMsg(RecipientRegisteredEvent("s-1"))
+      Thread.sleep(100)
+      eventListener.expectMsgAllOf(checkTimeout,
+        StatusEvent("1", RedLight),
+        StatusEvent("2", RedLight),
+        StatusEvent("3", RedLight),
+        StatusEvent("4", GreenLight)
+      )
+      for (j <- 0 to 3; i <- 1 to 4) {
+        val prev_id = s"${if ((i - 1) == 0) 4 else (i - 1)}"
+        val id = s"${i}"
+        tested ! ChangeToGreenCommand
+        expectMsg(ChangedToGreenEvent)
+        eventListener.expectMsgAllOf(checkTimeout,
+          StatusEvent(prev_id, ChangingToRedLight),
+          StatusEvent(prev_id, RedLight),
+          StatusEvent(id, ChangingToGreenLight),
+          StatusEvent(id, GreenLight)
+        )
+      }
     }
   }
 
