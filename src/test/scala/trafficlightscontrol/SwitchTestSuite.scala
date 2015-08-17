@@ -10,7 +10,7 @@ import akka.testkit.{ TestProbe, EventFilter }
 import scala.concurrent.duration._
 import akka.actor.ActorRef
 
-class SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with ActorSystemTestKit {
+trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with ActorSystemTestKit {
 
   def runSuite(name: String, switch: (String, Seq[LightState]) => TestActorRef[_]) {
 
