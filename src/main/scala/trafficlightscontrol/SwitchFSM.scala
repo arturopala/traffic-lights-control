@@ -2,113 +2,158 @@ package trafficlightscontrol
 
 import akka.actor._
 import akka.pattern.ask
-import scala.collection.mutable.Set
+import scala.collection.mutable.{ Set, Map }
 import scala.concurrent._
 import scala.concurrent.duration._
 
 object SwitchFSM {
   sealed trait State
-  object Free extends State
+  object Initializing extends State
+  object Idle extends State
   object WaitingForAllRed extends State
+  object WaitingForAllRedBeforeGreen extends State
   object WaitingForGreen extends State
 
   case class StateData(
-    currentGreenId: Option[String] = None,
-    recipientSet: Set[ActorRef] = Set.empty,
-    origin: ActorRef = ActorRef.noSender)
+    greenMemberId: String,
+    responderSet: Set[ActorRef] = Set.empty,
+    isGreen: Boolean = false)
+
+  def props(id: String,
+            memberProps: Seq[Props],
+            timeout: FiniteDuration = 10 seconds,
+            strategy: SwitchStrategy = SwitchStrategy.RoundRobin): Props =
+    Props(classOf[SwitchFSM], id, memberProps, timeout, strategy)
 }
 
 import SwitchFSM._
 
 class SwitchFSM(
-    val members: Map[String, ActorRef],
-    timeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with FSM[State, StateData] with Stash {
+    id: String,
+    memberProps: Seq[Props],
+    timeout: FiniteDuration,
+    strategy: SwitchStrategy) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
-  def initialState = StateData()
-  val memberSet: scala.collection.Set[ActorRef] = members.values.toSet
+  var recipient: Option[ActorRef] = None
+  val members: Map[String, ActorRef] = Map()
+  var memberIds: Seq[String] = Seq.empty
 
-  for (w <- members.values) w ! RegisterDirectorCommand(self)
+  startWith(Initializing, StateData(""))
 
-  startWith(Free, initialState)
+  when(Initializing) {
+    case Event(RecipientRegisteredEvent(id), _) =>
+      members.getOrElseUpdate(id, sender())
+      memberIds = members.keys.toSeq
+      log.debug(s"Switch ${this.id}: new member registered $id")
+      if (members.size == memberProps.size) {
+        log.info(s"Switch ${this.id} initialized. Members: ${memberIds.mkString(",")}")
+        goto(Idle)
+      }
+      else stay
+    case Event(ChangeToGreenCommand | ChangeToRedCommand, _) =>
+      log.warning(s"Switch $id not yet initialized, skipping command")
+      stay
+  }
 
-  val id = "1"
-
-  when(Free) {
-    case Event(ChangeToGreenCommand, StateData(currentGreenId, recipientSet, origin)) => {
-      currentGreenId match {
-        case None               => goto(WaitingForAllRed) using StateData(currentGreenId = Some(id), origin = sender())
-        case Some(i) if i != id => goto(WaitingForAllRed) using StateData(currentGreenId = Some(id), origin = sender())
-        case Some(i) if i == id => stay
+  when(Idle) {
+    case Event(ChangeToGreenCommand, StateData(greenMemberId, _, isGreen)) => {
+      val nextGreenId = strategy(greenMemberId, memberIds)
+      if (isGreen && nextGreenId == greenMemberId) {
+        recipient ! ChangedToGreenEvent
+        stay
+      }
+      else if (members.contains(nextGreenId)) {
+        goto(WaitingForAllRedBeforeGreen) using StateData(greenMemberId = nextGreenId, isGreen = isGreen)
+      }
+      else {
+        throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
       }
     }
     case Event(ChangeToRedCommand, _) =>
-      goto(WaitingForAllRed) using StateData(origin = sender())
+      goto(WaitingForAllRed)
   }
 
-  when(WaitingForAllRed, stateTimeout = timeout * members.size * 2) {
-    case Event(ChangedToRedEvent, state @ StateData(currentGreenId, recipientSet, origin)) =>
-      memberSet.contains(sender) match {
+  when(WaitingForAllRed, stateTimeout = timeout) {
+    case Event(ChangedToRedEvent, state @ StateData(_, responderSet, _)) =>
+      responderSet += sender
+      responderSet.size == members.size match {
         case false => stay
-        case true => {
-          recipientSet += sender
-          recipientSet.size == memberSet.size match {
-            case false => stay
-            case true => currentGreenId match {
-              case None => goto(Free) using initialState
-              case _    => goto(WaitingForGreen) using state.copy(recipientSet = Set.empty)
-            }
-          }
-        }
+        case true  => goto(Idle) using state.copy(responderSet = Set.empty, isGreen = false)
       }
-    case Event(_: Command, _) =>
-      stash()
+    case Event(ChangeToGreenCommand, _) =>
+      goto(WaitingForAllRedBeforeGreen)
+    case Event(ChangeToRedCommand, _) =>
       stay
     case Event(StateTimeout, _) =>
+      throw new TimeoutException("timeout occured when waiting for all final red acks")
+  }
+
+  when(WaitingForAllRedBeforeGreen, stateTimeout = timeout) {
+    case Event(ChangedToRedEvent, state @ StateData(_, responderSet, _)) =>
+      responderSet += sender
+      (responderSet.size == members.size) match {
+        case false =>
+          stay
+        case true =>
+          goto(WaitingForGreen) using state.copy(responderSet = Set.empty, isGreen = false)
+      }
+    case Event(ChangeToGreenCommand, stateData) =>
       stay
+    case Event(ChangeToRedCommand, _) =>
+      goto(WaitingForAllRed)
+    case Event(StateTimeout, _) =>
+      throw new TimeoutException("timeout occured when waiting for all red acks before changing to green")
   }
 
   when(WaitingForGreen, stateTimeout = timeout) {
-    case Event(ChangedToGreenEvent, StateData(currentGreenId, _, _)) =>
-      goto(Free) using StateData(currentGreenId = currentGreenId)
-    case Event(_: Command, _) =>
+    case Event(ChangedToGreenEvent, state) =>
+      goto(Idle) using state.copy(isGreen = true)
+    case Event(ChangeToGreenCommand, _) =>
+      stay
+    case Event(ChangeToRedCommand, _) =>
       stash()
       stay
     case Event(StateTimeout, _) =>
-      stay
+      throw new TimeoutException("timeout occured when waiting for final green ack")
   }
 
   onTransition {
-    case oldState -> newState =>
-    //log.info(s"transition from $oldState to $newState")
+    case Idle -> WaitingForAllRed =>
+      members.values.foreach(_ ! ChangeToRedCommand)
+    case Idle -> WaitingForAllRedBeforeGreen =>
+      members.values.foreach(_ ! ChangeToRedCommand)
+    case WaitingForAllRedBeforeGreen -> WaitingForGreen =>
+      members(stateData.greenMemberId) ! ChangeToGreenCommand
+    case WaitingForGreen -> Idle =>
+      recipient ! ChangedToGreenEvent
+    case WaitingForAllRed -> Idle =>
+      recipient ! ChangedToRedEvent
   }
 
   onTransition {
-    case Free -> WaitingForAllRed =>
-      tellToMembers(ChangeToRedCommand)
-    case WaitingForAllRed -> WaitingForGreen =>
-      tellToMemberChangeToGreen(stateData)
-    case WaitingForGreen -> Free =>
-      notifyOriginAboutGreen(stateData)
-    case WaitingForAllRed -> Free =>
-      notifyOriginAboutRed(stateData)
-  }
-
-  onTransition {
-    case _ -> Free =>
+    case WaitingForGreen -> Idle =>
       unstashAll()
   }
 
   whenUnhandled {
-    case Event(query: Query, _) =>
-      forwardToMembers(query)
+    case Event(RegisterRecipientCommand(newRecipient), _) =>
+      if (recipient.isEmpty) {
+        recipient = Option(newRecipient)
+        recipient ! RecipientRegisteredEvent(id)
+      }
+      stay
+    case Event(other, state) =>
+      log.error(s"Unhandled $other from $sender when $stateName using $state")
       stay
   }
 
   initialize()
 
-  def tellToMemberChangeToGreen(stateData: StateData): Unit = for (i <- stateData.currentGreenId; w <- members.get(i)) { w ! ChangeToGreenCommand }
-  def tellToMembers(msg: AnyRef): Unit = for (w <- memberSet) { w ! msg }
-  def forwardToMembers(msg: AnyRef): Unit = for (w <- memberSet) { w forward msg }
-  def notifyOriginAboutGreen(stateData: StateData): Unit = stateData match { case StateData(Some(currentGreenId), _, origin) => origin ! ChangedToGreenEvent }
-  def notifyOriginAboutRed(stateData: StateData): Unit = stateData match { case StateData(None, _, origin) => origin ! ChangedToRedEvent }
+  for (prop <- memberProps) {
+    val member = context.actorOf(prop)
+    member ! RegisterRecipientCommand(self)
+  }
+
+  log.info(s"$id: $self")
+
 }

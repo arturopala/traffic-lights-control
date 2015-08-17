@@ -15,8 +15,8 @@ class LightFSMSpec extends FlatSpecLike with Matchers with ActorSystemTestKit wi
 
   "A LightFSM" should "change status from red to green" in new ActorSystemTest {
     val tested = TestLightFSM(initialState = RedLight)
-    tested ! RegisterDirectorCommand(testActor)
-    expectMsg(DirectorRegisteredEvent("1"))
+    tested ! RegisterRecipientCommand(testActor)
+    expectMsg(RecipientRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", RedLight))
     tested ! ChangeToGreenCommand
@@ -29,8 +29,8 @@ class LightFSMSpec extends FlatSpecLike with Matchers with ActorSystemTestKit wi
 
   it should "change status from green to red" in new ActorSystemTest {
     val tested = TestLightFSM(initialState = GreenLight)
-    tested ! RegisterDirectorCommand(testActor)
-    expectMsg(DirectorRegisteredEvent("1"))
+    tested ! RegisterRecipientCommand(testActor)
+    expectMsg(RecipientRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", GreenLight))
     tested ! ChangeToRedCommand
@@ -43,11 +43,11 @@ class LightFSMSpec extends FlatSpecLike with Matchers with ActorSystemTestKit wi
 
   it should "reply current state event" in new ActorSystemTest {
     val greenLight = TestLightFSM(id = "A", initialState = GreenLight)
-    greenLight ! RegisterDirectorCommand(testActor)
-    expectMsg(DirectorRegisteredEvent("A"))
+    greenLight ! RegisterRecipientCommand(testActor)
+    expectMsg(RecipientRegisteredEvent("A"))
     val redLight = TestLightFSM(id = "B", initialState = RedLight)
-    redLight ! RegisterDirectorCommand(testActor)
-    expectMsg(DirectorRegisteredEvent("B"))
+    redLight ! RegisterRecipientCommand(testActor)
+    expectMsg(RecipientRegisteredEvent("B"))
     greenLight ! GetStatusQuery
     expectMsg(StatusEvent("A", GreenLight))
     redLight ! GetStatusQuery
@@ -56,8 +56,8 @@ class LightFSMSpec extends FlatSpecLike with Matchers with ActorSystemTestKit wi
 
   it should "switch to red when orange light before green" in new ActorSystemTest {
     val tested = TestLightFSM(initialState = ChangingToGreenLight)
-    tested ! RegisterDirectorCommand(testActor)
-    expectMsg(DirectorRegisteredEvent("1"))
+    tested ! RegisterRecipientCommand(testActor)
+    expectMsg(RecipientRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToGreenLight))
     tested ! ChangeToGreenCommand
@@ -71,8 +71,8 @@ class LightFSMSpec extends FlatSpecLike with Matchers with ActorSystemTestKit wi
 
   it should "switch to green when orange light before red" in new ActorSystemTest {
     val tested = TestLightFSM(initialState = ChangingToRedLight)
-    tested ! RegisterDirectorCommand(testActor)
-    expectMsg(DirectorRegisteredEvent("1"))
+    tested ! RegisterRecipientCommand(testActor)
+    expectMsg(RecipientRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToRedLight))
     tested ! ChangeToRedCommand //should be ignored
@@ -86,8 +86,8 @@ class LightFSMSpec extends FlatSpecLike with Matchers with ActorSystemTestKit wi
 
   it should "stay green when orange before green light" in new ActorSystemTest {
     val tested = TestLightFSM(initialState = ChangingToGreenLight)
-    tested ! RegisterDirectorCommand(testActor)
-    expectMsg(DirectorRegisteredEvent("1"))
+    tested ! RegisterRecipientCommand(testActor)
+    expectMsg(RecipientRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToGreenLight))
     tested ! ChangeToRedCommand //should change state immediately to ChangingToRedLight
@@ -101,8 +101,8 @@ class LightFSMSpec extends FlatSpecLike with Matchers with ActorSystemTestKit wi
 
   it should "stay red when orange before red light" in new ActorSystemTest {
     val tested = TestLightFSM(initialState = ChangingToRedLight)
-    tested ! RegisterDirectorCommand(testActor)
-    expectMsg(DirectorRegisteredEvent("1"))
+    tested ! RegisterRecipientCommand(testActor)
+    expectMsg(RecipientRegisteredEvent("1"))
     tested ! GetStatusQuery
     expectMsg(StatusEvent("1", ChangingToRedLight))
     tested ! ChangeToGreenCommand

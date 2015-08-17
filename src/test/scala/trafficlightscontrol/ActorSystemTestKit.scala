@@ -9,6 +9,7 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.Suite
 import akka.testkit.TestKitBase
 import org.scalatest.BeforeAndAfterAll
+import scala.concurrent.duration._
 
 trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
 
@@ -24,11 +25,6 @@ trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
             autoreceive = off
             lifecycle = off
           }
-          deployment {
-            "/*" {
-              dispatcher = akka.test.calling-thread-dispatcher
-            }
-          }
         }
         test {
           timefactor = 1
@@ -37,6 +33,7 @@ trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
   """
   private val actorSystemConfig = ConfigFactory.parseString(config).withFallback(ConfigFactory.load)
   val actorSystem = ActorSystem("test", actorSystemConfig)
+  val checkTimeout: FiniteDuration = 30.seconds
 
   class ActorSystemTest extends TestKit(actorSystem) with ImplicitSender {
 

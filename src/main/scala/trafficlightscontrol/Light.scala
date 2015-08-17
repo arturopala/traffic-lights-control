@@ -4,6 +4,15 @@ import akka.actor._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
+object Light {
+
+  def props(
+    id: String,
+    initialState: LightState = RedLight,
+    delay: FiniteDuration = 1 seconds,
+    automatic: Boolean = true): Props = Props(classOf[Light], id, initialState, delay, automatic)
+}
+
 /**
  * Light is a primitive building block of a traffic control system.
  * Possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
@@ -20,16 +29,16 @@ class Light(
     extends Actor with ActorLogging {
 
   var state: LightState = initialState
-  var director: Option[ActorRef] = None
+  var recipient: Option[ActorRef] = None
 
-  def receive = /*akka.event.LoggingReceive*/ {
+  val receive: Receive = {
 
-    case GetStatusQuery => director ! StatusEvent(id, state)
+    case GetStatusQuery => recipient ! StatusEvent(id, state)
 
-    case RegisterDirectorCommand(newDirector) =>
-      if (director.isEmpty) {
-        director = Option(newDirector)
-        director ! DirectorRegisteredEvent(id)
+    case RegisterRecipientCommand(newRecipient) =>
+      if (recipient.isEmpty) {
+        recipient = Option(newRecipient)
+        recipient ! RecipientRegisteredEvent(id)
       }
 
     case cmd: Command => state match {
@@ -40,37 +49,37 @@ class Light(
     }
   }
 
-  def receiveWhenRed: Receive = {
+  val receiveWhenRed: Receive = {
     case ChangeToRedCommand =>
-      director ! ChangedToRedEvent
+      recipient ! ChangedToRedEvent
 
     case ChangeToGreenCommand =>
       changeStateTo(ChangingToGreenLight)
       if (automatic) context.system.scheduler.scheduleOnce(delay, self, FinalizeChange)(context.system.dispatcher)
   }
 
-  def receiveWhenGreen: Receive = {
+  val receiveWhenGreen: Receive = {
     case ChangeToRedCommand =>
       changeStateTo(ChangingToRedLight)
       if (automatic) context.system.scheduler.scheduleOnce(delay, self, FinalizeChange)(context.system.dispatcher)
     case ChangeToGreenCommand => {
-      director ! ChangedToGreenEvent
+      recipient ! ChangedToGreenEvent
     }
   }
 
-  def receiveWhenChangingToRed: Receive = {
+  val receiveWhenChangingToRed: Receive = {
     case FinalizeChange =>
       changeStateTo(RedLight)
-      director ! ChangedToRedEvent
+      recipient ! ChangedToRedEvent
     case ChangeToGreenCommand =>
       changeStateTo(ChangingToGreenLight)
     case _ => //ignore
   }
 
-  def receiveWhenChangingToGreen: Receive = {
+  val receiveWhenChangingToGreen: Receive = {
     case FinalizeChange =>
       changeStateTo(GreenLight)
-      director ! ChangedToGreenEvent
+      recipient ! ChangedToGreenEvent
     case ChangeToRedCommand =>
       changeStateTo(ChangingToRedLight)
     case _ => //ignore
@@ -85,13 +94,4 @@ class Light(
 
   override val toString: String = s"Light($id,$state)"
 
-}
-
-object Light {
-
-  def props(
-    id: String,
-    initialState: LightState = RedLight,
-    delay: FiniteDuration = 1 seconds,
-    automatic: Boolean = true): Props = Props(classOf[Light], id, initialState, delay, automatic)
 }

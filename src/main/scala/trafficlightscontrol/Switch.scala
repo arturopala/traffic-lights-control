@@ -7,114 +7,150 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.collection.mutable.{ Set, Map }
 
+object Switch {
+  def props(id: String,
+            memberProps: Seq[Props],
+            timeout: FiniteDuration = 10 seconds,
+            strategy: SwitchStrategy = SwitchStrategy.RoundRobin): Props =
+    Props(classOf[Switch], id, memberProps, timeout, strategy)
+}
+
 /**
  * Switch is a set of components (eg. lights, groups, other switches) amongst which only one may be green at once.
  */
 class Switch(
-    val memberProps: Seq[Props],
-    baseTimeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
+    id: String,
+    memberProps: Seq[Props],
+    baseTimeout: FiniteDuration = 10 seconds,
+    strategy: SwitchStrategy = SwitchStrategy.RoundRobin) extends Actor with ActorLogging with Stash {
 
-  def receive = receiveWhenIdle
+  def receive = receiveWhenInitializing orElse receiveUnhandled
 
-  var director: Option[ActorRef] = None
+  var recipient: Option[ActorRef] = None
   val members: Map[String, ActorRef] = Map()
+  var memberIds: Seq[String] = Seq.empty
 
-  val responded: Set[ActorRef] = Set()
+  val responderSet: Set[ActorRef] = Set()
   var timeoutTask: Cancellable = _
+
+  var isGreen = false
+  var greenMemberId: String = ""
+  var nextGreenId: String = _
 
   override def preStart = {
     for (prop <- memberProps) {
-      context.actorOf(prop) ! RegisterDirectorCommand(self)
+      val member = context.actorOf(prop)
+      member ! RegisterRecipientCommand(self)
     }
   }
 
-  var currentGreenId: String = ""
-  var nextGreenId: String = _
+  /////////////////////////////////////////////////////////////////
+  // STATE 0: INITIALIZING, WAITING FOR ALL MEMBERS REGISTRATION //
+  /////////////////////////////////////////////////////////////////
+  val receiveWhenInitializing: Receive = {
+
+    case RecipientRegisteredEvent(id) =>
+      members.getOrElseUpdate(id, sender())
+      memberIds = members.keys.toSeq
+      log.debug(s"Switch ${this.id}: new member registered $id")
+      if (members.size == memberProps.size) {
+        log.info(s"Switch ${this.id} initialized. Members: ${memberIds.mkString(",")}")
+        context.become(receiveWhenIdle orElse receiveUnhandled)
+        unstashAll()
+      }
+
+    case ChangeToGreenCommand | ChangeToRedCommand => // ignore until initialized
+      log.warning(s"Switch $id not yet initialized, skipping command")
+  }
 
   /////////////////////////////////////////
   // STATE 1: IDLE, WAITING FOR COMMANDS //
   /////////////////////////////////////////
-  def receiveWhenIdle: Receive = akka.event.LoggingReceive {
-
-    case RegisterDirectorCommand(newDirector) =>
-      if (director.isEmpty) {
-        director = Option(newDirector)
-        director ! DirectorRegisteredEvent("")
-      }
-
-    case DirectorRegisteredEvent(id) =>
-      members.getOrElseUpdate(id, sender())
+  val receiveWhenIdle: Receive = {
 
     case ChangeToGreenCommand =>
-      nextGreenId = "1" //FIXME
-      if (nextGreenId != currentGreenId && members.contains(nextGreenId)) {
-        responded.clear()
-        context.become(receiveWhileChangingToAllRedBeforeGreen)
+      nextGreenId = strategy(greenMemberId, memberIds)
+      if (isGreen && nextGreenId == greenMemberId) {
+        recipient ! ChangedToGreenEvent
+      }
+      else if (members.contains(nextGreenId)) {
+        responderSet.clear()
+        context.become(receiveWhileChangingToAllRedBeforeGreen orElse receiveUnhandled)
         members ! ChangeToRedCommand
         scheduleTimeout()
       }
+      else {
+        throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
+      }
 
     case ChangeToRedCommand =>
-      responded.clear()
-      context.become(receiveWhileChangingToRed)
+      responderSet.clear()
+      context.become(receiveWhileChangingToRed orElse receiveUnhandled)
       members ! ChangeToRedCommand
-      scheduleTimeout(members.size * 2)
+      scheduleTimeout()
   }
 
   ///////////////////////////////////////////////////
   // STATE 2: WAITING FOR ALL IS RED CONFIRMATION  //
   ///////////////////////////////////////////////////
-  def receiveWhileChangingToRed: Receive = akka.event.LoggingReceive {
+  val receiveWhileChangingToRed: Receive = {
 
     case ChangedToRedEvent =>
-      responded += sender()
-      if (responded.size == members.size) {
+      responderSet += sender()
+      if (responderSet.size == members.size) {
         timeoutTask.cancel()
-        context.become(receiveWhenIdle)
-        director ! ChangedToRedEvent
+        isGreen = false
+        context.become(receiveWhenIdle orElse receiveUnhandled)
+        recipient ! ChangedToRedEvent
       }
 
     case ChangeToGreenCommand =>
-      context.become(receiveWhileChangingToAllRedBeforeGreen) // enable going green in the next step
+      context.become(receiveWhileChangingToAllRedBeforeGreen orElse receiveUnhandled) // enable going green in the next step
 
     case ChangeToRedCommand => //ignore, already changing to red
 
     case TimeoutEvent =>
-      throw new TimeoutException("baseTimeout occured when waiting for all final red acks")
+      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all final red acks")
   }
 
   ////////////////////////////////////////////////////////
   // STATE 3: WAITING FOR ALL IS RED BEFORE GOING GREEN //
   ////////////////////////////////////////////////////////
-  def receiveWhileChangingToAllRedBeforeGreen: Receive = akka.event.LoggingReceive {
+  val receiveWhileChangingToAllRedBeforeGreen: Receive = {
 
     case ChangedToRedEvent =>
-      responded += sender()
-      if (responded.size == members.size) {
+      responderSet += sender()
+      if (responderSet.size == members.size) {
         timeoutTask.cancel()
-        context.become(receiveWhileWaitingForGreenAck)
-        members(nextGreenId) ! ChangeToGreenCommand
-        scheduleTimeout()
+        context.become(receiveWhileWaitingForGreenAck orElse receiveUnhandled)
+        members.get(nextGreenId) match {
+          case Some(member) =>
+            member ! ChangeToGreenCommand
+            scheduleTimeout()
+          case None =>
+            throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
+        }
       }
 
     case ChangeToGreenCommand => //ignore
 
     case ChangeToRedCommand =>
-      context.become(receiveWhileChangingToRed) // avoid going green in the next step
+      context.become(receiveWhileChangingToRed orElse receiveUnhandled) // avoid going green in the next step
 
     case TimeoutEvent =>
-      throw new TimeoutException("baseTimeout occured when waiting for all red acks before changing to green")
+      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all red acks before changing to green")
   }
 
   /////////////////////////////////////////////////////////
   // STATE 4: WAITING FOR CONFIRMATION FROM GREEN MEMBER //
   /////////////////////////////////////////////////////////
-  def receiveWhileWaitingForGreenAck: Receive = akka.event.LoggingReceive {
+  val receiveWhileWaitingForGreenAck: Receive = {
 
     case ChangedToGreenEvent =>
       timeoutTask.cancel()
-      context.become(receiveWhenIdle)
-      director ! ChangedToGreenEvent
+      isGreen = true
+      context.become(receiveWhenIdle orElse receiveUnhandled)
+      recipient ! ChangedToGreenEvent
       unstashAll()
 
     case ChangeToGreenCommand => //ignore, already changing to green
@@ -122,11 +158,23 @@ class Switch(
     case ChangeToRedCommand   => stash() // we can't avoid green at that point
 
     case TimeoutEvent =>
-      throw new TimeoutException("baseTimeout occured when waiting for final green ack")
+      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for final green ack")
   }
 
-  def scheduleTimeout(factor: Int = 1): Unit = {
-    timeoutTask = context.system.scheduler.scheduleOnce(baseTimeout * factor, self, TimeoutEvent)(context.system.dispatcher)
+  val receiveUnhandled: Receive = {
+
+    case RegisterRecipientCommand(newRecipient) =>
+      if (recipient.isEmpty) {
+        recipient = Option(newRecipient)
+        recipient ! RecipientRegisteredEvent(id)
+      }
+
+    case other =>
+      log.error(s"Switch ${this.id}: command not recognized $other")
+  }
+
+  def scheduleTimeout(): Unit = {
+    timeoutTask = context.system.scheduler.scheduleOnce(baseTimeout, self, TimeoutEvent)(context.system.dispatcher)
   }
 
 }

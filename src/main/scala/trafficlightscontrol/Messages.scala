@@ -7,8 +7,8 @@ trait Command extends Message
 trait Query extends Message
 trait Event extends Message
 
-case class RegisterDirectorCommand(director: ActorRef) extends Command
-case class DirectorRegisteredEvent(id: String) extends Event
+case class RegisterRecipientCommand(director: ActorRef) extends Command
+case class RecipientRegisteredEvent(id: String) extends Event
 
 case object ChangeToRedCommand extends Command
 case object ChangeToGreenCommand extends Command

@@ -1,13 +1,18 @@
 package trafficlightscontrol
 
-import akka.actor.Actor
+import akka.actor._
 import scala.concurrent.duration._
-import akka.actor.ActorRef
 import scala.concurrent.ExecutionContext
-import akka.actor.ActorLogging
-import akka.actor.Stash
-import akka.actor.FSM
 import sun.awt.X11.XBaseWindow.InitialiseState
+
+object LightFSM {
+
+  def props(
+    id: String,
+    initialState: LightState = RedLight,
+    delay: FiniteDuration = 1 seconds,
+    automatic: Boolean = true): Props = Props(classOf[LightFSM], id, initialState, delay, automatic)
+}
 
 /**
  * LightFSM is a primitive building block of a traffic control system. R
@@ -27,16 +32,16 @@ class LightFSM(
   startWith(initialState, None)
 
   when(RedLight) {
-    case Event(ChangeToRedCommand, director) =>
-      director ! ChangedToRedEvent
+    case Event(ChangeToRedCommand, recipient) =>
+      recipient ! ChangedToRedEvent
       stay
     case Event(ChangeToGreenCommand, _) =>
       goto(ChangingToGreenLight)
   }
 
   when(GreenLight) {
-    case Event(ChangeToGreenCommand, director) =>
-      director ! ChangedToGreenEvent
+    case Event(ChangeToGreenCommand, recipient) =>
+      recipient ! ChangedToGreenEvent
       stay
     case Event(ChangeToRedCommand, _) =>
       goto(ChangingToRedLight)
@@ -73,11 +78,11 @@ class LightFSM(
   }
 
   whenUnhandled {
-    case Event(RegisterDirectorCommand(newDirector), _) =>
+    case Event(RegisterRecipientCommand(newRecipient), _) =>
       if (stateData.isEmpty) {
-        val director = Option(newDirector)
-        director ! DirectorRegisteredEvent(id)
-        stay using director
+        val recipient = Option(newRecipient)
+        recipient ! RecipientRegisteredEvent(id)
+        stay using recipient
       }
       else stay
 
@@ -89,5 +94,7 @@ class LightFSM(
   }
 
   initialize()
+
+  context.system.eventStream.publish(StatusEvent(id, stateName))
 
 }
