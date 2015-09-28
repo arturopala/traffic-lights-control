@@ -56,7 +56,7 @@ trait LightTestSuite extends FlatSpecLike with Matchers with ActorSystemTestKit 
       expectMsg(StatusEvent("B", RedLight))
     }
 
-    it should "switch to red when orange light before green" in new ActorSystemTest {
+    it should "switch to red when yellow light before green" in new ActorSystemTest {
       val tested = light("1", ChangingToGreenLight)
       tested ! RegisterRecipientCommand(testActor)
       expectMsg(RecipientRegisteredEvent("1"))
@@ -71,7 +71,7 @@ trait LightTestSuite extends FlatSpecLike with Matchers with ActorSystemTestKit 
       expectMsg(StatusEvent("1", RedLight))
     }
 
-    it should "switch to green when orange light before red" in new ActorSystemTest {
+    it should "switch to green when yellow light before red" in new ActorSystemTest {
       val tested = light("1", ChangingToRedLight)
       tested ! RegisterRecipientCommand(testActor)
       expectMsg(RecipientRegisteredEvent("1"))
@@ -86,7 +86,7 @@ trait LightTestSuite extends FlatSpecLike with Matchers with ActorSystemTestKit 
       expectMsg(StatusEvent("1", GreenLight))
     }
 
-    it should "stay green when orange before green light" in new ActorSystemTest {
+    it should "stay green when yellow before green light" in new ActorSystemTest {
       val tested = light("1", ChangingToGreenLight)
       tested ! RegisterRecipientCommand(testActor)
       expectMsg(RecipientRegisteredEvent("1"))
@@ -101,7 +101,7 @@ trait LightTestSuite extends FlatSpecLike with Matchers with ActorSystemTestKit 
       expectMsg(StatusEvent("1", GreenLight))
     }
 
-    it should "stay red when orange before red light" in new ActorSystemTest {
+    it should "stay red when yellow before red light" in new ActorSystemTest {
       val tested = light("1", ChangingToRedLight)
       tested ! RegisterRecipientCommand(testActor)
       expectMsg(RecipientRegisteredEvent("1"))

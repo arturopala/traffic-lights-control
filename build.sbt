@@ -13,9 +13,9 @@ scalaVersion := "2.11.6"
 resolvers += Resolver.mavenLocal
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.3.12",
-  "com.typesafe.akka" %% "akka-slf4j" % "2.3.12",
-  "com.typesafe.akka" %% "akka-testkit" % "2.3.12" % Test,
+  "com.typesafe.akka" %% "akka-actor" % "2.3.14",
+  "com.typesafe.akka" %% "akka-slf4j" % "2.3.14",
+  "com.typesafe.akka" %% "akka-testkit" % "2.3.14" % Test,
   "org.scalatest" %% "scalatest" % "2.+" % Test,
   "junit" % "junit" % "4.12" % Test,
   "com.novocode" % "junit-interface" % "0.10" % Test,

@@ -20,7 +20,7 @@ object LightFSM {
  * @param id UUID
  * @param initalState initial state of the light
  * @param delay green <-> red switch delay
- * @param automatic should switch from orange to red or green automatically or manually?
+ * @param automatic should switch from yellow to red or green automatically or manually?
  */
 class LightFSM(
   id: String,

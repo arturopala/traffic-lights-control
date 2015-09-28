@@ -37,5 +37,5 @@ sealed abstract class LightState(val colour: String, val id: String) {
 
 case object RedLight extends LightState("Red", "R")
 case object GreenLight extends LightState("Green", "G")
-case object ChangingToRedLight extends LightState("OrangeThenRed", "CTR")
-case object ChangingToGreenLight extends LightState("OrangeThenGreen", "CTG")
+case object ChangingToRedLight extends LightState("YellowThenRed", "YTR")
+case object ChangingToGreenLight extends LightState("YellowThenGreen", "YTG")
