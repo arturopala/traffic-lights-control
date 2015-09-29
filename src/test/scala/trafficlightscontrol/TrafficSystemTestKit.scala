@@ -42,5 +42,19 @@ trait TrafficSystemTestKit {
     }
   }
 
+  object TestGroup {
+    def apply(id: String, lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
+      val workers = lights zip (1 to lights.size) map { case (l, c) => Light.props(""+c, l, testLightChangeDelay, true) }
+      TestActorRef(new Group(id, workers, timeout))
+    }
+  }
+
+  object TestGroupFSM {
+    def apply(id: String, lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
+      val workers = lights zip (1 to lights.size) map { case (l, c) => LightFSM.props(""+c, l, testLightChangeDelay, true) }
+      TestFSMRef(new GroupFSM(id, workers, timeout))
+    }
+  }
+
   def stateOfLightFSM(ref: ActorRef): LightState = ref.asInstanceOf[TestActorRef[LightFSM]].underlyingActor.stateName
 }

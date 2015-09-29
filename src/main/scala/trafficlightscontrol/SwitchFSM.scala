@@ -28,6 +28,9 @@ object SwitchFSM {
 
 import SwitchFSM._
 
+/**
+ * SwitchFSM is a set of components (eg. lights, groups, other switches) amongst which only one may be green at once.
+ */
 class SwitchFSM(
     id: String,
     memberProps: Seq[Props],

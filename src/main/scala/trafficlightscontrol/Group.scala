@@ -7,22 +7,20 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.collection.mutable.{ Set, Map }
 
-object Switch {
+object Group {
   def props(id: String,
             memberProps: Seq[Props],
-            timeout: FiniteDuration = 10 seconds,
-            strategy: SwitchStrategy = SwitchStrategy.RoundRobin): Props =
-    Props(classOf[Switch], id, memberProps, timeout, strategy)
+            timeout: FiniteDuration = 10 seconds): Props =
+    Props(classOf[Group], id, memberProps, timeout)
 }
 
 /**
- * Switch is a set of components (eg. lights, groups, other switches) amongst which only one may be green at once.
+ * Group is a set of components (eg. lights, groups, other switches) which should be all red or green at the same time.
  */
-class Switch(
+class Group(
     id: String,
     memberProps: Seq[Props],
-    baseTimeout: FiniteDuration = 10 seconds,
-    strategy: SwitchStrategy = SwitchStrategy.RoundRobin) extends Actor with ActorLogging with Stash {
+    baseTimeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenInitializing orElse receiveUnhandled
 
@@ -33,9 +31,7 @@ class Switch(
   val responderSet: Set[ActorRef] = Set()
   var timeoutTask: Cancellable = _
 
-  var isGreen = false
-  var greenMemberId: String = ""
-  var nextGreenId: String = _
+  var isGreen: Option[Boolean] = None
 
   override def preStart = {
     for (prop <- memberProps) {
@@ -68,26 +64,25 @@ class Switch(
   /////////////////////////////////////////
   val receiveWhenIdle: Receive = {
 
-    case ChangeToGreenCommand =>
-      nextGreenId = strategy(greenMemberId, memberIds)
-      if (isGreen && nextGreenId == greenMemberId) {
-        recipient ! ChangedToGreenEvent
-      }
-      else if (members.contains(nextGreenId)) {
+    case ChangeToGreenCommand => isGreen match {
+      case None | Some(false) =>
         responderSet.clear()
-        context.become(receiveWhileChangingToAllRedBeforeGreen orElse receiveUnhandled)
+        context.become(receiveWhileChangingToGreen orElse receiveUnhandled)
+        members ! ChangeToGreenCommand
+        scheduleTimeout()
+      case Some(true) =>
+        recipient ! ChangedToGreenEvent
+    }
+
+    case ChangeToRedCommand => isGreen match {
+      case None | Some(true) =>
+        responderSet.clear()
+        context.become(receiveWhileChangingToRed orElse receiveUnhandled)
         members ! ChangeToRedCommand
         scheduleTimeout()
-      }
-      else {
-        throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
-      }
-
-    case ChangeToRedCommand =>
-      responderSet.clear()
-      context.become(receiveWhileChangingToRed orElse receiveUnhandled)
-      members ! ChangeToRedCommand
-      scheduleTimeout()
+      case Some(false) =>
+        recipient ! ChangedToRedEvent
+    }
   }
 
   ///////////////////////////////////////////////////
@@ -99,66 +94,39 @@ class Switch(
       responderSet += sender()
       if (responderSet.size == members.size) {
         timeoutTask.cancel()
-        isGreen = false
+        isGreen = Some(false)
         context.become(receiveWhenIdle orElse receiveUnhandled)
         recipient ! ChangedToRedEvent
       }
 
-    case ChangeToGreenCommand =>
-      context.become(receiveWhileChangingToAllRedBeforeGreen orElse receiveUnhandled) // enable going green in the next step
+    case ChangeToGreenCommand => stash() // we can't avoid going red at that point
 
-    case ChangeToRedCommand => //ignore, already changing to red
+    case ChangeToRedCommand   => //ignore, already changing to red
 
     case TimeoutEvent =>
       throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all final red acks")
   }
 
-  ////////////////////////////////////////////////////////
-  // STATE 3: WAITING FOR ALL IS RED BEFORE GOING GREEN //
-  ////////////////////////////////////////////////////////
-  val receiveWhileChangingToAllRedBeforeGreen: Receive = {
+  ////////////////////////////////////////////////////
+  // STATE 3: WAITING FOR ALL IS GREEN CONFIRMATION //
+  ////////////////////////////////////////////////////
+  val receiveWhileChangingToGreen: Receive = {
 
-    case ChangedToRedEvent =>
+    case ChangedToGreenEvent =>
       responderSet += sender()
       if (responderSet.size == members.size) {
         timeoutTask.cancel()
-        context.become(receiveWhileWaitingForGreenAck orElse receiveUnhandled)
-        members.get(nextGreenId) match {
-          case Some(member) =>
-            member ! ChangeToGreenCommand
-            scheduleTimeout()
-          case None =>
-            throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
-        }
+        isGreen = Some(true)
+        context.become(receiveWhenIdle orElse receiveUnhandled)
+        recipient ! ChangedToGreenEvent
       }
-
-    case ChangeToGreenCommand => //ignore
-
-    case ChangeToRedCommand =>
-      context.become(receiveWhileChangingToRed orElse receiveUnhandled) // avoid going green in the next step
-
-    case TimeoutEvent =>
-      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all red acks before changing to green")
-  }
-
-  /////////////////////////////////////////////////////////
-  // STATE 4: WAITING FOR CONFIRMATION FROM GREEN MEMBER //
-  /////////////////////////////////////////////////////////
-  val receiveWhileWaitingForGreenAck: Receive = {
-
-    case ChangedToGreenEvent =>
-      timeoutTask.cancel()
-      isGreen = true
-      context.become(receiveWhenIdle orElse receiveUnhandled)
-      recipient ! ChangedToGreenEvent
-      unstashAll()
-
-    case ChangeToGreenCommand => //ignore, already changing to green
 
     case ChangeToRedCommand   => stash() // we can't avoid going green at that point
 
+    case ChangeToGreenCommand => //ignore, already changing to red
+
     case TimeoutEvent =>
-      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for final green ack")
+      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all final green acks")
   }
 
   val receiveUnhandled: Receive = {
