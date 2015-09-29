@@ -9,6 +9,8 @@ import akka.testkit.TestProbe
 import scala.concurrent.duration._
 import akka.actor.{ Actor, ActorRef, ActorRefFactory }
 
+import trafficlightscontrol.model._
+
 trait LightTestSuite extends FlatSpecLike with Matchers with ActorSystemTestKit {
 
   object Ack extends Event

@@ -11,6 +11,8 @@ import akka.testkit.TestKitBase
 import org.scalatest.BeforeAndAfterAll
 import scala.concurrent.duration._
 
+import trafficlightscontrol.model._
+
 trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
 
   private val config = """

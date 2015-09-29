@@ -7,35 +7,37 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.collection.mutable.{ Set, Map }
 
-object Switch {
-  def props(id: String,
-            memberProps: Seq[Props],
+import trafficlightscontrol.model._
+
+object SwitchActor {
+  def props(id: Id,
+            memberProps: Iterable[Props],
             timeout: FiniteDuration = 10 seconds,
             strategy: SwitchStrategy = SwitchStrategy.RoundRobin): Props =
-    Props(classOf[Switch], id, memberProps, timeout, strategy)
+    Props(classOf[SwitchActor], id, memberProps, timeout, strategy)
 }
 
 /**
  * Switch is a set of components (eg. lights, groups, other switches) amongst which only one may be green at once.
  */
-class Switch(
-    id: String,
-    memberProps: Seq[Props],
+class SwitchActor(
+    id: Id,
+    memberProps: Iterable[Props],
     baseTimeout: FiniteDuration = 10 seconds,
     strategy: SwitchStrategy = SwitchStrategy.RoundRobin) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenInitializing orElse receiveUnhandled
 
   var recipient: Option[ActorRef] = None
-  val members: Map[String, ActorRef] = Map()
-  var memberIds: Seq[String] = Seq.empty
+  val members: Map[Id, ActorRef] = Map()
+  var memberIds: Seq[Id] = Seq.empty
 
   val responderSet: Set[ActorRef] = Set()
   var timeoutTask: Cancellable = _
 
   var isGreen = false
-  var greenMemberId: String = ""
-  var nextGreenId: String = _
+  var greenMemberId: Id = ""
+  var nextGreenId: Id = _
 
   override def preStart = {
     for (prop <- memberProps) {
@@ -54,7 +56,7 @@ class Switch(
       memberIds = members.keys.toSeq
       log.debug(s"Switch ${this.id}: new member registered $id")
       if (members.size == memberProps.size) {
-        log.info(s"Switch ${this.id} initialized. Members: ${memberIds.mkString(",")}")
+        log.info(s"Switch ${this.id} initialized. Members: ${memberIds.mkString(",")}, timeout: $baseTimeout")
         context.become(receiveWhenIdle orElse receiveUnhandled)
         unstashAll()
       }
@@ -149,6 +151,7 @@ class Switch(
     case ChangedToGreenEvent =>
       timeoutTask.cancel()
       isGreen = true
+      greenMemberId = nextGreenId
       context.become(receiveWhenIdle orElse receiveUnhandled)
       recipient ! ChangedToGreenEvent
       unstashAll()

@@ -3,12 +3,13 @@ package trafficlightscontrol.actors
 import akka.actor._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
-import sun.awt.X11.XBaseWindow.InitialiseState
+
+import trafficlightscontrol.model._
 
 object LightFSM {
 
   def props(
-    id: String,
+    id: Id,
     initialState: LightState = RedLight,
     delay: FiniteDuration = 1 seconds,
     automatic: Boolean = true): Props = Props(classOf[LightFSM], id, initialState, delay, automatic)
@@ -23,7 +24,7 @@ object LightFSM {
  * @param automatic should switch from yellow to red or green automatically or manually?
  */
 class LightFSM(
-  id: String,
+  id: Id,
   initialState: LightState = RedLight,
   delay: FiniteDuration = 1 seconds,
   automatic: Boolean = true)

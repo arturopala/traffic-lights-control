@@ -8,6 +8,7 @@ import akka.actor.ActorPath
 import akka.actor.Terminated
 import akka.actor.ActorLogging
 
+import trafficlightscontrol.model._
 import trafficlightscontrol.actors._
 
 class MonitoringActor extends Actor with WebSocketProducerActor with ActorLogging {
@@ -23,7 +24,6 @@ class MonitoringActor extends Actor with WebSocketProducerActor with ActorLoggin
       report += (id -> status)
       val msg = s"$id:${status.id}"
       listeners foreach (l => push(l, msg))
-    //log.info(s"new event $event sent to ${listeners.size} listener(s)")
 
     case ws.Open(_, origin) =>
       listeners add origin

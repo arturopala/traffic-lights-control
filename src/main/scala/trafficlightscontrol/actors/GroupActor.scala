@@ -7,26 +7,28 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.collection.mutable.{ Set, Map }
 
-object Group {
-  def props(id: String,
-            memberProps: Seq[Props],
+import trafficlightscontrol.model._
+
+object GroupActor {
+  def props(id: Id,
+            memberProps: Iterable[Props],
             timeout: FiniteDuration = 10 seconds): Props =
-    Props(classOf[Group], id, memberProps, timeout)
+    Props(classOf[GroupActor], id, memberProps, timeout)
 }
 
 /**
  * Group is a set of components (eg. lights, groups, other switches) which should be all red or green at the same time.
  */
-class Group(
-    id: String,
-    memberProps: Seq[Props],
+class GroupActor(
+    id: Id,
+    memberProps: Iterable[Props],
     baseTimeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenInitializing orElse receiveUnhandled
 
   var recipient: Option[ActorRef] = None
-  val members: Map[String, ActorRef] = Map()
-  var memberIds: Seq[String] = Seq.empty
+  val members: Map[Id, ActorRef] = Map()
+  var memberIds: Seq[Id] = Seq.empty
 
   val responderSet: Set[ActorRef] = Set()
   var timeoutTask: Cancellable = _
@@ -48,15 +50,15 @@ class Group(
     case RecipientRegisteredEvent(id) =>
       members.getOrElseUpdate(id, sender())
       memberIds = members.keys.toSeq
-      log.debug(s"Switch ${this.id}: new member registered $id")
+      log.debug(s"Group ${this.id}: new member registered $id")
       if (members.size == memberProps.size) {
-        log.info(s"Switch ${this.id} initialized. Members: ${memberIds.mkString(",")}")
+        log.info(s"Group ${this.id} initialized. Members: ${memberIds.mkString(",")}, timeout: $baseTimeout")
         context.become(receiveWhenIdle orElse receiveUnhandled)
         unstashAll()
       }
 
     case ChangeToGreenCommand | ChangeToRedCommand => // ignore until initialized
-      log.warning(s"Switch $id not yet initialized, skipping command")
+      log.warning(s"Group $id not yet initialized, skipping command")
   }
 
   /////////////////////////////////////////
@@ -104,7 +106,7 @@ class Group(
     case ChangeToRedCommand   => //ignore, already changing to red
 
     case TimeoutEvent =>
-      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all final red acks")
+      throw new TimeoutException("Group ${this.id}: timeout occured when waiting for all final red acks")
   }
 
   ////////////////////////////////////////////////////
@@ -126,7 +128,7 @@ class Group(
     case ChangeToGreenCommand => //ignore, already changing to red
 
     case TimeoutEvent =>
-      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all final green acks")
+      throw new TimeoutException("Group ${this.id}: timeout occured when waiting for all final green acks")
   }
 
   val receiveUnhandled: Receive = {
@@ -138,7 +140,7 @@ class Group(
       }
 
     case other =>
-      log.error(s"Switch ${this.id}: command not recognized $other")
+      log.error(s"Group ${this.id}: command not recognized $other")
   }
 
   def scheduleTimeout(): Unit = {

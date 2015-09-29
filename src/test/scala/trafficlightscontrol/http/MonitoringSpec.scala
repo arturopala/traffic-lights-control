@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.ActorRef
 
 import trafficlightscontrol.actors._
+import trafficlightscontrol.model._
 
 @RunWith(classOf[JUnitRunner])
 class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit {

@@ -4,13 +4,15 @@ import akka.actor._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
-object Light {
+import trafficlightscontrol.model._
+
+object LightActor {
 
   def props(
-    id: String,
+    id: Id,
     initialState: LightState = RedLight,
     delay: FiniteDuration = 1 seconds,
-    automatic: Boolean = true): Props = Props(classOf[Light], id, initialState, delay, automatic)
+    automatic: Boolean = true): Props = Props(classOf[LightActor], id, initialState, delay, automatic)
 }
 
 /**
@@ -21,8 +23,8 @@ object Light {
  * @param delay green <-> red switch delay
  * @param automatic should switch from yellow to red or green automatically or manually?
  */
-class Light(
-  id: String,
+class LightActor(
+  id: Id,
   initialState: LightState = RedLight,
   delay: FiniteDuration = 1 seconds,
   automatic: Boolean = true)
@@ -88,6 +90,7 @@ class Light(
   def changeStateTo(light: LightState) = {
     state = light
     context.system.eventStream.publish(StatusEvent(id, state))
+    log.info(s"$id: $state")
   }
 
   changeStateTo(state)

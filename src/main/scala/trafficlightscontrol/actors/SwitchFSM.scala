@@ -6,6 +6,8 @@ import scala.collection.mutable.{ Set, Map }
 import scala.concurrent._
 import scala.concurrent.duration._
 
+import trafficlightscontrol.model._
+
 object SwitchFSM {
   sealed trait State
   object Initializing extends State
@@ -15,12 +17,12 @@ object SwitchFSM {
   object WaitingForGreen extends State
 
   case class StateData(
-    greenMemberId: String,
+    greenMemberId: Id,
     responderSet: Set[ActorRef] = Set.empty,
     isGreen: Boolean = false)
 
-  def props(id: String,
-            memberProps: Seq[Props],
+  def props(id: Id,
+            memberProps: Iterable[Props],
             timeout: FiniteDuration = 10 seconds,
             strategy: SwitchStrategy = SwitchStrategy.RoundRobin): Props =
     Props(classOf[SwitchFSM], id, memberProps, timeout, strategy)
@@ -32,14 +34,14 @@ import SwitchFSM._
  * SwitchFSM is a set of components (eg. lights, groups, other switches) amongst which only one may be green at once.
  */
 class SwitchFSM(
-    id: String,
-    memberProps: Seq[Props],
+    id: Id,
+    memberProps: Iterable[Props],
     timeout: FiniteDuration,
     strategy: SwitchStrategy) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
   var recipient: Option[ActorRef] = None
-  val members: Map[String, ActorRef] = Map()
-  var memberIds: Seq[String] = Seq.empty
+  val members: Map[Id, ActorRef] = Map()
+  var memberIds: Seq[Id] = Seq.empty
 
   startWith(Initializing, StateData(""))
 
@@ -49,7 +51,7 @@ class SwitchFSM(
       memberIds = members.keys.toSeq
       log.debug(s"Switch ${this.id}: new member registered $id")
       if (members.size == memberProps.size) {
-        log.info(s"Switch ${this.id} initialized. Members: ${memberIds.mkString(",")}")
+        log.info(s"Switch ${this.id} initialized. Members: ${memberIds.mkString(",")}, timeout: $timeout")
         goto(Idle)
       }
       else stay

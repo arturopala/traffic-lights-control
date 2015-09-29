@@ -10,6 +10,8 @@ import akka.testkit.{ TestProbe, EventFilter }
 import scala.concurrent.duration._
 import akka.actor.ActorRef
 
+import trafficlightscontrol.model._
+
 trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with ActorSystemTestKit {
 
   def runSuite(name: String, group: (String, Seq[LightState]) => TestActorRef[_]) {

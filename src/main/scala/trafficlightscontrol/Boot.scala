@@ -13,5 +13,12 @@ object Boot extends App {
   implicit val module = new Module {}
 
   implicit val timeout = Timeout(5.seconds)
-  IO(UHttp) ! Http.Bind(module.webSocketServiceActor, interface = "0.0.0.0", port = 8080)
+  val uhttp = IO(UHttp)
+  uhttp ! Http.Bind(module.webSocketServiceActor, interface = "0.0.0.0", port = 8080)
+
+  module.demoTrafficActor ! "Start"
+
+  scala.io.StdIn.readLine(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
+  uhttp ! Http.Unbind
+  system.shutdown()
 }

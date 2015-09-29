@@ -1,5 +1,9 @@
 package trafficlightscontrol.actors
 
+import trafficlightscontrol.model._
+
+import trafficlightscontrol.model._
+
 import akka.actor.ActorRef
 
 trait Message
@@ -26,16 +30,3 @@ case class ReportEvent(report: Map[String, LightState]) extends Event
 
 case object TimeoutEvent extends Event
 case object TickCommand extends Command
-
-///////////////////
-/// LIGHT STATES //
-///////////////////
-
-sealed abstract class LightState(val colour: String, val id: String) {
-  override val toString: String = s"${colour}"
-}
-
-case object RedLight extends LightState("Red", "R")
-case object GreenLight extends LightState("Green", "G")
-case object ChangingToRedLight extends LightState("YellowThenRed", "YTR")
-case object ChangingToGreenLight extends LightState("YellowThenGreen", "YTG")

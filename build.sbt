@@ -49,3 +49,7 @@ lazy val root = (project in file(".")).enablePlugins(SbtTwirl)
 
 fork := true
 
+connectInput in run := true
+
+outputStrategy := Some(StdoutOutput)
+

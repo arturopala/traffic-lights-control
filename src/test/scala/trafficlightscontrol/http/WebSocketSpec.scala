@@ -15,6 +15,8 @@ import scala.concurrent.duration._
 import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.ActorRef
 
+import trafficlightscontrol.model._
+
 @RunWith(classOf[JUnitRunner])
 class WebSocketSpec extends FlatSpecLike with Matchers {
 

@@ -19,6 +19,7 @@ import spray.routing.HttpService
 import spray.http.StatusCodes._
 import spray.http.ContentTypes
 
+import trafficlightscontrol.model._
 import trafficlightscontrol.actors.ActorSystemTestKit
 import trafficlightscontrol.Module
 

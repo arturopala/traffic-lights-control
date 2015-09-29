@@ -6,6 +6,8 @@ import scala.collection.mutable.{ Set, Map }
 import scala.concurrent._
 import scala.concurrent.duration._
 
+import trafficlightscontrol.model._
+
 object GroupFSM {
   sealed trait State
   object Initializing extends State
@@ -18,7 +20,7 @@ object GroupFSM {
     isGreen: Option[Boolean] = None)
 
   def props(id: String,
-            memberProps: Seq[Props],
+            memberProps: Iterable[Props],
             timeout: FiniteDuration = 10 seconds): Props =
     Props(classOf[GroupFSM], id, memberProps, timeout)
 }
@@ -30,7 +32,7 @@ import GroupFSM._
  */
 class GroupFSM(
     id: String,
-    memberProps: Seq[Props],
+    memberProps: Iterable[Props],
     timeout: FiniteDuration) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
   var recipient: Option[ActorRef] = None
@@ -43,14 +45,14 @@ class GroupFSM(
     case Event(RecipientRegisteredEvent(id), _) =>
       members.getOrElseUpdate(id, sender())
       memberIds = members.keys.toSeq
-      log.debug(s"Switch ${this.id}: new member registered $id")
+      log.debug(s"Group ${this.id}: new member registered $id")
       if (members.size == memberProps.size) {
-        log.info(s"Switch ${this.id} initialized. Members: ${memberIds.mkString(",")}")
+        log.info(s"Group ${this.id} initialized. Members: ${memberIds.mkString(",")}, timeout: $timeout")
         goto(Idle)
       }
       else stay
     case Event(ChangeToGreenCommand | ChangeToRedCommand, _) =>
-      log.warning(s"Switch $id not yet initialized, skipping command")
+      log.warning(s"Group $id not yet initialized, skipping command")
       stay
   }
 
