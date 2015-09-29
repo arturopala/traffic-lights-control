@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.actors
 
 class LightFSMSpec extends LightTestSuite with TrafficSystemTestKit {
 

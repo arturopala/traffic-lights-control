@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.actors
 
 class GroupSpec extends GroupTestSuite with TrafficSystemTestKit {
 

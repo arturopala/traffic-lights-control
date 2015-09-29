@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.http
 
 import java.nio.charset.Charset
 import java.nio.file.{ FileSystems, Files, Path }
@@ -19,9 +19,11 @@ import spray.routing.HttpService
 import spray.http.StatusCodes._
 import spray.http.ContentTypes
 
+import trafficlightscontrol.actors.ActorSystemTestKit
+import trafficlightscontrol.Module
+
 @RunWith(classOf[JUnitRunner])
-class HttpServiceSpec extends FlatSpecLike with Matchers
-    with ScalatestRouteTest with ActorSystemTestKit {
+class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest with ActorSystemTestKit {
 
   val module = new Module
 

@@ -11,6 +11,8 @@ import akka.actor.ActorSystem
 import akka.actor.ActorRefFactory
 import scala.reflect.ClassTag
 
+import trafficlightscontrol.actors._, trafficlightscontrol.http._
+
 class Module(implicit system: ActorSystem) extends Macwire with ActorOf {
 
   val period: FiniteDuration = 10.seconds

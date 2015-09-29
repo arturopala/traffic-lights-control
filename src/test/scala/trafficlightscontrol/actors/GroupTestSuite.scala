@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.actors
 
 import org.junit.runner.RunWith
 import org.scalatest.{ FlatSpecLike, Matchers }

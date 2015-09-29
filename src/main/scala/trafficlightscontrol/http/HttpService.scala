@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.http
 
 import akka.actor.{ Actor, ActorSystem, Props, ActorRef, ActorLogging }
 import akka.io.IO
@@ -9,6 +9,8 @@ import scala.concurrent.duration._
 import spray.routing._
 import spray.http._
 import MediaTypes._
+
+import trafficlightscontrol.actors._
 
 class TrafficHttpServiceActor(trafficHttpService: TrafficHttpService) extends HttpServiceActor {
   def receive = runRoute(trafficHttpService.route)

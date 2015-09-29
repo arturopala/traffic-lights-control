@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.actors
 
 import com.typesafe.config.ConfigFactory
 import akka.testkit.TestKit

@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.http
 
 import akka.actor.Actor
 import akka.actor.ActorRef
@@ -7,6 +7,8 @@ import scala.concurrent.ExecutionContext
 import akka.actor.ActorPath
 import akka.actor.Terminated
 import akka.actor.ActorLogging
+
+import trafficlightscontrol.actors._
 
 class MonitoringActor extends Actor with WebSocketProducerActor with ActorLogging {
 

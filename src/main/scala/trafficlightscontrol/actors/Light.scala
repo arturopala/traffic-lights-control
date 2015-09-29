@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.actors
 
 import akka.actor._
 import scala.concurrent.duration._

@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.actors
 
 import akka.actor.Actor
 import akka.actor.ActorRef

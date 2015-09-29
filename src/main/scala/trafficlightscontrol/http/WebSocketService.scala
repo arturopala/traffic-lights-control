@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.http
 
 import akka.actor.{ ActorSystem, Actor, Props, ActorLogging, ActorRef, ActorRefFactory }
 import akka.io.IO

@@ -1,6 +1,8 @@
+package trafficlightscontrol
+
 import akka.actor.ActorRef
 
-package object trafficlightscontrol {
+package object actors {
 
   type LightId = String
   type SwitchStrategy = (String, scala.collection.Seq[String]) => String

@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.actors
 
 class SwitchFSMSpec extends SwitchTestSuite with TrafficSystemTestKit {
 

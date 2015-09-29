@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.http
 
 import java.nio.charset.Charset
 import java.nio.file.{ FileSystems, Files, Path }
@@ -14,6 +14,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.ActorRef
+
+import trafficlightscontrol.actors._
 
 @RunWith(classOf[JUnitRunner])
 class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit {

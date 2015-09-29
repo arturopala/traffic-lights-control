@@ -1,4 +1,4 @@
-package trafficlightscontrol
+package trafficlightscontrol.http
 
 import java.nio.charset.Charset
 import java.nio.file.{ FileSystems, Files, Path }
