@@ -1,6 +1,5 @@
 package trafficlightscontrol.actors
 
-import org.junit.runner.RunWith
 import org.scalatest.{ FlatSpecLike, Matchers }
 import org.scalatest.concurrent.ScalaFutures
 import akka.actor.ActorSystem

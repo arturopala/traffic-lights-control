@@ -1,5 +1,7 @@
 package trafficlightscontrol
 
+import scala.reflect.ClassTag
+
 import com.softwaremill.macwire.Macwire
 import akka.actor.Props
 import scala.concurrent.duration._
@@ -9,22 +11,24 @@ import akka.actor.ActorContext
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.actor.ActorRefFactory
-import scala.reflect.ClassTag
+
+import akka.stream.ActorMaterializer
+import akka.http.scaladsl.Http
 
 import trafficlightscontrol.actors._, trafficlightscontrol.http._
 
-class Module(implicit system: ActorSystem) extends Macwire with ActorOf {
+class Module(implicit system: ActorSystem, materializer: ActorMaterializer) extends Macwire with ActorOf {
 
-  val period: FiniteDuration = 10.seconds
-
-  lazy val demoTrafficActor: ActorRef = actorOf[DemoTrafficSystem]("demo", period)
+  val interval: FiniteDuration = 5.seconds
+  lazy val demoTrafficActor: ActorRef = actorOf[DemoTrafficSystem]("demo", interval)
   lazy val monitoring: Monitoring = Monitoring(actorOf[MonitoringActor]("monitoring"))
-  lazy val httpService: TrafficHttpService = wire[TrafficHttpService]
-  lazy val httpServiceActor: ActorRef = actorOf[TrafficHttpServiceActor]("http", httpService)
+  lazy val httpService: HttpService = wire[HttpService]
 
-  lazy val webSocketRoute: ws.Route[ActorRef] = ws.Routes(
+  //lazy val httpService: TrafficHttpService = wire[TrafficHttpService]
+  //lazy val httpServiceActor: ActorRef = actorOf[TrafficHttpServiceActor]("http", httpService)
+  /*lazy val webSocketRoute: ws.Route[ActorRef] = ws.Routes(
     "/light/status/stream" -> monitoring.actor)
-  lazy val webSocketServiceActor: ActorRef = actorOf[WebSocketServiceActor]("websocket", webSocketRoute, httpServiceActor)
+  lazy val webSocketServiceActor: ActorRef = actorOf[WebSocketServiceActor]("websocket", webSocketRoute, httpServiceActor)*/
 
 }
 

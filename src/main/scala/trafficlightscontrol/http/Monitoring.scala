@@ -11,7 +11,7 @@ import akka.actor.ActorLogging
 import trafficlightscontrol.model._
 import trafficlightscontrol.actors._
 
-class MonitoringActor extends Actor with WebSocketProducerActor with ActorLogging {
+class MonitoringActor extends Actor /*with WebSocketProducerActor*/ with ActorLogging {
 
   var report: Map[String, LightState] = Map()
   val listeners: scala.collection.mutable.Set[ActorRef] = scala.collection.mutable.Set()
@@ -23,11 +23,11 @@ class MonitoringActor extends Actor with WebSocketProducerActor with ActorLoggin
     case event @ StatusEvent(id, status) =>
       report += (id -> status)
       val msg = s"$id:${status.id}"
-      listeners foreach (l => push(l, msg))
+    //listeners foreach (l => push(l, msg))
 
-    case ws.Open(_, origin) =>
+    /*case ws.Open(_, origin) =>
       listeners add origin
-      context watch origin
+      context watch origin*/
 
     case Terminated(origin) =>
       listeners remove origin

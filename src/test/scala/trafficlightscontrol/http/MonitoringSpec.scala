@@ -3,7 +3,7 @@ package trafficlightscontrol.http
 import java.nio.charset.Charset
 import java.nio.file.{ FileSystems, Files, Path }
 import java.util.function.Consumer
-import org.junit.runner.RunWith
+
 import org.scalatest.{ Finders, FlatSpecLike, Matchers }
 import akka.actor.{ ActorSystem, Props }
 import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
@@ -18,7 +18,6 @@ import akka.actor.ActorRef
 import trafficlightscontrol.actors._
 import trafficlightscontrol.model._
 
-@RunWith(classOf[JUnitRunner])
 class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit {
 
   class MonitoringTest extends ActorSystemTest {
@@ -42,7 +41,7 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     tested.underlyingActor.report("2") should equal(GreenLight)
   }
 
-  it should "register websocket listeners" in new MonitoringTest {
+  /*it should "register websocket listeners" in new MonitoringTest {
     val probe1 = TestProbe()
     tested ! ws.Open("/", probe1.ref)
     tested.underlyingActor.listeners should contain(probe1.ref)
@@ -61,7 +60,7 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     tested.underlyingActor.listeners should contain(probe.ref)
     system.stop(probe.ref)
     awaitAssert(tested.underlyingActor.listeners should not contain (probe.ref), 5.seconds, 500.millis)
-  }
+  }*/
 
   it should "report current system status" in new MonitoringTest {
     tested ! GetReportQuery

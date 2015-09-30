@@ -3,7 +3,7 @@ package trafficlightscontrol.http
 import java.nio.charset.Charset
 import java.nio.file.{ FileSystems, Files, Path }
 import java.util.function.Consumer
-import org.junit.runner.RunWith
+
 import org.scalatest.{ Finders, FlatSpecLike, Matchers }
 import akka.actor.{ ActorSystem, Props }
 import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
@@ -17,7 +17,7 @@ import akka.actor.ActorRef
 
 import trafficlightscontrol.model._
 
-@RunWith(classOf[JUnitRunner])
+
 class WebSocketSpec extends FlatSpecLike with Matchers {
 
   "A ws.RouteMatcher" should "match using single wildcard" in {

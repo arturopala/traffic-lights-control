@@ -10,7 +10,7 @@ import trafficlightscontrol.model._
 import trafficlightscontrol.actors._
 import trafficlightscontrol.dsl._
 
-class DemoTrafficSystem(interval: FiniteDuration = 5.seconds) extends Actor with ActorLogging {
+class DemoTrafficSystem(interval: FiniteDuration) extends Actor with ActorLogging {
 
   val delay = interval / 5
   val timeout = interval * 10

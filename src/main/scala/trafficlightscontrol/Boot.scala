@@ -2,23 +2,22 @@ package trafficlightscontrol
 
 import scala.concurrent.duration.DurationInt
 import akka.actor.ActorSystem
-import akka.io.IO
-import akka.util.Timeout
-import spray.can.Http
-import spray.can.server.UHttp
+import akka.stream.ActorMaterializer
 
 object Boot extends App {
 
   implicit val system = ActorSystem("app")
-  implicit val module = new Module {}
+  implicit val materializer = akka.stream.ActorMaterializer()
+  implicit val module = new Module
 
-  implicit val timeout = Timeout(5.seconds)
-  val uhttp = IO(UHttp)
-  uhttp ! Http.Bind(module.webSocketServiceActor, interface = "0.0.0.0", port = 8080)
+  val httpBinding = module.httpService.bind("localhost", 8080)
 
   module.demoTrafficActor ! "Start"
 
-  scala.io.StdIn.readLine(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
-  uhttp ! Http.Unbind
-  system.shutdown()
+  println("Press RETURN to stop...")
+  scala.io.StdIn.readLine()
+  import system.dispatcher // for the future transformations
+  httpBinding
+    .flatMap(_.unbind()) // trigger unbinding from the port
+    .onComplete(_ ⇒ system.shutdown()) // and shutdown when done
 }

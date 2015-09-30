@@ -1,7 +1,6 @@
 package trafficlightscontrol.actors
 
 import trafficlightscontrol.model._
-import trafficlightscontrol.model._
 import akka.actor.ActorRef
 
 trait Message

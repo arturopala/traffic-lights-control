@@ -1,28 +1,44 @@
 package trafficlightscontrol.http
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Future }
+import scala.util.{ Try, Success, Failure }
+import scala.util.control.NonFatal
+
 import akka.actor.{ Actor, ActorSystem, Props, ActorRef, ActorLogging }
-import akka.io.IO
-import spray.can.Http
 import akka.pattern.ask
 import akka.util.Timeout
-import scala.concurrent.duration._
-import spray.routing._
-import spray.http._
-import MediaTypes._
+
+import akka.stream._
+import akka.stream.scaladsl._
+import akka.http.scaladsl._
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server._
+import StatusCodes._
+import Directives._
+
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import spray.json._
+import DefaultJsonProtocol._
 
 import trafficlightscontrol.actors._
+import trafficlightscontrol.model._
 
-class TrafficHttpServiceActor(trafficHttpService: TrafficHttpService) extends HttpServiceActor {
-  def receive = runRoute(trafficHttpService.route)
-}
+class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, materializer: ActorMaterializer) extends SprayJsonSupport {
 
-class TrafficHttpService(monitoring: Monitoring)(implicit system: ActorSystem) extends HttpService {
+  import scala.concurrent.ExecutionContext.Implicits.global
 
-  val actorRefFactory = system
+  import JsonProtocol._
 
-  import Directives._
+  implicit val timeout = Timeout(5.seconds)
 
-  object GetReportQueryTimeout
+  def bind(host: String, port: Int): Future[Http.ServerBinding] = {
+    Http().bindAndHandle(route, host, port) andThen {
+      case Success(_) => println(s"Server online at http://$host:$port/")
+      case Failure(e) => println(s"Error starting HTTP server: $e")
+    }
+  }
 
   val exceptionHandler = {
     ExceptionHandler {
@@ -32,61 +48,35 @@ class TrafficHttpService(monitoring: Monitoring)(implicit system: ActorSystem) e
   }
 
   val rejectionHandler = {
-    RejectionHandler {
-      case MissingQueryParamRejection(param) :: _ =>
-        complete(StatusCodes.BadRequest, s"Request is missing required query parameter '$param'")
+    RejectionHandler.newBuilder()
+      .handle {
+        case MissingQueryParamRejection(param) =>
+          complete(BadRequest, s"Request is missing required query parameter '$param'")
+      }
+      .handleAll[MethodRejection] { methodRejections ⇒
+        val names = methodRejections.map(_.supported.name)
+        complete(MethodNotAllowed, s"Can't do that! Supported: ${names mkString " or "}!")
+      }
+      .handleNotFound { complete(NotFound, "Not here!") }
+      .result()
+  }
+
+  val route = handleRejections(rejectionHandler) {
+    handleExceptions(exceptionHandler) {
+      path("status") {
+        get {
+          complete {
+            monitoring.actor ? GetReportQuery map (_.asInstanceOf[ReportEvent])
+          }
+        }
+      } ~
+        pathPrefix("") {
+          getFromResourceDirectory("")
+        } ~
+        path("") {
+          getFromResource("index.html")
+        }
     }
   }
 
-  val route =
-    handleRejections(rejectionHandler) {
-      handleExceptions(exceptionHandler) {
-        path("status") {
-          get {
-            streamStatusResponse(monitoring)
-          }
-        } ~
-          pathPrefix("") {
-            getFromResourceDirectory("")
-          } ~
-          path("") {
-            getFromResource("index.html")
-          }
-      }
-    }
-
-  def streamStatusResponse(monitoring: Monitoring)(ctx: RequestContext): Unit =
-    actorRefFactory.actorOf {
-      Props {
-        new Actor with ActorLogging {
-
-          val responseStart = HttpResponse(entity = HttpEntity(`application/json`, "{\"status\":{"))
-          ctx.responder ! ChunkedResponseStart(responseStart)
-
-          def receive = {
-            case ReportEvent(report) => {
-              timeoutTask.cancel()
-              ctx.responder ! MessageChunk(report map { case (k, v) => s""""$k":"${v.id}"""" } mkString ("", ",", "}}"))
-              ctx.responder ! ChunkedMessageEnd
-              context.stop(self)
-            }
-            case GetReportQueryTimeout => {
-              ctx.responder ! MessageChunk("}}")
-              ctx.responder ! ChunkedMessageEnd
-              context.stop(self)
-            }
-            case ev: Http.ConnectionClosed => {
-              timeoutTask.cancel()
-              log.warning("Stopping response streaming due to {}", ev)
-            }
-
-          }
-
-          val timeoutTask = context.system.scheduler.scheduleOnce(1.seconds, self, GetReportQueryTimeout)(context.system.dispatcher)
-
-          monitoring.actor ! GetReportQuery
-
-        }
-      }
-    }
 }
