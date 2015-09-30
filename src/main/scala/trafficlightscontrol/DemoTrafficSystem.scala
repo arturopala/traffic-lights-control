@@ -29,9 +29,14 @@ class DemoTrafficSystem(interval: FiniteDuration = 5.seconds) extends Actor with
   val props = TrafficSystem.props(layout)(TrafficSystemMaterializer)
   val trafficSystem = context.actorOf(props)
 
+  val separator = "-" * 60
+
   def receive: Receive = {
     case "Start" =>
-      context.system.scheduler.schedule(delay, interval, trafficSystem, ChangeToGreenCommand)(context.system.dispatcher, self)
+      context.system.scheduler.schedule(delay, interval, self, "Tick")(context.system.dispatcher, self)
+    case "Tick" =>
+      log.info(separator)
+      trafficSystem ! ChangeToGreenCommand
   }
 
 }
