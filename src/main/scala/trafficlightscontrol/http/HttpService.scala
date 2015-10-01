@@ -15,6 +15,7 @@ import akka.http.scaladsl._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
+import akka.http.scaladsl.model.ws._
 import StatusCodes._
 import Directives._
 
@@ -74,9 +75,9 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
             }
           }
       } ~
-        pathPrefix("ws" / "lights") {
-          get { complete("ws") }
-        } ~
+        /*pathPrefix("ws" / "lights") {
+          get { handleWebsocketMessages(websocketService) }
+        } ~*/
         pathPrefix("") {
           getFromResourceDirectory("")
         } ~

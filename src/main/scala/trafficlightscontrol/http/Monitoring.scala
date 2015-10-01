@@ -1,5 +1,7 @@
 package trafficlightscontrol.http
 
+import scala.annotation.tailrec
+
 import akka.actor.Actor
 import akka.actor.ActorRef
 import scala.concurrent.duration._
@@ -11,10 +13,11 @@ import akka.actor.ActorLogging
 import trafficlightscontrol.model._
 import trafficlightscontrol.actors._
 
-class MonitoringActor extends Actor /*with WebSocketProducerActor*/ with ActorLogging {
+import akka.stream.actor._
+
+class MonitoringActor extends Actor with ActorLogging {
 
   var report: Map[String, LightState] = Map()
-  val listeners: scala.collection.mutable.Set[ActorRef] = scala.collection.mutable.Set()
 
   def receive = {
     case GetReportQuery =>
@@ -28,18 +31,32 @@ class MonitoringActor extends Actor /*with WebSocketProducerActor*/ with ActorLo
 
     case event @ StatusEvent(id, status) =>
       report += (id -> status)
-      val msg = s"$id:${status.id}"
-    //listeners foreach (l => push(l, msg))
 
-    /*case ws.Open(_, origin) =>
-      listeners add origin
-      context watch origin*/
-
-    case Terminated(origin) =>
-      listeners remove origin
   }
 
   context.system.eventStream.subscribe(self, classOf[StatusEvent])
+
 }
 
 case class Monitoring(actor: ActorRef)
+
+class StatusPublisherActor extends Actor with ActorPublisher[StatusEvent] {
+
+  import akka.stream.actor.ActorPublisherMessage._
+
+  var eventOpt: Option[StatusEvent] = None
+
+  def receive = {
+    case event @ StatusEvent(_, status) =>
+      if (isActive & totalDemand > 0) {
+        onNext(event)
+        eventOpt = None
+      }
+      else eventOpt = Some(event)
+    case Request(n) =>
+      if (isActive && n > 0) eventOpt foreach onNext
+    case Cancel =>
+      context.stop(self)
+  }
+
+}
