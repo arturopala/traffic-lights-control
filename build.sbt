@@ -12,7 +12,7 @@ resolvers += Resolver.mavenLocal
 
 scalaVersion := "2.11.7"
 
-val akkaVersion = "2.4.0-RC3"
+val akkaVersion = "2.4.0"
 val akkaHttpVersion = "1.0"
 
 libraryDependencies ++= Seq(
