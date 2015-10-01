@@ -33,8 +33,8 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
 
   import JsonProtocol._
 
-  "HttpService" should "return a json report for GET /status" in {
-    Get("/status") ~> module.httpService.route ~> check {
+  "HttpService" should "return a json report for GET /lights" in {
+    Get("/lights") ~> module.httpService.route ~> check {
       status should be(OK)
       contentType should be(ContentTypes.`application/json`)
       val body = responseAs[String].parseJson.convertTo[ReportEvent]
@@ -58,17 +58,17 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
     }
   }
 
-  it should "return 404 for GET /status/foo" in {
-    Get("/status/foo") ~> module.httpService.route ~> check {
+  it should "return 404 for GET /lights/foo" in {
+    Get("/lights/foo") ~> module.httpService.route ~> check {
       status should be(NotFound)
       responseAs[String] should be("""Light #foo not found!""")
     }
   }
 
-  it should "return status for GET /status/l1" in {
+  it should "return status for GET /lights/l1" in {
     val lightStatus = StatusEvent("l1", GreenLight)
     module.monitoring.actor ! lightStatus
-    Get("/status/l1") ~> module.httpService.route ~> check {
+    Get("/lights/l1") ~> module.httpService.route ~> check {
       status should be(OK)
       responseAs[String].parseJson.convertTo[StatusEvent] should be(lightStatus)
     }

@@ -74,6 +74,9 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
             }
           }
       } ~
+        pathPrefix("ws" / "lights") {
+          get { complete("ws") }
+        } ~
         pathPrefix("") {
           getFromResourceDirectory("")
         } ~
