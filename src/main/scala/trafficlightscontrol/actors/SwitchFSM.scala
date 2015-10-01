@@ -159,6 +159,4 @@ class SwitchFSM(
     member ! RegisterRecipientCommand(self)
   }
 
-  log.info(s"$id: $self")
-
 }

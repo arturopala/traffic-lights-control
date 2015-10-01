@@ -15,25 +15,7 @@ import trafficlightscontrol.model._
 
 trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
 
-  private val config = """
-      akka {
-        loglevel = "DEBUG"
-        stdout-loglevel = "DEBUG"
-        log-dead-letters-during-shutdown = on
-        log-dead-letters = 5
-        actor {
-          debug {
-            receive = off
-            autoreceive = off
-            lifecycle = off
-          }
-        }
-        test {
-          timefactor = 1
-        }
-      }
-  """
-  private val actorSystemConfig = ConfigFactory.parseString(config).withFallback(ConfigFactory.load)
+  private val actorSystemConfig = ConfigFactory.load
   val actorSystem = ActorSystem("test", actorSystemConfig)
   val checkTimeout: FiniteDuration = 30.seconds
 

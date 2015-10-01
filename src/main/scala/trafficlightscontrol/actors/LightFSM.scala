@@ -65,6 +65,7 @@ class LightFSM(
   onTransition {
     case oldState -> newState =>
       context.system.eventStream.publish(StatusEvent(id, newState))
+      log.info(s"$id: $newState")
   }
 
   onTransition {
@@ -95,7 +96,5 @@ class LightFSM(
   }
 
   initialize()
-
-  context.system.eventStream.publish(StatusEvent(id, stateName))
 
 }
