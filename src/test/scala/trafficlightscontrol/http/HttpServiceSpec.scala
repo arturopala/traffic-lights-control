@@ -35,8 +35,8 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
 
   "HttpService" should "return a json report for GET /status" in {
     Get("/status") ~> module.httpService.route ~> check {
-      status === OK
-      contentType === ContentTypes.`application/json`
+      status should be(OK)
+      contentType should be(ContentTypes.`application/json`)
       val body = responseAs[String].parseJson.convertTo[ReportEvent]
       body.report should not be null
     }
@@ -44,17 +44,33 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
 
   it should "return index.html page for GET /" in {
     Get("/") ~> module.httpService.route ~> check {
-      status === OK
-      contentType === ContentType(MediaTypes.`text/html`)
+      status should be(OK)
+      contentType should be(ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`))
       responseAs[String] should include("""<title>Traffic Lights Control</title>""")
     }
   }
 
   it should "return traffic.css file for GET /traffic.css" in {
     Get("/traffic.css") ~> module.httpService.route ~> check {
-      status === OK
-      contentType === ContentType(MediaTypes.`text/css`)
+      status should be(OK)
+      contentType should be(ContentType(MediaTypes.`text/css`, HttpCharsets.`UTF-8`))
       responseAs[String] should include("""margin: 0 auto;""")
+    }
+  }
+
+  it should "return 404 for GET /status/foo" in {
+    Get("/status/foo") ~> module.httpService.route ~> check {
+      status should be(NotFound)
+      responseAs[String] should be("""Light #foo not found!""")
+    }
+  }
+
+  it should "return status for GET /status/l1" in {
+    val lightStatus = StatusEvent("l1", GreenLight)
+    module.monitoring.actor ! lightStatus
+    Get("/status/l1") ~> module.httpService.route ~> check {
+      status should be(OK)
+      responseAs[String].parseJson.convertTo[StatusEvent] should be(lightStatus)
     }
   }
 

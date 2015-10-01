@@ -20,6 +20,12 @@ class MonitoringActor extends Actor /*with WebSocketProducerActor*/ with ActorLo
     case GetReportQuery =>
       sender ! ReportEvent(report)
 
+    case GetStatusQuery(id) =>
+      report.get(id) match {
+        case Some(state) => sender ! Some(StatusEvent(id, state))
+        case None        => sender ! None
+      }
+
     case event @ StatusEvent(id, status) =>
       report += (id -> status)
       val msg = s"$id:${status.id}"

@@ -22,4 +22,5 @@ object JsonProtocol extends DefaultJsonProtocol {
   }
 
   implicit val ReportEventJsonFormat = jsonFormat1(ReportEvent.apply)
+  implicit val StatusEventJsonFormat = jsonFormat2(StatusEvent.apply)
 }

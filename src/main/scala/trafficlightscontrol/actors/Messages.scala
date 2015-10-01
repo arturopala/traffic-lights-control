@@ -20,6 +20,7 @@ case object ChangedToRedEvent extends Event
 case object ChangedToGreenEvent extends Event
 
 case object GetStatusQuery extends Query
+case class GetStatusQuery(id: String) extends Query
 case class StatusEvent(id: String, state: LightState) extends Event
 
 case object GetReportQuery extends Query

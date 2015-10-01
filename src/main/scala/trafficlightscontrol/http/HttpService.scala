@@ -63,12 +63,16 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
 
   val route = handleRejections(rejectionHandler) {
     handleExceptions(exceptionHandler) {
-      path("status") {
-        get {
-          complete {
-            monitoring.actor ? GetReportQuery map (_.asInstanceOf[ReportEvent])
+      pathPrefix("lights") {
+        pathEnd {
+          get { complete { monitoring.actor ? GetReportQuery map (_.asInstanceOf[ReportEvent]) } }
+        } ~
+          path("\\w{1,128}".r) { id =>
+            onSuccess(monitoring.actor ? GetStatusQuery(id) map (_.asInstanceOf[Option[StatusEvent]])) {
+              case Some(status) => complete(status)
+              case None         => complete(NotFound, s"Light #$id not found!")
+            }
           }
-        }
       } ~
         pathPrefix("") {
           getFromResourceDirectory("")
