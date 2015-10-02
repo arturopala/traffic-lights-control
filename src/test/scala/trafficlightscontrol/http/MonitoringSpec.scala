@@ -115,9 +115,9 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r3 should be(Some(StatusEvent("1", GreenLight)))
   }
 
-  it must "receive Monitoring.Publish and send back Publisher[StatusEvent]" in new MonitoringTest {
+  it must "receive Monitoring.PublisherQuery and send back Publisher[StatusEvent]" in new MonitoringTest {
     info("step 1: request publisher")
-    tested ! Monitoring.Publish(_ => true)
+    tested ! Monitoring.PublisherQuery(_ => true)
     val publisher = expectMsgAnyClassOf(classOf[Publisher[StatusEvent]])
     info("step 2: subscribe for events")
     val subscriber = new TestSubscriber[StatusEvent]
@@ -161,12 +161,12 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     expectNoMsg
   }
 
-  it must "receive multiple Monitoring.Publish and send back separate publishers" in new MonitoringTest {
+  it must "receive multiple Monitoring.PublisherQuery and send back separate publishers" in new MonitoringTest {
     info("step 1: request first publisher")
-    tested ! Monitoring.Publish(_ => true)
+    tested ! Monitoring.PublisherQuery(_ => true)
     val p1 = expectMsgType[Publisher[StatusEvent]]
     info("step 2: request second publisher")
-    tested ! Monitoring.Publish(_ => true)
+    tested ! Monitoring.PublisherQuery(_ => true)
     val p2 = expectMsgType[Publisher[StatusEvent]]
     p1 should not be (p2)
     info("step 3: register subscribers")
@@ -192,9 +192,9 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     s1.probe.expectNoMsg
   }
 
-  it must "receive Monitoring.Publish and send events according to predicate" in new MonitoringTest {
+  it must "receive Monitoring.PublisherQuery and send events according to predicate" in new MonitoringTest {
     info("step 1: request publisher and register subscriber")
-    tested ! Monitoring.Publish(id => id.contains("2"))
+    tested ! Monitoring.PublisherQuery(id => id.contains("2"))
     val p1 = expectMsgType[Publisher[StatusEvent]]
     val s1 = new TestSubscriber[StatusEvent]
     p1.subscribe(s1)
