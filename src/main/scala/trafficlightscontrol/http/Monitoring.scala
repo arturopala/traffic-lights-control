@@ -9,6 +9,7 @@ import scala.concurrent.ExecutionContext
 import akka.actor.ActorPath
 import akka.actor.Terminated
 import akka.actor.ActorLogging
+import akka.actor.Props
 
 import trafficlightscontrol.model._
 import trafficlightscontrol.actors._
@@ -17,9 +18,15 @@ import akka.stream.actor._
 
 class MonitoringActor extends Actor with ActorLogging {
 
-  var report: Map[String, LightState] = Map()
+  var report: Map[Id, LightState] = Map()
+  var publishers: Set[(Id => Boolean, ActorRef)] = Set.empty
 
   def receive = {
+
+    case event @ StatusEvent(id, status) =>
+      report += (id -> status)
+      sendToPublishers(event)
+
     case GetReportQuery =>
       sender ! ReportEvent(report)
 
@@ -29,16 +36,29 @@ class MonitoringActor extends Actor with ActorLogging {
         case None        => sender ! None
       }
 
-    case event @ StatusEvent(id, status) =>
-      report += (id -> status)
+    case Monitoring.Publish(predicate) =>
+      val publisherActor = context.actorOf(StatusPublisherActor.props)
+      context.watch(publisherActor)
+      publishers = publishers + (predicate -> publisherActor)
+      val publisher = ActorPublisher(publisherActor)
+      sender ! publisher
 
+    case Terminated(publisherActor) =>
+      publishers = publishers filterNot { case (_, ref) => ref == publisherActor }
+  }
+
+  def sendToPublishers(event: StatusEvent): Unit = {
+    for ((p, ref) <- publishers) if (p(event.id)) ref ! event
   }
 
   context.system.eventStream.subscribe(self, classOf[StatusEvent])
-
 }
 
 case class Monitoring(actor: ActorRef)
+
+object Monitoring {
+  case class Publish(p: Id => Boolean) extends Command
+}
 
 class StatusPublisherActor extends Actor with ActorPublisher[StatusEvent] {
 
@@ -47,7 +67,7 @@ class StatusPublisherActor extends Actor with ActorPublisher[StatusEvent] {
   var eventOpt: Option[StatusEvent] = None
 
   def receive = {
-    case event @ StatusEvent(_, status) =>
+    case event: StatusEvent =>
       if (isActive & totalDemand > 0) {
         onNext(event)
         eventOpt = None
@@ -59,4 +79,8 @@ class StatusPublisherActor extends Actor with ActorPublisher[StatusEvent] {
       context.stop(self)
   }
 
+}
+
+object StatusPublisherActor {
+  val props: Props = Props(classOf[StatusPublisherActor])
 }
