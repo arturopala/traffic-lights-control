@@ -5,12 +5,25 @@
 
 ## Goal
 
-Goal of the project is to implement traffic lights control system modelled using Akka actors.
+Traffic lights control system modelled using Akka Actors.
 
 ## Technologies
 
 -   Scala
--   Akka
+-   Akka Actors - 2.4.x
+-   Akka HTTP - 1.0.x
 -   WebSockets
 
+## Run
 
+```sbt run```
+
+Http server runs at <http://localhost:8080/>
+
+## API
+
+-   GET /api/lights : returns current system status as JSON
+-   GET /api/lights/{id} : returns state of light for id = {id}
+
+-   GET /ws/lights : live stream of all light state events
+-   GET /ws/lights/{id} : live stream of light state events for id = {id}
