@@ -11,6 +11,8 @@ import akka.testkit.TestKitBase
 import org.scalatest.BeforeAndAfterAll
 import scala.concurrent.duration._
 
+import org.reactivestreams.{ Publisher, Subscriber, Subscription }
+
 import trafficlightscontrol.model._
 
 trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
@@ -24,6 +26,14 @@ trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
     val eventListener = TestProbe()
     actorSystem.eventStream.subscribe(eventListener.ref, classOf[StatusEvent])
 
+  }
+
+  class TestSubscriber[T](implicit val system: ActorSystem) extends Subscriber[T] {
+    val probe = TestProbe()
+    def onComplete(): Unit = { probe.ref ! "Completed" }
+    def onError(error: Throwable): Unit = { probe.ref ! error }
+    def onNext(element: T): Unit = { probe.ref ! element }
+    def onSubscribe(subscription: Subscription): Unit = { probe.ref ! subscription }
   }
 
   override def afterAll() {

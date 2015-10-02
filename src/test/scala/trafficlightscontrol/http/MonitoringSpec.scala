@@ -115,14 +115,6 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r3 should be(Some(StatusEvent("1", GreenLight)))
   }
 
-  class TestSubscriber[T](implicit val system: ActorSystem) extends Subscriber[T] {
-    val probe = TestProbe()
-    def onComplete(): Unit = { probe.ref ! "Completed" }
-    def onError(error: Throwable): Unit = { probe.ref ! error }
-    def onNext(element: T): Unit = { probe.ref ! element }
-    def onSubscribe(subscription: Subscription): Unit = { probe.ref ! subscription }
-  }
-
   it must "receive Monitoring.Publish and send back Publisher[StatusEvent]" in new MonitoringTest {
     info("step 1: request publisher")
     tested ! Monitoring.Publish(_ => true)
@@ -198,6 +190,29 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     tested ! e2
     s2.probe.expectMsgType[StatusEvent] shouldBe e2
     s1.probe.expectNoMsg
+  }
+
+  it must "receive Monitoring.Publish and send events according to predicate" in new MonitoringTest {
+    info("step 1: request publisher and register subscriber")
+    tested ! Monitoring.Publish(id => id.contains("2"))
+    val p1 = expectMsgType[Publisher[StatusEvent]]
+    val s1 = new TestSubscriber[StatusEvent]
+    p1.subscribe(s1)
+    val subs1 = s1.probe.expectMsgType[Subscription]
+    subs1.request(1000)
+    info("step 2: expect only events having id matching predicate")
+    tested ! StatusEvent("1", RedLight)
+    s1.probe.expectNoMsg
+    tested ! StatusEvent("2", GreenLight)
+    s1.probe.expectMsgType[StatusEvent] should be(StatusEvent("2", GreenLight))
+    tested ! StatusEvent("12", RedLight)
+    s1.probe.expectMsgType[StatusEvent] should be(StatusEvent("12", RedLight))
+    tested ! StatusEvent("3", RedLight)
+    s1.probe.expectNoMsg
+    info("step 3: cancel subscription")
+    subs1.cancel()
+    Thread.sleep(200)
+    expectNoMsg
   }
 
 }
