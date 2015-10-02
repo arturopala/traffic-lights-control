@@ -33,15 +33,6 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
 
   import JsonProtocol._
 
-  "HttpService" should "return a json report for GET /lights" in {
-    Get("/lights") ~> module.httpService.route ~> check {
-      status should be(OK)
-      contentType should be(ContentTypes.`application/json`)
-      val body = responseAs[String].parseJson.convertTo[ReportEvent]
-      body.report should not be null
-    }
-  }
-
   it should "return index.html page for GET /" in {
     Get("/") ~> module.httpService.route ~> check {
       status should be(OK)
@@ -58,8 +49,17 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
     }
   }
 
+  "HttpService" should "return a json report for GET /lights" in {
+    Get("/api/lights") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentTypes.`application/json`)
+      val body = responseAs[String].parseJson.convertTo[ReportEvent]
+      body.report should not be null
+    }
+  }
+
   it should "return 404 for GET /lights/foo" in {
-    Get("/lights/foo") ~> module.httpService.route ~> check {
+    Get("/api/lights/foo") ~> module.httpService.route ~> check {
       status should be(NotFound)
       responseAs[String] should be("""Light #foo not found!""")
     }
@@ -68,10 +68,32 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
   it should "return status for GET /lights/l1" in {
     val lightStatus = StatusEvent("l1", GreenLight)
     module.monitoring.actor ! lightStatus
-    Get("/lights/l1") ~> module.httpService.route ~> check {
+    Get("/api/lights/l1") ~> module.httpService.route ~> check {
       status should be(OK)
       responseAs[String].parseJson.convertTo[StatusEvent] should be(lightStatus)
     }
   }
+
+  /*import akka.http.scaladsl.model.ws._
+  import akka.http.scaladsl.testkit.WSProbe
+
+  it should "handle /ws/lights requests" in {
+    val wsClient = WSProbe()
+    WS("/ws/lights", wsClient.flow) ~> module.httpService.route ~>
+      check {
+        isWebsocketUpgrade shouldEqual true
+        wsClient.sendMessage("Peter")
+          wsClient.expectMessage("Hello Peter!")
+
+          wsClient.sendMessage(BinaryMessage(ByteString("abcdef")))
+          // wsClient.expectNoMessage() // will be checked implicitly by next expectation
+
+          wsClient.sendMessage("John")
+          wsClient.expectMessage("Hello John!")
+
+        wsClient.sendCompletion()
+        wsClient.expectCompletion()
+      }
+  }*/
 
 }

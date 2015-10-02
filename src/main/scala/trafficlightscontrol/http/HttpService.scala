@@ -14,8 +14,8 @@ import akka.stream.scaladsl._
 import akka.http.scaladsl._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server._
 import akka.http.scaladsl.model.ws._
+import akka.http.scaladsl.server._
 import StatusCodes._
 import Directives._
 
@@ -23,9 +23,14 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 import DefaultJsonProtocol._
 
+import org.reactivestreams.Publisher
+
 import trafficlightscontrol.actors._
 import trafficlightscontrol.model._
 
+/**
+ * Http service exposing REST and WS API.
+ */
 class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, materializer: ActorMaterializer) extends SprayJsonSupport {
 
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -62,28 +67,73 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
       .result()
   }
 
+  def getReport: Future[ReportEvent] = {
+    monitoring.actor ? GetReportQuery map (_.asInstanceOf[ReportEvent])
+  }
+
+  def getStatusOpt(id: Id): Future[Option[StatusEvent]] = {
+    monitoring.actor ? GetStatusQuery(id) map (_.asInstanceOf[Option[StatusEvent]])
+  }
+
+  def getStatusPublisher(predicate: Id => Boolean): Future[Publisher[StatusEvent]] = {
+    monitoring.actor ? GetPublisherQuery(predicate) map (_.asInstanceOf[Publisher[StatusEvent]])
+  }
+
+  def getStatusPublisher: Future[Publisher[StatusEvent]] = {
+    monitoring.actor ? GetPublisherQuery(_ => true) map (_.asInstanceOf[Publisher[StatusEvent]])
+  }
+
+  def handleWebsocket: Directive1[UpgradeToWebsocket] =
+    optionalHeaderValueByType[UpgradeToWebsocket](()).flatMap {
+      case Some(upgrade) ⇒ provide(upgrade)
+      case None          ⇒ reject(ExpectedWebsocketRequestRejection)
+    }
+
+  def publisherAsMessageSource[A](p: Publisher[A])(f: A => String): Source[TextMessage, Unit] = Source(p).map(e => TextMessage.Strict(f(e)))
+
+  val idPattern = "\\w{1,128}".r
+  val statusEventToString: StatusEvent => String = e => s"${e.id}:${e.state.id}"
+  val lightStateToString: StatusEvent => String = e => e.state.id
+  val forAllIds: Id => Boolean = _ => true
+  def onlyFor(id: Id): Id => Boolean = x => x == id
+
   val route = handleRejections(rejectionHandler) {
     handleExceptions(exceptionHandler) {
-      pathPrefix("lights") {
-        pathEnd {
-          get { complete { monitoring.actor ? GetReportQuery map (_.asInstanceOf[ReportEvent]) } }
-        } ~
-          path("\\w{1,128}".r) { id =>
-            onSuccess(monitoring.actor ? GetStatusQuery(id) map (_.asInstanceOf[Option[StatusEvent]])) {
-              case Some(status) => complete(status)
-              case None         => complete(NotFound, s"Light #$id not found!")
+      get {
+        pathPrefix("api" / "lights") {
+          pathEnd {
+            complete(getReport)
+          } ~
+            path(idPattern) { id =>
+              onSuccess(getStatusOpt(id)) {
+                case Some(status) => complete(status)
+                case None         => complete(NotFound, s"Light #$id not found!")
+              }
             }
-          }
-      } ~
-        /*pathPrefix("ws" / "lights") {
-          get { handleWebsocketMessages(websocketService) }
-        } ~*/
-        pathPrefix("") {
-          getFromResourceDirectory("")
         } ~
-        path("") {
-          getFromResource("index.html")
-        }
+          pathPrefix("ws" / "lights") {
+            pathEnd {
+              handleWebsocket { websocket =>
+                onSuccess(getStatusPublisher(forAllIds)) { p =>
+                  complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString), None))
+                }
+              }
+            } ~
+              path(idPattern) { id =>
+                handleWebsocket { websocket =>
+                  onSuccess(getStatusPublisher(onlyFor(id))) { p =>
+                    complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(lightStateToString), None))
+                  }
+                }
+              }
+          } ~
+          pathPrefix("") {
+            getFromResourceDirectory("")
+          } ~
+          path("") {
+            getFromResource("index.html")
+          }
+      }
     }
   }
 

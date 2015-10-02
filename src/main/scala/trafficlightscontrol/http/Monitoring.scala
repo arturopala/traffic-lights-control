@@ -17,12 +17,11 @@ import trafficlightscontrol.actors._
 import akka.stream.actor._
 
 /**
- * Actor responsible of listening on EventStream for StatusEvents.
- * <br>
+ * Actor responsible of listening on EventStream for StatusEvents. <br>
  * Keeps current system status and spreads it responding on:
  * <li>   GetReportQuery => ReportEvent
  * <li>   GetStatusQuery(id: Id) => StatusEvent
- * <li>   Monitoring.PublisherQuery(predicate: Id => Boolean) => Publisher[StatusEvent]
+ * <li>   GetPublisherQuery(predicate: Id => Boolean) => Publisher[StatusEvent]
  */
 class MonitoringActor extends Actor with ActorLogging {
 
@@ -44,7 +43,7 @@ class MonitoringActor extends Actor with ActorLogging {
         case None        => sender ! None
       }
 
-    case Monitoring.PublisherQuery(predicate) =>
+    case GetPublisherQuery(predicate) =>
       val publisherActor = context.actorOf(StatusPublisherActor.props)
       context.watch(publisherActor)
       publishers = publishers + (predicate -> publisherActor)
@@ -63,10 +62,6 @@ class MonitoringActor extends Actor with ActorLogging {
 }
 
 case class Monitoring(actor: ActorRef)
-
-object Monitoring {
-  case class PublisherQuery(p: Id => Boolean) extends Command
-}
 
 class StatusPublisherActor extends Actor with ActorPublisher[StatusEvent] {
 

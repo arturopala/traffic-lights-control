@@ -26,5 +26,7 @@ case class StatusEvent(id: Id, state: LightState) extends Event
 case object GetReportQuery extends Query
 case class ReportEvent(report: Map[Id, LightState]) extends Event
 
+case class GetPublisherQuery(p: Id => Boolean) extends Command
+
 case object TimeoutEvent extends Event
 case object TickCommand extends Command
