@@ -13,6 +13,22 @@ Traffic lights control system modelled using Akka Actors.
 -   Akka Actors - 2.4.x
 -   Akka HTTP - 1.0.x
 -   WebSockets
+-   React.js
+
+## Build
+
+Project uses SBT for backend stuff and Webpack for front-end.
+
+```
+npm install
+sbt test:compile
+```
+
+## Test
+
+```
+sbt test
+```
 
 ## Run
 
