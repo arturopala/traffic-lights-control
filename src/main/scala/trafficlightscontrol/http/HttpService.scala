@@ -128,10 +128,10 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
               }
           } ~
           pathPrefix("") {
-            getFromResourceDirectory("")
+            getFromResourceDirectory("public/")
           } ~
           path("") {
-            getFromResource("index.html")
+            getFromResource("public/index.html")
           }
       }
     }

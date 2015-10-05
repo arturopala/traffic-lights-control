@@ -10,3 +10,9 @@ project/target/
 *.sublime-project
 *.sublime-workspace
 *.class
+
+# added by GitSavvy
+node_modules/
+
+# added by GitSavvy
+/src/main/resources/public/app.js
