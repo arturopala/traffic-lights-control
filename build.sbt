@@ -2,7 +2,7 @@ import io.gatling.sbt.GatlingPlugin
 import io.gatling.sbt.GatlingPlugin._
 import scalariform.formatter.preferences._
 
-organization := "hackaton"
+organization := "me.arturopala"
 
 name := "traffic-lights-control"
 
@@ -48,7 +48,7 @@ mainClass in (Compile, run) := Some("trafficlightscontrol.Boot")
 
 lazy val loadtester = (project in file("loadtester")).enablePlugins(GatlingPlugin)
 
-lazy val root = (project in file(".")).enablePlugins(SbtTwirl)
+lazy val root = (project in file("."))
 
 fork := true
 
