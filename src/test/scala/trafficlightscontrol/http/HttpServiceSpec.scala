@@ -41,13 +41,13 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
     }
   }
 
-  it should "return traffic.css file for GET /traffic.css" in {
+  /*it should "return traffic.css file for GET /traffic.css" in {
     Get("/traffic.css") ~> module.httpService.route ~> check {
       status should be(OK)
       contentType should be(ContentType(MediaTypes.`text/css`, HttpCharsets.`UTF-8`))
       responseAs[String] should include("""margin: 0 auto;""")
     }
-  }
+  }*/
 
   "HttpService" should "return a json report for GET /lights" in {
     Get("/api/lights") ~> module.httpService.route ~> check {
