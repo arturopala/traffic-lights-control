@@ -2,7 +2,7 @@
 import "babel-core/polyfill";
 
 import React from 'react';
-import App from './jsx/app.jsx';
+import App from './app.jsx';
 
 main();
 
