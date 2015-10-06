@@ -1,11 +1,17 @@
 import React from 'react'
 import Actions from '../actions.js'
 import Store from '../store.js'
+import Light from './light.jsx'
 
 export default class Dashboard extends React.Component {
 
+  constructor(props) {
+    super(props)
+    this.state = {}
+  }
+
   componentWillMount() {
-    this.unsubscribe = Store.listen(this.onStatusUpdate)
+    this.unsubscribe = Store.listen(this.onStatusUpdate.bind(this))
     Actions.WatchStatus()
   }
 
@@ -14,14 +20,20 @@ export default class Dashboard extends React.Component {
     this.unsubscribe()
   }
 
-  onStatusUpdate(data){
-	console.log(data)
+  onStatusUpdate({lightId, lightState}){
+  	this.setState({
+		[lightId]: lightState
+  	})
   }
 
   render() {
     return (
     	<div className="dashboard">
-    		Dashboard
+    	{	
+    		Object.getOwnPropertyNames(this.state).map((lightId) => {
+    			return <Light key={lightId} lightId={lightId} lightState={this.state[lightId]}/>;
+			})
+    	}
     	</div>
 	);
   }

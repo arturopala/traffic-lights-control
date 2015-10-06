@@ -15,8 +15,8 @@ const Store = Reflux.createStore({
     init: function() {},
 
 	handleLightStatusUpdate: function (message) {
-	  	let [ id, state ] = message.split(':')
-      	this.trigger({ id, state })
+	  	let [ lightId, lightState ] = message.split(':')
+      	this.trigger({ lightId, lightState })
 	},
 
     onWatchStatus: function() {
