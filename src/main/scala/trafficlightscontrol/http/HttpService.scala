@@ -19,6 +19,8 @@ import akka.http.scaladsl.server._
 import StatusCodes._
 import Directives._
 
+import akka.event.Logging
+
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
 import DefaultJsonProtocol._
@@ -99,40 +101,43 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
 
   val route = handleRejections(rejectionHandler) {
     handleExceptions(exceptionHandler) {
-      get {
-        pathPrefix("api" / "lights") {
-          pathEnd {
-            complete(getReport)
-          } ~
-            path(idPattern) { id =>
-              onSuccess(getStatusOpt(id)) {
-                case Some(status) => complete(status)
-                case None         => complete(NotFound, s"Light #$id not found!")
-              }
-            }
-        } ~
-          pathPrefix("ws" / "lights") {
+      logRequestResult("http", Logging.InfoLevel) {
+        get {
+          pathPrefix("api" / "lights") {
             pathEnd {
-              handleWebsocket { websocket =>
-                onSuccess(getStatusPublisher(forAllIds)) { p =>
-                  complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString), None))
-                }
-              }
+              complete(getReport)
             } ~
               path(idPattern) { id =>
-                handleWebsocket { websocket =>
-                  onSuccess(getStatusPublisher(onlyFor(id))) { p =>
-                    complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(lightStateToString), None))
-                  }
+                onSuccess(getStatusOpt(id)) {
+                  case Some(status) => complete(status)
+                  case None         => complete(NotFound, s"Light #$id not found!")
                 }
               }
           } ~
-          pathPrefix("") {
+            pathPrefix("ws" / "lights") {
+              pathEnd {
+                handleWebsocket { websocket =>
+                  onSuccess(getStatusPublisher(forAllIds)) { p =>
+                    complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString), None))
+                  }
+                }
+              } ~
+                path(idPattern) { id =>
+                  handleWebsocket { websocket =>
+                    onSuccess(getStatusPublisher(onlyFor(id))) { p =>
+                      complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(lightStateToString), None))
+                    }
+                  }
+                }
+            } ~
+            pathSuffix("app.js") {
+              getFromResource("public/app.js")
+            } ~
+            (pathSingleSlash | path("") | pathPrefix("lights")) {
+              getFromResource("public/index.html")
+            } ~
             getFromResourceDirectory("public/")
-          } ~
-          path("") {
-            getFromResource("public/index.html")
-          }
+        }
       }
     }
   }

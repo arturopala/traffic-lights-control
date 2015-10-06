@@ -27,5 +27,10 @@ module.exports = {
       { test: /\.less$/, loader: 'style!css!less'}
     ],
     noParse: [pathToReact]
+  },
+
+  devServer: {
+    port: 8081,
+    historyApiFallback: true
   }
 }
