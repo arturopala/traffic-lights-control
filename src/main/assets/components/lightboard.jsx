@@ -1,34 +1,37 @@
 import React from 'react'
 import { Link } from 'react-router'
-import { connect } from 'react-redux'
+import WS , { WebSocketListenerMixin } from '../websocket.js'
+import merge from 'deepmerge'
+import mixin from '../mixin.js'
 
 import Light from './light.jsx'
 
-class LightBoard extends React.Component {
+const initialState = {
+  lightId: undefined,
+  lightState: undefined,
+  socket: undefined
+}
 
-  constructor(){
-  	super()
-  	this.state = {recent:[]}
+class LightBoard extends mixin(React.Component, WebSocketListenerMixin) {
+
+  constructor() {
+    super()
+    this.state = initialState
   }
 
-  componentWillReceiveProps(nextProps){
-  	const currLightId = this.props.params.lightId || this.props.lightId
-  	const newLightId = nextProps.params.lightId || nextProps.lightId
-  	const { lightStateMap } = this.props
-  	if(currLightId !== newLightId){
-  		this.setState({lightState:undefined})
-  	}
-  	let newLightState = lightStateMap[newLightId]
-  	if(newLightState && newLightState!==this.state.lightState){
-  		this.state.recent.push(newLightState)
-  		this.setState({lightState:newLightState})
-  	}
+  webSocketPath(){
+    const lightId = this.props.params.lightId || this.props.lightId
+    if(lightId){
+      return `/ws/lights/${lightId}`
+    } else {
+      throw new Error("Some lightId expected")
+    }
   }
 
-  shouldComponentUpdate(nextProps, nextState){
-  	const currLightId = this.props.params.lightId || this.props.lightId
-  	const newLightId = nextProps.params.lightId || nextProps.lightId
-  	return (currLightId !== newLightId) || (nextState.lightState !== this.state.lightState)
+  receiveMessage(message){
+    if(message){
+      this.setState({ lightState: message})
+    }
   }
 
   render() {
@@ -45,10 +48,4 @@ class LightBoard extends React.Component {
   }
 }
 
-const selector = (state) => {
-	return {
-		lightStateMap: state.lightStateMap
-	}
-}
-
-export default connect(selector)(LightBoard)
+export default LightBoard

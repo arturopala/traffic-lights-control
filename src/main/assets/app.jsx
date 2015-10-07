@@ -9,8 +9,6 @@ import LightBoard from './components/lightboard.jsx'
 import Welcome from './components/welcome.jsx'
 
 import Store from './store.js'
-import WS from './websocket.js'
-import { updateLightStatus } from './actions.js'
 
 const routes = () => {
 	return (
@@ -25,26 +23,6 @@ const routes = () => {
 }
 
 class App extends React.Component {
-
-  constructor() {
-  	super()
-  	this.socket = undefined
-  }
-
-  componentWillMount(){
-  	this.socket = WS('/ws/lights', (message) => {
-		let [lightId, lightState] = message.split(':')
-		if(lightId && lightState){
-			Store.dispatch(updateLightStatus(lightId, lightState))
-		}
-	})
-  }
-
-  componentDidUnmount(){
-  	if(this.socket) this.socket.close()
-    this.socket = undefined
-  }
-
   render() {
     return (
     	<Provider store={Store}>{routes}</Provider>
