@@ -1,5 +1,10 @@
-import Reflux from 'reflux'
+export const LightStatusUpdate = 'LightStatusUpdate'
 
-const Actions = Reflux.createActions(['WatchStatus','StopStatus'])
-
-export default Actions;
+export function updateLightStatus(lightId,lightState){ 
+	return {
+		type: LightStatusUpdate, 
+		lightStateMap: {
+			[lightId]: lightState
+		}
+	}
+}

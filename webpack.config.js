@@ -1,18 +1,12 @@
 var webpack = require('webpack');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 var path = require('path');
 var node_modules = path.resolve(__dirname, 'node_modules');
-var pathToReact = path.resolve(node_modules, 'react/dist/react.js');
 
 module.exports = {
   
-  entry: "./src/main/assets/main.js",
-
-  resolve: {
-      alias: {
-        'react': pathToReact
-      }
-  },
+  entry: "./src/main/assets/index.js",
 
   output: {
     path: __dirname + "/src/main/resources/public/",
@@ -20,14 +14,22 @@ module.exports = {
     publicPath: "/"
   },
 
+  plugins: [
+    new ExtractTextPlugin('style.css', { allChunks: true })
+  ],
+
   module: {
     loaders: [
       { test: /\.jsx?$/, exclude: node_modules, loader: 'babel' },
-      { test: /\.css$/, loader: 'style!css'},
-      { test: /\.less$/, loader: 'style!css!less'}
-    ],
-    noParse: [pathToReact]
+      { test: /\.css$/, loader: ExtractTextPlugin.extract('style-loader', 'css-loader?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader') }
+    ]
   },
+
+  // Additional plugins for CSS post processing using postcss-loader
+  postcss: [
+    require('autoprefixer'), // Automatically include vendor prefixes
+    require('postcss-nested') // Enable nested rules, like in Sass
+  ],
 
   devServer: {
     port: 8081,

@@ -13,7 +13,7 @@ Traffic lights control system modelled using Akka Actors.
 -   Akka Actors - 2.4.x
 -   Akka HTTP - 1.0.x
 -   WebSockets
--   React.js
+-   React.js + Redux
 
 ## Build
 

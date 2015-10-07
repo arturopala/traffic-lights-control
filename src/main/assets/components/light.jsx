@@ -1,11 +1,12 @@
 import React from 'react';
+import './light.css'
 
 export default class Light extends React.Component {
   render() {
     return (
-    	<div className="light">
+    	<span className='light'>
     		Light # {this.props.lightId} is {this.props.lightState}
-    	</div>
+    	</span>
 	);
   }
 }

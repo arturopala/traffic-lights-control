@@ -1,32 +1,21 @@
-import Reflux from 'reflux'
-import Actions from './actions.js'
-import listenToWebsocket from './websocket.js'
+import Redux from 'redux'
+import merge from 'deepmerge'
+import { combineReducers, createStore } from 'redux';
+import { LightStatusUpdate } from './actions.js'
 
-const Store = Reflux.createStore({
+const initialState = {
+	lightStateMap: {}
+}
 
-    listenables: Actions,
+const reducer = function(state = initialState, action) {
+  switch (action.type) {
+	  case LightStatusUpdate:
+	    return merge(state, {lightStateMap: action.lightStateMap});
+	  default:
+	    return state;
+  }
+}
 
-    _state: {},
-
-    getInitialState: function(){
-		return this._state
-	},
-
-    init: function() {},
-
-	handleLightStatusUpdate: function (message) {
-	  	let [ lightId, lightState ] = message.split(':')
-      	this.trigger({ lightId, lightState })
-	},
-
-    onWatchStatus: function() {
-    	this._state.socket = listenToWebsocket('/ws/lights', this.handleLightStatusUpdate)
-    },
-
-    onStopStatus: function() {
-    	this._state.socket.close()
-    }
-})
+const Store = createStore(reducer)
 
 export default Store
-

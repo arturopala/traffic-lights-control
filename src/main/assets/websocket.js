@@ -1,8 +1,8 @@
-const WS = window['MozWebSocket'] ? MozWebSocket : WebSocket
+const websocket = window['MozWebSocket'] ? MozWebSocket : WebSocket
 
-export default function listenToWebsocket(path, callback){
+export default function WS(path, callback){
 
-  let socket = new WS("ws://"+window.location.host+path)
+  let socket = new websocket("ws://"+window.location.host+path)
 
   socket.onmessage = function (event) {
     if(typeof event.data !== undefined){

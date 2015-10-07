@@ -1,40 +1,31 @@
 import React from 'react'
-import Actions from '../actions.js'
-import Store from '../store.js'
+import { Link } from 'react-router'
+import { connect } from 'react-redux'
+
 import Light from './light.jsx'
+import Store from '../store.js'
 
-export default class Dashboard extends React.Component {
-
-  constructor(props) {
-    super(props)
-    this.state = {}
-  }
-
-  componentWillMount() {
-    this.unsubscribe = Store.listen(this.onStatusUpdate.bind(this))
-    Actions.WatchStatus()
-  }
-
-  componentDidUnmount() {
-    Actions.StopStatus()
-    this.unsubscribe()
-  }
-
-  onStatusUpdate({lightId, lightState}){
-  	this.setState({
-		[lightId]: lightState
-  	})
-  }
-
+class Dashboard extends React.Component {
   render() {
+  	const { lightStateMap } = this.props
     return (
-    	<div className="dashboard">
-    	{	
-    		Object.getOwnPropertyNames(this.state).map((lightId) => {
-    			return <Light key={lightId} lightId={lightId} lightState={this.state[lightId]}/>;
-			})
-    	}
-    	</div>
+		<div className="dashboard">
+		{Object.getOwnPropertyNames(lightStateMap).map(
+			lightId => <Link key={lightId} to={`/lights/${lightId}`}><Light lightId={lightId} lightState={lightStateMap[lightId]}/></Link>
+		)}
+	    </div>
 	);
   }
+
 }
+
+Dashboard.propTypes = { lightStateMap: React.PropTypes.object.isRequired };
+Dashboard.defaultProps = { lightStateMap: {} };
+
+const selector = (state) => {
+	return {
+		lightStateMap: state.lightStateMap
+	}
+}
+
+export default connect(selector)(Dashboard)
