@@ -66,7 +66,7 @@ trait LightTestSuite extends FlatSpecLike with Matchers with ActorSystemTestKit 
       tested ! ChangeToGreenCommand //should be ignored
       tested ! ChangeToRedCommand //should change state immediately to ChangingToRedLight
       expectNoMsg(1.second)
-      tested ! FinalizeChange
+      tested ! CanContinueAfterDelayEvent
       tested ! GetStatusQuery
       expectMsg(ChangedToRedEvent)
       expectMsg(StatusEvent("1", RedLight))
@@ -81,7 +81,7 @@ trait LightTestSuite extends FlatSpecLike with Matchers with ActorSystemTestKit 
       tested ! ChangeToRedCommand //should be ignored
       tested ! ChangeToGreenCommand //should change state immediately to ChangingToGreenLight
       expectNoMsg(1.second)
-      tested ! FinalizeChange
+      tested ! CanContinueAfterDelayEvent
       tested ! GetStatusQuery
       expectMsg(ChangedToGreenEvent)
       expectMsg(StatusEvent("1", GreenLight))
@@ -96,7 +96,7 @@ trait LightTestSuite extends FlatSpecLike with Matchers with ActorSystemTestKit 
       tested ! ChangeToRedCommand //should change state immediately to ChangingToRedLight
       tested ! ChangeToGreenCommand //should change state immediately back to ChangingToGreenLight
       expectNoMsg(1.second)
-      tested ! FinalizeChange
+      tested ! CanContinueAfterDelayEvent
       tested ! GetStatusQuery
       expectMsg(ChangedToGreenEvent)
       expectMsg(StatusEvent("1", GreenLight))
@@ -111,7 +111,7 @@ trait LightTestSuite extends FlatSpecLike with Matchers with ActorSystemTestKit 
       tested ! ChangeToGreenCommand //should change state immediately to ChangingToGreenLight
       tested ! ChangeToRedCommand //should change state immediately back to ChangingToRedLight
       expectNoMsg(1.second)
-      tested ! FinalizeChange
+      tested ! CanContinueAfterDelayEvent
       tested ! GetStatusQuery
       expectMsg(ChangedToRedEvent)
       expectMsg(StatusEvent("1", RedLight))

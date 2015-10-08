@@ -15,20 +15,19 @@ import trafficlightscontrol.actors._
 
 class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures with ActorSystemTestKit {
 
-  val timeout = 10.seconds
-  val delay = 1.second
+  val config = Configuration(interval = 10.seconds, delayGreenToRed = 1.second, delayRedToGreen = 1.second, switchDelay = 100.millis, timeout = 10.seconds)
   val strategy = SwitchStrategy.RoundRobin
 
   "A TrafficSystem" should "be materialized with TrafficSystemMaterializer" in new ActorSystemTest {
 
-    val layout = Switch("s1", strategy, timeout, Seq(
-      Group("g1", timeout, Seq(
-        Light("l1", RedLight, delay),
-        Light("l2", GreenLight, delay)
+    val layout = Switch("s1", strategy, config, Seq(
+      Group("g1", config, Seq(
+        Light("l1", RedLight, config),
+        Light("l2", GreenLight, config)
       )),
-      Group("g2", timeout, Seq(
-        Light("l3", GreenLight, delay),
-        Light("l4", RedLight, delay)
+      Group("g2", config, Seq(
+        Light("l3", GreenLight, config),
+        Light("l4", RedLight, config)
       ))
     ))
 
@@ -46,14 +45,14 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
 
   "A TrafficSystem" should "be materialized with TrafficSystemMaterializerFSM" in new ActorSystemTest {
 
-    val layout = Switch("s1", strategy, timeout, Seq(
-      Group("g1", timeout, Seq(
-        Light("l1", RedLight, delay),
-        Light("l2", GreenLight, delay)
+    val layout = Switch("s1", strategy, config, Seq(
+      Group("g1", config, Seq(
+        Light("l1", RedLight, config),
+        Light("l2", GreenLight, config)
       )),
-      Group("g2", timeout, Seq(
-        Light("l3", GreenLight, delay),
-        Light("l4", RedLight, delay)
+      Group("g2", config, Seq(
+        Light("l3", GreenLight, config),
+        Light("l4", RedLight, config)
       ))
     ))
 

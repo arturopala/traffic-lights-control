@@ -12,8 +12,8 @@ import trafficlightscontrol.model._
 object GroupActor {
   def props(id: Id,
             memberProps: Iterable[Props],
-            timeout: FiniteDuration = 10 seconds): Props =
-    Props(classOf[GroupActor], id, memberProps, timeout)
+            configuration: Configuration): Props =
+    Props(classOf[GroupActor], id, memberProps, configuration)
 }
 
 /**
@@ -22,7 +22,7 @@ object GroupActor {
 class GroupActor(
     id: Id,
     memberProps: Iterable[Props],
-    baseTimeout: FiniteDuration = 10 seconds) extends Actor with ActorLogging with Stash {
+    configuration: Configuration) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenInitializing orElse receiveUnhandled
 
@@ -41,6 +41,8 @@ class GroupActor(
       member ! RegisterRecipientCommand(self)
     }
   }
+
+  val baseTimeout = configuration.timeout
 
   /////////////////////////////////////////////////////////////////
   // STATE 0: INITIALIZING, WAITING FOR ALL MEMBERS REGISTRATION //

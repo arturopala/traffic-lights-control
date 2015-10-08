@@ -11,8 +11,7 @@ object LightActor {
   def props(
     id: Id,
     initialState: LightState = RedLight,
-    delay: FiniteDuration = 1 seconds,
-    automatic: Boolean = true): Props = Props(classOf[LightActor], id, initialState, delay, automatic)
+    configuration: Configuration): Props = Props(classOf[LightActor], id, initialState, configuration)
 }
 
 /**
@@ -26,8 +25,7 @@ object LightActor {
 class LightActor(
   id: Id,
   initialState: LightState = RedLight,
-  delay: FiniteDuration = 1 seconds,
-  automatic: Boolean = true)
+  configuration: Configuration)
     extends Actor with ActorLogging {
 
   var state: LightState = initialState
@@ -57,20 +55,20 @@ class LightActor(
 
     case ChangeToGreenCommand =>
       changeStateTo(ChangingToGreenLight)
-      if (automatic) context.system.scheduler.scheduleOnce(delay, self, FinalizeChange)(context.system.dispatcher)
+      if (configuration.automatic) context.system.scheduler.scheduleOnce(configuration.delayRedToGreen, self, CanContinueAfterDelayEvent)(context.system.dispatcher)
   }
 
   val receiveWhenGreen: Receive = {
     case ChangeToRedCommand =>
       changeStateTo(ChangingToRedLight)
-      if (automatic) context.system.scheduler.scheduleOnce(delay, self, FinalizeChange)(context.system.dispatcher)
+      if (configuration.automatic) context.system.scheduler.scheduleOnce(configuration.delayGreenToRed, self, CanContinueAfterDelayEvent)(context.system.dispatcher)
     case ChangeToGreenCommand => {
       recipient ! ChangedToGreenEvent
     }
   }
 
   val receiveWhenChangingToRed: Receive = {
-    case FinalizeChange =>
+    case CanContinueAfterDelayEvent =>
       changeStateTo(RedLight)
       recipient ! ChangedToRedEvent
     case ChangeToGreenCommand =>
@@ -79,7 +77,7 @@ class LightActor(
   }
 
   val receiveWhenChangingToGreen: Receive = {
-    case FinalizeChange =>
+    case CanContinueAfterDelayEvent =>
       changeStateTo(GreenLight)
       recipient ! ChangedToGreenEvent
     case ChangeToRedCommand =>

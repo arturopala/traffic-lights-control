@@ -10,7 +10,7 @@ import trafficlightscontrol.model._
 
 trait TrafficSystemTestKit {
 
-  val testLightChangeDelay: FiniteDuration = 50.milliseconds
+  val config = Configuration(interval = 1.second, delayGreenToRed = 60.milliseconds, delayRedToGreen = 40.milliseconds, switchDelay = 10.milliseconds, timeout = 1.second)
 
   def testSwitchStrategy(size: Int): SwitchStrategy = {
     var n = -1
@@ -21,40 +21,40 @@ trait TrafficSystemTestKit {
   }
 
   object TestLight {
-    def apply(id: String, initialState: LightState = RedLight, delay: FiniteDuration = testLightChangeDelay, automatic: Boolean = true)(implicit system: ActorSystem) =
-      TestActorRef(new LightActor(id, initialState, delay, automatic))
+    def apply(id: String, initialState: LightState = RedLight, configuration: Configuration = config)(implicit system: ActorSystem) =
+      TestActorRef(new LightActor(id, initialState, configuration))
   }
 
   object TestLightFSM {
-    def apply(id: String, initialState: LightState = RedLight, delay: FiniteDuration = testLightChangeDelay, automatic: Boolean = true)(implicit system: ActorSystem) =
-      TestActorRef(new LightFSM(id, initialState, delay, automatic))
+    def apply(id: String, initialState: LightState = RedLight, configuration: Configuration = config)(implicit system: ActorSystem) =
+      TestActorRef(new LightFSM(id, initialState, configuration))
   }
 
   object TestSwitch {
-    def apply(id: String, lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
-      val workers = lights zip (1 to lights.size) map { case (l, c) => LightActor.props(""+c, l, testLightChangeDelay, true) }
-      TestActorRef(new SwitchActor(id, workers, timeout, testSwitchStrategy(lights.size)))
+    def apply(id: String, lights: Seq[LightState], configuration: Configuration = config)(implicit system: ActorSystem) = {
+      val workers = lights zip (1 to lights.size) map { case (l, c) => LightActor.props(""+c, l, configuration) }
+      TestActorRef(new SwitchActor(id, workers, configuration, testSwitchStrategy(lights.size)))
     }
   }
 
   object TestSwitchFSM {
-    def apply(id: String, lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
-      val workers = lights zip (1 to lights.size) map { case (l, c) => LightFSM.props(""+c, l, testLightChangeDelay, true) }
-      TestFSMRef(new SwitchFSM(id, workers, timeout, testSwitchStrategy(lights.size)))
+    def apply(id: String, lights: Seq[LightState], configuration: Configuration = config)(implicit system: ActorSystem) = {
+      val workers = lights zip (1 to lights.size) map { case (l, c) => LightFSM.props(""+c, l, configuration) }
+      TestFSMRef(new SwitchFSM(id, workers, configuration, testSwitchStrategy(lights.size)))
     }
   }
 
   object TestGroup {
-    def apply(id: String, lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
-      val workers = lights zip (1 to lights.size) map { case (l, c) => LightActor.props(""+c, l, testLightChangeDelay, true) }
-      TestActorRef(new GroupActor(id, workers, timeout))
+    def apply(id: String, lights: Seq[LightState], configuration: Configuration = config)(implicit system: ActorSystem) = {
+      val workers = lights zip (1 to lights.size) map { case (l, c) => LightActor.props(""+c, l, configuration) }
+      TestActorRef(new GroupActor(id, workers, configuration))
     }
   }
 
   object TestGroupFSM {
-    def apply(id: String, lights: Seq[LightState], timeout: FiniteDuration = testLightChangeDelay * 20)(implicit system: ActorSystem) = {
-      val workers = lights zip (1 to lights.size) map { case (l, c) => LightFSM.props(""+c, l, testLightChangeDelay, true) }
-      TestFSMRef(new GroupFSM(id, workers, timeout))
+    def apply(id: String, lights: Seq[LightState], configuration: Configuration = config)(implicit system: ActorSystem) = {
+      val workers = lights zip (1 to lights.size) map { case (l, c) => LightFSM.props(""+c, l, configuration) }
+      TestFSMRef(new GroupFSM(id, workers, configuration))
     }
   }
 

@@ -14,6 +14,7 @@ object SwitchFSM {
   object Idle extends State
   object WaitingForAllRed extends State
   object WaitingForAllRedBeforeGreen extends State
+  object WaitingWhileDelayedBeforeGreen extends State
   object WaitingForGreen extends State
 
   case class StateData(
@@ -23,9 +24,9 @@ object SwitchFSM {
 
   def props(id: Id,
             memberProps: Iterable[Props],
-            timeout: FiniteDuration = 10 seconds,
+            configuration: Configuration,
             strategy: SwitchStrategy = SwitchStrategy.RoundRobin): Props =
-    Props(classOf[SwitchFSM], id, memberProps, timeout, strategy)
+    Props(classOf[SwitchFSM], id, memberProps, configuration, strategy)
 }
 
 import SwitchFSM._
@@ -36,12 +37,14 @@ import SwitchFSM._
 class SwitchFSM(
     id: Id,
     memberProps: Iterable[Props],
-    timeout: FiniteDuration,
+    configuration: Configuration,
     strategy: SwitchStrategy) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
   var recipient: Option[ActorRef] = None
   val members: Map[Id, ActorRef] = Map()
   var memberIds: Seq[Id] = Seq.empty
+
+  val timeout = configuration.timeout
 
   startWith(Initializing, StateData(""))
 
@@ -100,12 +103,23 @@ class SwitchFSM(
         case false =>
           stay
         case true =>
-          goto(WaitingForGreen) using state.copy(responderSet = Set.empty, isGreen = false)
+          goto(WaitingWhileDelayedBeforeGreen) using state.copy(responderSet = Set.empty, isGreen = false)
       }
     case Event(ChangeToGreenCommand, stateData) =>
       stay
     case Event(ChangeToRedCommand, _) =>
       goto(WaitingForAllRed)
+    case Event(StateTimeout, _) =>
+      throw new TimeoutException("timeout occured when waiting for all red acks before changing to green")
+  }
+
+  when(WaitingWhileDelayedBeforeGreen, stateTimeout = timeout) {
+    case Event(CanContinueAfterDelayEvent, state) =>
+      goto(WaitingForGreen) using state.copy(responderSet = Set.empty, isGreen = false)
+    case Event(ChangeToGreenCommand, stateData) =>
+      stay
+    case Event(ChangeToRedCommand, state) => // cancel waiting, fast track to RED state
+      goto(Idle) using state.copy(responderSet = Set.empty, isGreen = false)
     case Event(StateTimeout, _) =>
       throw new TimeoutException("timeout occured when waiting for all red acks before changing to green")
   }
@@ -127,11 +141,16 @@ class SwitchFSM(
       members.values.foreach(_ ! ChangeToRedCommand)
     case Idle -> WaitingForAllRedBeforeGreen =>
       members.values.foreach(_ ! ChangeToRedCommand)
-    case WaitingForAllRedBeforeGreen -> WaitingForGreen =>
+    case WaitingForAllRedBeforeGreen -> WaitingWhileDelayedBeforeGreen =>
+      setTimer("delayChangeToGreen", CanContinueAfterDelayEvent, configuration.switchDelay, false)
+    case WaitingWhileDelayedBeforeGreen -> WaitingForGreen =>
       members(stateData.greenMemberId) ! ChangeToGreenCommand
     case WaitingForGreen -> Idle =>
       recipient ! ChangedToGreenEvent
     case WaitingForAllRed -> Idle =>
+      recipient ! ChangedToRedEvent
+    case WaitingWhileDelayedBeforeGreen -> Idle =>
+      cancelTimer("delayChangeToGreen")
       recipient ! ChangedToRedEvent
   }
 

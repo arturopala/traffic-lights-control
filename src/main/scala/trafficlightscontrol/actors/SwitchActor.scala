@@ -12,9 +12,9 @@ import trafficlightscontrol.model._
 object SwitchActor {
   def props(id: Id,
             memberProps: Iterable[Props],
-            timeout: FiniteDuration = 10 seconds,
+            configuration: Configuration,
             strategy: SwitchStrategy = SwitchStrategy.RoundRobin): Props =
-    Props(classOf[SwitchActor], id, memberProps, timeout, strategy)
+    Props(classOf[SwitchActor], id, memberProps, configuration, strategy)
 }
 
 /**
@@ -23,7 +23,7 @@ object SwitchActor {
 class SwitchActor(
     id: Id,
     memberProps: Iterable[Props],
-    baseTimeout: FiniteDuration = 10 seconds,
+    configuration: Configuration,
     strategy: SwitchStrategy = SwitchStrategy.RoundRobin) extends Actor with ActorLogging with Stash {
 
   def receive = receiveWhenInitializing orElse receiveUnhandled
@@ -45,6 +45,8 @@ class SwitchActor(
       member ! RegisterRecipientCommand(self)
     }
   }
+
+  val baseTimeout = configuration.timeout
 
   /////////////////////////////////////////////////////////////////
   // STATE 0: INITIALIZING, WAITING FOR ALL MEMBERS REGISTRATION //
@@ -124,14 +126,8 @@ class SwitchActor(
       responderSet += sender()
       if (responderSet.size == members.size) {
         timeoutTask.cancel()
-        context.become(receiveWhileWaitingForGreenAck orElse receiveUnhandled)
-        members.get(nextGreenId) match {
-          case Some(member) =>
-            member ! ChangeToGreenCommand
-            scheduleTimeout()
-          case None =>
-            throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
-        }
+        timeoutTask = context.system.scheduler.scheduleOnce(configuration.switchDelay, self, CanContinueAfterDelayEvent)(context.system.dispatcher)
+        context.become(receiveWhileDelayedBeforeGreen orElse receiveUnhandled)
       }
 
     case ChangeToGreenCommand => //ignore
@@ -143,8 +139,32 @@ class SwitchActor(
       throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all red acks before changing to green")
   }
 
+  //////////////////////////////////////////////////////////
+  // STATE 4: WAITING WHEN DELAY BEFORE GOING GREEN       //
+  //////////////////////////////////////////////////////////
+  val receiveWhileDelayedBeforeGreen: Receive = {
+
+    case CanContinueAfterDelayEvent =>
+      members.get(nextGreenId) match {
+        case Some(member) =>
+          member ! ChangeToGreenCommand
+          scheduleTimeout()
+          context.become(receiveWhileWaitingForGreenAck orElse receiveUnhandled)
+        case None =>
+          throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
+      }
+
+    case ChangeToGreenCommand => //ignore
+
+    case ChangedToRedEvent =>
+      timeoutTask.cancel()
+      isGreen = false
+      context.become(receiveWhenIdle orElse receiveUnhandled)
+      recipient ! ChangedToRedEvent
+  }
+
   /////////////////////////////////////////////////////////
-  // STATE 4: WAITING FOR CONFIRMATION FROM GREEN MEMBER //
+  // STATE 5: WAITING FOR CONFIRMATION FROM GREEN MEMBER //
   /////////////////////////////////////////////////////////
   val receiveWhileWaitingForGreenAck: Receive = {
 

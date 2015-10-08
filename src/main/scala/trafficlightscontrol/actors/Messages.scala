@@ -14,7 +14,7 @@ case class RecipientRegisteredEvent(id: Id) extends Event
 case object ChangeToRedCommand extends Command
 case object ChangeToGreenCommand extends Command
 
-case object FinalizeChange extends Command
+case object CanContinueAfterDelayEvent extends Command
 
 case object ChangedToRedEvent extends Event
 case object ChangedToGreenEvent extends Event

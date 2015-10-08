@@ -22,25 +22,25 @@ trait TrafficSystemMaterializer {
 }
 
 object TrafficSystemMaterializer extends TrafficSystemMaterializer {
-  def lightProps(light: Light): Props = LightActor.props(light.id, light.initialState, light.delay)
+  def lightProps(light: Light): Props = LightActor.props(light.id, light.initialState, light.configuration)
   def switchProps(switch: Switch): Props = {
     val memberProps = switch.members.map(props(_)(this))
-    SwitchActor.props(switch.id, memberProps, switch.timeout, switch.strategy)
+    SwitchActor.props(switch.id, memberProps, switch.configuration, switch.strategy)
   }
   def groupProps(group: Group): Props = {
     val memberProps = group.members.map(props(_)(this))
-    GroupActor.props(group.id, memberProps, group.timeout)
+    GroupActor.props(group.id, memberProps, group.configuration)
   }
 }
 
 object TrafficSystemMaterializerFSM extends TrafficSystemMaterializer {
-  def lightProps(light: Light): Props = LightFSM.props(light.id, light.initialState, light.delay)
+  def lightProps(light: Light): Props = LightFSM.props(light.id, light.initialState, light.configuration)
   def switchProps(switch: Switch): Props = {
     val memberProps = switch.members.map(props(_)(this))
-    SwitchFSM.props(switch.id, memberProps, switch.timeout, switch.strategy)
+    SwitchFSM.props(switch.id, memberProps, switch.configuration, switch.strategy)
   }
   def groupProps(group: Group): Props = {
     val memberProps = group.members.map(props(_)(this))
-    GroupFSM.props(group.id, memberProps, group.timeout)
+    GroupFSM.props(group.id, memberProps, group.configuration)
   }
 }

@@ -21,8 +21,8 @@ object GroupFSM {
 
   def props(id: String,
             memberProps: Iterable[Props],
-            timeout: FiniteDuration = 10 seconds): Props =
-    Props(classOf[GroupFSM], id, memberProps, timeout)
+            configuration: Configuration): Props =
+    Props(classOf[GroupFSM], id, memberProps, configuration)
 }
 
 import GroupFSM._
@@ -33,11 +33,13 @@ import GroupFSM._
 class GroupFSM(
     id: String,
     memberProps: Iterable[Props],
-    timeout: FiniteDuration) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
+    configuration: Configuration) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
   var recipient: Option[ActorRef] = None
   val members: Map[String, ActorRef] = Map()
   var memberIds: Seq[String] = Seq.empty
+
+  val timeout = configuration.timeout
 
   startWith(Initializing, StateData())
 

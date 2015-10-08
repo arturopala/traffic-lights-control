@@ -99,6 +99,9 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
   val forAllIds: Id => Boolean = _ => true
   def onlyFor(id: Id): Id => Boolean = x => x == id
 
+  //////////////////////////////////////////////////////////////////////
+  //                   Main routing configuration                     //
+  //////////////////////////////////////////////////////////////////////
   val route = handleRejections(rejectionHandler) {
     handleExceptions(exceptionHandler) {
       logRequestResult("http", Logging.InfoLevel) {
@@ -130,12 +133,9 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
                   }
                 }
             } ~
-            pathSuffix("app.js") {
-              getFromResource("public/app.js")
-            } ~
-            (pathSingleSlash | path("") | pathPrefix("lights")) {
-              getFromResource("public/index.html")
-            } ~
+            pathSuffix("app.js") { getFromResource("public/app.js") } ~
+            pathSuffix("style.css") { getFromResource("public/style.css") } ~
+            (pathSingleSlash | path("") | pathPrefix("lights")) { getFromResource("public/index.html") } ~
             getFromResourceDirectory("public/")
         }
       }

@@ -11,8 +11,7 @@ object LightFSM {
   def props(
     id: Id,
     initialState: LightState = RedLight,
-    delay: FiniteDuration = 1 seconds,
-    automatic: Boolean = true): Props = Props(classOf[LightFSM], id, initialState, delay, automatic)
+    configuration: Configuration): Props = Props(classOf[LightFSM], id, initialState, configuration)
 }
 
 /**
@@ -26,8 +25,7 @@ object LightFSM {
 class LightFSM(
   id: Id,
   initialState: LightState = RedLight,
-  delay: FiniteDuration = 1 seconds,
-  automatic: Boolean = true)
+  configuration: Configuration)
     extends Actor with ActorLogging with FSM[LightState, Option[ActorRef]] {
 
   startWith(initialState, None)
@@ -49,14 +47,14 @@ class LightFSM(
   }
 
   when(ChangingToRedLight) {
-    case Event(FinalizeChange, _) =>
+    case Event(CanContinueAfterDelayEvent, _) =>
       goto(RedLight)
     case Event(ChangeToGreenCommand, _) =>
       goto(ChangingToGreenLight)
   }
 
   when(ChangingToGreenLight) {
-    case Event(FinalizeChange, _) =>
+    case Event(CanContinueAfterDelayEvent, _) =>
       goto(GreenLight)
     case Event(ChangeToRedCommand, _) =>
       goto(ChangingToRedLight)
@@ -74,9 +72,9 @@ class LightFSM(
     case ChangingToRedLight -> RedLight =>
       stateData map (_ ! ChangedToRedEvent)
     case RedLight -> ChangingToGreenLight =>
-      if (automatic) setTimer("changeToGreen", FinalizeChange, delay, false)
+      if (configuration.automatic) setTimer("changeToGreen", CanContinueAfterDelayEvent, configuration.delayRedToGreen, false)
     case GreenLight -> ChangingToRedLight =>
-      if (automatic) setTimer("changeToRed", FinalizeChange, delay, false)
+      if (configuration.automatic) setTimer("changeToRed", CanContinueAfterDelayEvent, configuration.delayGreenToRed, false)
   }
 
   whenUnhandled {

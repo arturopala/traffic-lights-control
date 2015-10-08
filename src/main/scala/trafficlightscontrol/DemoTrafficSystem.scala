@@ -12,17 +12,22 @@ import trafficlightscontrol.dsl._
 
 class DemoTrafficSystem(interval: FiniteDuration) extends Actor with ActorLogging {
 
-  val delay = interval / 5
-  val timeout = interval * 10
+  val config = Configuration(
+    interval = interval,
+    delayRedToGreen = interval / 4,
+    delayGreenToRed = interval / 6,
+    switchDelay = interval / 10,
+    timeout = interval * 10
+  )
 
-  val layout = Switch("s1", SwitchStrategy.RoundRobin, timeout, Seq(
-    Group("g1", timeout, Seq(
-      Light("l1", RedLight, delay),
-      Light("l2", GreenLight, delay)
+  val layout = Switch("s1", SwitchStrategy.RoundRobin, config, Seq(
+    Group("g1", config, Seq(
+      Light("l1", RedLight, config),
+      Light("l2", GreenLight, config)
     )),
-    Group("g2", timeout, Seq(
-      Light("l3", GreenLight, delay),
-      Light("l4", RedLight, delay)
+    Group("g2", config, Seq(
+      Light("l3", GreenLight, config),
+      Light("l4", RedLight, config)
     ))
   ))
 
@@ -33,7 +38,7 @@ class DemoTrafficSystem(interval: FiniteDuration) extends Actor with ActorLoggin
 
   def receive: Receive = {
     case "Start" =>
-      context.system.scheduler.schedule(delay, interval, self, "Tick")(context.system.dispatcher, self)
+      context.system.scheduler.schedule(config.delayRedToGreen, interval, self, "Tick")(context.system.dispatcher, self)
     case "Tick" =>
       log.info(separator)
       trafficSystem ! ChangeToGreenCommand
