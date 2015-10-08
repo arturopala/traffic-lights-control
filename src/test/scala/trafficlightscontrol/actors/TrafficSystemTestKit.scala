@@ -12,9 +12,10 @@ trait TrafficSystemTestKit {
 
   val config = Configuration(interval = 1.second, delayGreenToRed = 60.milliseconds, delayRedToGreen = 40.milliseconds, switchDelay = 10.milliseconds, timeout = 1.second)
 
-  def testSwitchStrategy(size: Int): SwitchStrategy = {
+  def testSwitchStrategy(size: Int): SwitchStrategy = new SwitchStrategy {
+    val name = "TestSwitchStrategy"
     var n = -1
-    (currentGreenId: Id, memberIds: Seq[Id]) => {
+    def apply(current: Id, members: scala.collection.Seq[Id]): Id = {
       n = (n + 1) % size
       s"${n + 1}"
     }

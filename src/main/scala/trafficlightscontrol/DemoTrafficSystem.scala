@@ -12,7 +12,7 @@ import trafficlightscontrol.dsl._
 
 class DemoTrafficSystem(interval: FiniteDuration) extends Actor with ActorLogging {
 
-  val config = Configuration(
+  implicit val config = Configuration(
     interval = interval,
     delayRedToGreen = interval / 4,
     delayGreenToRed = interval / 6,
@@ -20,16 +20,16 @@ class DemoTrafficSystem(interval: FiniteDuration) extends Actor with ActorLoggin
     timeout = interval * 10
   )
 
-  val layout = Switch("s1", SwitchStrategy.RoundRobin, config, Seq(
-    Group("g1", config, Seq(
-      Light("l1", RedLight, config),
-      Light("l2", GreenLight, config)
-    )),
-    Group("g2", config, Seq(
-      Light("l3", GreenLight, config),
-      Light("l4", RedLight, config)
-    ))
-  ))
+  val layout = Switch("s1", SwitchStrategy.RoundRobin,
+    Group("g1",
+      Light("l1", RedLight),
+      Light("l2", GreenLight)
+    ),
+    Group("g2",
+      Light("l3", GreenLight),
+      Light("l4", RedLight)
+    )
+  )
 
   val props = TrafficSystem.props(layout)(TrafficSystemMaterializer)
   val trafficSystem = context.actorOf(props)

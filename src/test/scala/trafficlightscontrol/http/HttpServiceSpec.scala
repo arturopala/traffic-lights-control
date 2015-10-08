@@ -41,13 +41,37 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
     }
   }
 
-  /*it should "return traffic.css file for GET /traffic.css" in {
-    Get("/traffic.css") ~> module.httpService.route ~> check {
+  it should "return app.js file for GET /app.js" in {
+    Get("/app.js") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentType(MediaTypes.`application/javascript`, HttpCharsets.`UTF-8`))
+      responseAs[String] should include("""function(module, exports) {""")
+    }
+  }
+
+  it should "return app.js file for GET /foobar/app.js" in {
+    Get("/foobar/app.js") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentType(MediaTypes.`application/javascript`, HttpCharsets.`UTF-8`))
+      responseAs[String] should include("""function(module, exports) {""")
+    }
+  }
+
+  it should "return style.css file for GET /style.css" in {
+    Get("/style.css") ~> module.httpService.route ~> check {
       status should be(OK)
       contentType should be(ContentType(MediaTypes.`text/css`, HttpCharsets.`UTF-8`))
-      responseAs[String] should include("""margin: 0 auto;""")
+      responseAs[String] should include(""".light {""")
     }
-  }*/
+  }
+
+  it should "return style.css file for GET /foo/bar/style.css" in {
+    Get("/foo/bar/style.css") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentType(MediaTypes.`text/css`, HttpCharsets.`UTF-8`))
+      responseAs[String] should include(""".light {""")
+    }
+  }
 
   "HttpService" should "return a json report for GET /lights" in {
     Get("/api/lights") ~> module.httpService.route ~> check {

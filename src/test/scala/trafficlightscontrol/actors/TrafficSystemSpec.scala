@@ -15,21 +15,21 @@ import trafficlightscontrol.actors._
 
 class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures with ActorSystemTestKit {
 
-  val config = Configuration(interval = 10.seconds, delayGreenToRed = 1.second, delayRedToGreen = 1.second, switchDelay = 100.millis, timeout = 10.seconds)
+  implicit val config = Configuration(interval = 10.seconds, delayGreenToRed = 1.second, delayRedToGreen = 1.second, switchDelay = 100.millis, timeout = 10.seconds)
   val strategy = SwitchStrategy.RoundRobin
 
   "A TrafficSystem" should "be materialized with TrafficSystemMaterializer" in new ActorSystemTest {
 
-    val layout = Switch("s1", strategy, config, Seq(
-      Group("g1", config, Seq(
-        Light("l1", RedLight, config),
-        Light("l2", GreenLight, config)
-      )),
-      Group("g2", config, Seq(
-        Light("l3", GreenLight, config),
-        Light("l4", RedLight, config)
-      ))
-    ))
+    val layout = Switch("s1", strategy,
+      Group("g1",
+        Light("l1", RedLight),
+        Light("l2", GreenLight)
+      ),
+      Group("g2",
+        Light("l3", GreenLight),
+        Light("l4", RedLight)
+      )
+    )
 
     val props = TrafficSystem.props(layout)(TrafficSystemMaterializer)
     val trafficSystemRef = actorSystem.actorOf(props)
@@ -45,16 +45,16 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
 
   "A TrafficSystem" should "be materialized with TrafficSystemMaterializerFSM" in new ActorSystemTest {
 
-    val layout = Switch("s1", strategy, config, Seq(
-      Group("g1", config, Seq(
-        Light("l1", RedLight, config),
-        Light("l2", GreenLight, config)
-      )),
-      Group("g2", config, Seq(
-        Light("l3", GreenLight, config),
-        Light("l4", RedLight, config)
-      ))
-    ))
+    val layout = Switch("s1", strategy,
+      Group("g1",
+        Light("l1", RedLight),
+        Light("l2", GreenLight)
+      ),
+      Group("g2",
+        Light("l3", GreenLight),
+        Light("l4", RedLight)
+      )
+    )
 
     val props = TrafficSystem.props(layout)(TrafficSystemMaterializerFSM)
     val trafficSystemRef = actorSystem.actorOf(props)

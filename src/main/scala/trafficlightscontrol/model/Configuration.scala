@@ -11,6 +11,7 @@ case class Configuration(
   automatic: Boolean = true)
 
 object Configuration {
+
   def apply(interval: FiniteDuration): Configuration = Configuration(
     interval = interval,
     delayRedToGreen = interval / 4,
@@ -18,4 +19,6 @@ object Configuration {
     switchDelay = interval / 10,
     timeout = interval * 10
   )
+
+  def default = Configuration(10.seconds)
 }
