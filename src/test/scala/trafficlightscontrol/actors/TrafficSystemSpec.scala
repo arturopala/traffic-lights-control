@@ -10,7 +10,6 @@ import scala.concurrent.duration._
 import akka.actor.ActorRef
 
 import trafficlightscontrol.model._
-import trafficlightscontrol.dsl._
 import trafficlightscontrol.actors._
 
 class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures with ActorSystemTestKit {
@@ -31,14 +30,14 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
       )
     )
 
-    val props = TrafficSystem.props(layout)(TrafficSystemMaterializer)
+    val props = TrafficSystem.props(layout, "foo")(TrafficSystemMaterializer)
     val trafficSystemRef = actorSystem.actorOf(props)
 
     eventListener.expectMsgAllOf(checkTimeout,
-      StatusEvent("l1", RedLight),
-      StatusEvent("l2", GreenLight),
-      StatusEvent("l3", GreenLight),
-      StatusEvent("l4", RedLight)
+      StatusEvent("foo_l1", RedLight),
+      StatusEvent("foo_l2", GreenLight),
+      StatusEvent("foo_l3", GreenLight),
+      StatusEvent("foo_l4", RedLight)
     )
 
   }
@@ -56,14 +55,14 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
       )
     )
 
-    val props = TrafficSystem.props(layout)(TrafficSystemMaterializerFSM)
+    val props = TrafficSystem.props(layout, "bar")(TrafficSystemMaterializerFSM)
     val trafficSystemRef = actorSystem.actorOf(props)
 
     eventListener.expectMsgAllOf(checkTimeout,
-      StatusEvent("l1", RedLight),
-      StatusEvent("l2", GreenLight),
-      StatusEvent("l3", GreenLight),
-      StatusEvent("l4", RedLight)
+      StatusEvent("bar_l1", RedLight),
+      StatusEvent("bar_l2", GreenLight),
+      StatusEvent("bar_l3", GreenLight),
+      StatusEvent("bar_l4", RedLight)
     )
 
   }

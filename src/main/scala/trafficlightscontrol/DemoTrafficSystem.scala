@@ -8,7 +8,6 @@ import akka.actor.ActorLogging
 
 import trafficlightscontrol.model._
 import trafficlightscontrol.actors._
-import trafficlightscontrol.dsl._
 
 class DemoTrafficSystem(interval: FiniteDuration) extends Actor with ActorLogging {
 
@@ -31,7 +30,7 @@ class DemoTrafficSystem(interval: FiniteDuration) extends Actor with ActorLoggin
     )
   )
 
-  val props = TrafficSystem.props(layout)(TrafficSystemMaterializer)
+  val props = TrafficSystem.props(layout, "demo")(TrafficSystemMaterializer)
   val trafficSystem = context.actorOf(props)
 
   val separator = "-" * 60

@@ -20,7 +20,7 @@ import trafficlightscontrol.actors._, trafficlightscontrol.http._
 class Module(implicit system: ActorSystem, materializer: ActorMaterializer) extends Macwire with ActorOf {
 
   val interval: FiniteDuration = 5.seconds
-  lazy val demoTrafficActor: ActorRef = actorOf[DemoTrafficSystem]("demo", interval)
+  lazy val manager: ActorRef = actorOf[TrafficSystemsManager]("manager")
   lazy val monitoring: Monitoring = Monitoring(actorOf[MonitoringActor]("monitoring"))
   lazy val httpService: HttpService = wire[HttpService]
 

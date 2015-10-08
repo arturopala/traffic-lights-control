@@ -1,13 +1,11 @@
-package trafficlightscontrol
+package trafficlightscontrol.model
 
 import org.scalatest.{ FlatSpecLike, Matchers }
 import scala.concurrent.duration._
 
-import trafficlightscontrol.dsl._
-import trafficlightscontrol.model._
 import trafficlightscontrol.http._
 
-class DslSpec extends FlatSpecLike with Matchers {
+class ComponentSpec extends FlatSpecLike with Matchers {
 
   import spray.json._
   import DefaultJsonProtocol._
@@ -15,7 +13,7 @@ class DslSpec extends FlatSpecLike with Matchers {
 
   implicit val configuration = Configuration.default
 
-  "Traffic lights components DSL" should "convert to and from JSON" in {
+  "Component" should "convert to and from JSON" in {
     val layout: Component = Switch("s1", SwitchStrategy.RoundRobin,
       Group("g1",
         Light("l1", RedLight),

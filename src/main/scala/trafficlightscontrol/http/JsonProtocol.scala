@@ -5,7 +5,6 @@ import DefaultJsonProtocol._
 
 import trafficlightscontrol.model._
 import trafficlightscontrol.actors._
-import trafficlightscontrol.dsl._
 
 object JsonProtocol extends DefaultJsonProtocol {
 
