@@ -18,14 +18,18 @@ trait LightTestSuite extends FlatSpecLike with Matchers with ActorSystemTestKit 
 
     s"A $name" should "change status from red to green" in new ActorSystemTest {
       val tested = light("1", RedLight)
+      info("register recipient")
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("1"))
+      info("get status of light #1")
       tested ! GetStatusQuery
       expectMsg(StatusEvent("1", RedLight))
+      info("change light #1 to green")
       tested ! ChangeToGreenCommand
       tested ! GetStatusQuery
       expectMsg(StatusEvent("1", ChangingToGreenLight))
       expectMsg(checkTimeout, ChangedToGreenEvent)
+      info("assert status of light #1")
       tested ! GetStatusQuery
       expectMsg(StatusEvent("1", GreenLight))
     }

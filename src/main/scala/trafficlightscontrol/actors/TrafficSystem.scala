@@ -60,10 +60,10 @@ class TrafficSystemActor(componentProps: Props, component: Component, systemId: 
   var clock: Cancellable = _
 
   def receive: Receive = {
-    case TickCommand =>
+    case TickEvent =>
       componentRef ! ChangeToGreenCommand
     case StartSystemCommand(_) =>
-      clock = context.system.scheduler.schedule(component.configuration.delayRedToGreen, component.configuration.interval, self, TickCommand)(context.system.dispatcher, self)
+      clock = context.system.scheduler.schedule(component.configuration.delayRedToGreen, component.configuration.interval, self, TickEvent)(context.system.dispatcher, self)
       log.info(s"Traffic system $systemId just STARTED")
     case StopSystemCommand(_) =>
       clock.cancel()

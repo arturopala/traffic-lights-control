@@ -12,7 +12,7 @@ package object actors {
     def !(msg: Any)(implicit sender: ActorRef): Unit = actorRefColl.foreach(_.tell(msg, sender))
   }
 
-  implicit class ActorRefMap(actorRefMap: scala.collection.mutable.Map[String, ActorRef]) {
+  implicit class ActorRefMap(actorRefMap: Map[String, ActorRef]) {
     def !(msg: Any)(implicit sender: ActorRef): Unit = actorRefMap.values.foreach(_.tell(msg, sender))
   }
 

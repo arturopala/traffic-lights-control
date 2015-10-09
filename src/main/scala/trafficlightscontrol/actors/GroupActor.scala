@@ -20,48 +20,15 @@ object GroupActor {
  * Group is a set of components (eg. lights, groups, other switches) which should be all red or green at the same time.
  */
 class GroupActor(
-    id: Id,
-    memberProps: Iterable[Props],
-    configuration: Configuration) extends Actor with ActorLogging with Stash {
 
-  def receive = receiveWhenInitializing orElse receiveUnhandled
-
-  var recipient: Option[ActorRef] = None
-  val members: Map[Id, ActorRef] = Map()
-  var memberIds: Seq[Id] = Seq.empty
+    val id: Id,
+    val memberProps: Iterable[Props],
+    val configuration: Configuration) extends BaseNodeActor with Stash {
 
   val responderSet: Set[ActorRef] = Set()
-  var timeoutTask: Cancellable = _
-
   var isGreen: Option[Boolean] = None
 
-  override def preStart = {
-    for (prop <- memberProps) {
-      val member = context.actorOf(prop)
-      member ! RegisterRecipientCommand(self)
-    }
-  }
-
-  val baseTimeout = configuration.timeout
-
-  /////////////////////////////////////////////////////////////////
-  // STATE 0: INITIALIZING, WAITING FOR ALL MEMBERS REGISTRATION //
-  /////////////////////////////////////////////////////////////////
-  val receiveWhenInitializing: Receive = {
-
-    case RecipientRegisteredEvent(id) =>
-      members.getOrElseUpdate(id, sender())
-      memberIds = members.keys.toSeq
-      log.debug(s"Group ${this.id}: new member registered $id")
-      if (members.size == memberProps.size) {
-        log.info(s"Group ${this.id} initialized. Members: ${memberIds.mkString(",")}, timeout: $baseTimeout")
-        context.become(receiveWhenIdle orElse receiveUnhandled)
-        unstashAll()
-      }
-
-    case ChangeToGreenCommand | ChangeToRedCommand => // ignore until initialized
-      log.warning(s"Group $id not yet initialized, skipping command")
-  }
+  import configuration.{ timeout }
 
   /////////////////////////////////////////
   // STATE 1: IDLE, WAITING FOR COMMANDS //
@@ -71,9 +38,9 @@ class GroupActor(
     case ChangeToGreenCommand => isGreen match {
       case None | Some(false) =>
         responderSet.clear()
-        context.become(receiveWhileChangingToGreen orElse receiveUnhandled)
+        context.become(receiveWhileChangingToGreen orElse receiveCommonNodeMessages)
         members ! ChangeToGreenCommand
-        scheduleTimeout()
+        scheduleTimeout(timeout)
       case Some(true) =>
         recipient ! ChangedToGreenEvent
     }
@@ -81,9 +48,9 @@ class GroupActor(
     case ChangeToRedCommand => isGreen match {
       case None | Some(true) =>
         responderSet.clear()
-        context.become(receiveWhileChangingToRed orElse receiveUnhandled)
+        context.become(receiveWhileChangingToRed orElse receiveCommonNodeMessages)
         members ! ChangeToRedCommand
-        scheduleTimeout()
+        scheduleTimeout(timeout)
       case Some(false) =>
         recipient ! ChangedToRedEvent
     }
@@ -97,9 +64,9 @@ class GroupActor(
     case ChangedToRedEvent =>
       responderSet += sender()
       if (responderSet.size == members.size) {
-        timeoutTask.cancel()
+        cancelTimeout()
         isGreen = Some(false)
-        context.become(receiveWhenIdle orElse receiveUnhandled)
+        context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
         recipient ! ChangedToRedEvent
       }
 
@@ -119,9 +86,9 @@ class GroupActor(
     case ChangedToGreenEvent =>
       responderSet += sender()
       if (responderSet.size == members.size) {
-        timeoutTask.cancel()
+        cancelTimeout()
         isGreen = Some(true)
-        context.become(receiveWhenIdle orElse receiveUnhandled)
+        context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
         recipient ! ChangedToGreenEvent
       }
 
@@ -133,20 +100,6 @@ class GroupActor(
       throw new TimeoutException("Group ${this.id}: timeout occured when waiting for all final green acks")
   }
 
-  val receiveUnhandled: Receive = {
-
-    case RegisterRecipientCommand(newRecipient) =>
-      if (recipient.isEmpty) {
-        recipient = Option(newRecipient)
-        recipient ! RecipientRegisteredEvent(id)
-      }
-
-    case other =>
-      log.error(s"Group ${this.id}: command not recognized $other")
-  }
-
-  def scheduleTimeout(): Unit = {
-    timeoutTask = context.system.scheduler.scheduleOnce(baseTimeout, self, TimeoutEvent)(context.system.dispatcher)
-  }
+  override val receive = receiveWhenInitializing orElse receiveCommonNodeMessages
 
 }

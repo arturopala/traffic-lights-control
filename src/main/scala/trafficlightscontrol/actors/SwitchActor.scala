@@ -21,51 +21,19 @@ object SwitchActor {
  * Switch is a set of components (eg. lights, groups, other switches) amongst which only one may be green at once.
  */
 class SwitchActor(
-    id: Id,
-    memberProps: Iterable[Props],
-    configuration: Configuration,
-    strategy: SwitchStrategy = SwitchStrategy.RoundRobin) extends Actor with ActorLogging with Stash {
 
-  def receive = receiveWhenInitializing orElse receiveUnhandled
-
-  var recipient: Option[ActorRef] = None
-  val members: Map[Id, ActorRef] = Map()
-  var memberIds: Seq[Id] = Seq.empty
+    val id: Id,
+    val memberProps: Iterable[Props],
+    val configuration: Configuration,
+    strategy: SwitchStrategy = SwitchStrategy.RoundRobin) extends BaseNodeActor with Stash {
 
   val responderSet: Set[ActorRef] = Set()
-  var timeoutTask: Cancellable = _
 
   var isGreen = false
   var greenMemberId: Id = ""
   var nextGreenId: Id = _
 
-  override def preStart = {
-    for (prop <- memberProps) {
-      val member = context.actorOf(prop)
-      member ! RegisterRecipientCommand(self)
-    }
-  }
-
-  val baseTimeout = configuration.timeout
-
-  /////////////////////////////////////////////////////////////////
-  // STATE 0: INITIALIZING, WAITING FOR ALL MEMBERS REGISTRATION //
-  /////////////////////////////////////////////////////////////////
-  val receiveWhenInitializing: Receive = {
-
-    case RecipientRegisteredEvent(id) =>
-      members.getOrElseUpdate(id, sender())
-      memberIds = members.keys.toSeq
-      log.debug(s"Switch ${this.id}: new member registered $id")
-      if (members.size == memberProps.size) {
-        log.info(s"Switch ${this.id} initialized. Members: ${memberIds.mkString(",")}, timeout: $baseTimeout")
-        context.become(receiveWhenIdle orElse receiveUnhandled)
-        unstashAll()
-      }
-
-    case ChangeToGreenCommand | ChangeToRedCommand => // ignore until initialized
-      log.warning(s"Switch $id not yet initialized, skipping command")
-  }
+  import configuration.{ timeout, switchDelay }
 
   /////////////////////////////////////////
   // STATE 1: IDLE, WAITING FOR COMMANDS //
@@ -79,9 +47,9 @@ class SwitchActor(
       }
       else if (members.contains(nextGreenId)) {
         responderSet.clear()
-        context.become(receiveWhileChangingToAllRedBeforeGreen orElse receiveUnhandled)
+        context.become(receiveWhileChangingToAllRedBeforeGreen orElse receiveCommonNodeMessages)
         members ! ChangeToRedCommand
-        scheduleTimeout()
+        scheduleTimeout(timeout)
       }
       else {
         throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
@@ -89,9 +57,9 @@ class SwitchActor(
 
     case ChangeToRedCommand =>
       responderSet.clear()
-      context.become(receiveWhileChangingToRed orElse receiveUnhandled)
+      context.become(receiveWhileChangingToRed orElse receiveCommonNodeMessages)
       members ! ChangeToRedCommand
-      scheduleTimeout()
+      scheduleTimeout(timeout)
   }
 
   ///////////////////////////////////////////////////
@@ -102,14 +70,14 @@ class SwitchActor(
     case ChangedToRedEvent =>
       responderSet += sender()
       if (responderSet.size == members.size) {
-        timeoutTask.cancel()
+        cancelTimeout()
         isGreen = false
-        context.become(receiveWhenIdle orElse receiveUnhandled)
+        context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
         recipient ! ChangedToRedEvent
       }
 
     case ChangeToGreenCommand =>
-      context.become(receiveWhileChangingToAllRedBeforeGreen orElse receiveUnhandled) // enable going green in the next step
+      context.become(receiveWhileChangingToAllRedBeforeGreen orElse receiveCommonNodeMessages) // enable going green in the next step
 
     case ChangeToRedCommand => //ignore, already changing to red
 
@@ -125,15 +93,16 @@ class SwitchActor(
     case ChangedToRedEvent =>
       responderSet += sender()
       if (responderSet.size == members.size) {
-        timeoutTask.cancel()
-        timeoutTask = context.system.scheduler.scheduleOnce(configuration.switchDelay, self, CanContinueAfterDelayEvent)(context.system.dispatcher)
-        context.become(receiveWhileDelayedBeforeGreen orElse receiveUnhandled)
+        cancelTimeout()
+        scheduleDelay(switchDelay)
+        isGreen = false
+        context.become(receiveWhileDelayedBeforeGreen orElse receiveCommonNodeMessages)
       }
 
     case ChangeToGreenCommand => //ignore
 
     case ChangeToRedCommand =>
-      context.become(receiveWhileChangingToRed orElse receiveUnhandled) // avoid going green in the next step
+      context.become(receiveWhileChangingToRed orElse receiveCommonNodeMessages) // avoid going green in the next step
 
     case TimeoutEvent =>
       throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all red acks before changing to green")
@@ -148,8 +117,8 @@ class SwitchActor(
       members.get(nextGreenId) match {
         case Some(member) =>
           member ! ChangeToGreenCommand
-          scheduleTimeout()
-          context.become(receiveWhileWaitingForGreenAck orElse receiveUnhandled)
+          scheduleTimeout(timeout)
+          context.become(receiveWhileWaitingForGreenAck orElse receiveCommonNodeMessages)
         case None =>
           throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
       }
@@ -157,9 +126,9 @@ class SwitchActor(
     case ChangeToGreenCommand => //ignore
 
     case ChangedToRedEvent =>
-      timeoutTask.cancel()
+      cancelDelay()
       isGreen = false
-      context.become(receiveWhenIdle orElse receiveUnhandled)
+      context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
       recipient ! ChangedToRedEvent
   }
 
@@ -169,10 +138,10 @@ class SwitchActor(
   val receiveWhileWaitingForGreenAck: Receive = {
 
     case ChangedToGreenEvent =>
-      timeoutTask.cancel()
+      cancelTimeout()
       isGreen = true
       greenMemberId = nextGreenId
-      context.become(receiveWhenIdle orElse receiveUnhandled)
+      context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
       recipient ! ChangedToGreenEvent
       unstashAll()
 
@@ -184,20 +153,6 @@ class SwitchActor(
       throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for final green ack")
   }
 
-  val receiveUnhandled: Receive = {
-
-    case RegisterRecipientCommand(newRecipient) =>
-      if (recipient.isEmpty) {
-        recipient = Option(newRecipient)
-        recipient ! RecipientRegisteredEvent(id)
-      }
-
-    case other =>
-      log.error(s"Switch ${this.id}: command not recognized $other")
-  }
-
-  def scheduleTimeout(): Unit = {
-    timeoutTask = context.system.scheduler.scheduleOnce(baseTimeout, self, TimeoutEvent)(context.system.dispatcher)
-  }
+  override val receive = receiveWhenInitializing orElse receiveCommonNodeMessages
 
 }
