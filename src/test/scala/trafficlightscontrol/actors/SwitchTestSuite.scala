@@ -29,7 +29,8 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", RedLight),
         StatusEvent("2", GreenLight),
         StatusEvent("3", RedLight),
@@ -37,7 +38,8 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
       )
       tested ! ChangeToGreenCommand
       expectMsg(ChangedToGreenEvent)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", ChangingToGreenLight),
         StatusEvent("1", GreenLight),
         StatusEvent("2", ChangingToRedLight),
@@ -50,7 +52,8 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", RedLight),
         StatusEvent("2", GreenLight),
         StatusEvent("3", GreenLight),
@@ -58,7 +61,8 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
       )
       tested ! ChangeToGreenCommand
       expectMsg(ChangedToGreenEvent)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", ChangingToGreenLight),
         StatusEvent("1", GreenLight),
         StatusEvent("2", ChangingToRedLight),
@@ -75,7 +79,8 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", GreenLight),
         StatusEvent("2", GreenLight),
         StatusEvent("3", RedLight),
@@ -83,7 +88,8 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
       )
       tested ! ChangeToRedCommand
       expectMsg(ChangedToRedEvent)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", ChangingToRedLight),
         StatusEvent("1", RedLight),
         StatusEvent("2", ChangingToRedLight),
@@ -98,7 +104,8 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", RedLight),
         StatusEvent("2", RedLight),
         StatusEvent("3", RedLight),
@@ -109,7 +116,8 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
         val id = s"${i}"
         tested ! ChangeToGreenCommand
         expectMsg(ChangedToGreenEvent)
-        eventListener.expectMsgAllOf(checkTimeout,
+        eventListener.expectMsgAllOf(
+          checkTimeout,
           StatusEvent(prev_id, ChangingToRedLight),
           StatusEvent(prev_id, RedLight),
           StatusEvent(id, ChangingToGreenLight),

@@ -14,26 +14,35 @@ import trafficlightscontrol.actors._
 
 class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures with ActorSystemTestKit {
 
-  implicit val config = Configuration(interval = 10.seconds, delayGreenToRed = 1.second, delayRedToGreen = 1.second, switchDelay = 100.millis, timeout = 10.seconds)
+  implicit val config = Configuration(
+    interval = 1.second,
+    delayGreenToRed = 60.milliseconds,
+    delayRedToGreen = 40.milliseconds,
+    switchDelay = 10.milliseconds,
+    timeout = 1.second
+  )
+
   val strategy = SwitchStrategy.RoundRobin
 
-  "A TrafficSystem" should "be materialized with TrafficSystemMaterializer" in new ActorSystemTest {
+  val layout = Switch("s1", strategy,
+    Group(
+      "g1",
+      Light("l1", RedLight),
+      Light("l2", GreenLight)
+    ),
+    Group(
+      "g2",
+      Light("l3", GreenLight),
+      Light("l4", RedLight)
+    ))
 
-    val layout = Switch("s1", strategy,
-      Group("g1",
-        Light("l1", RedLight),
-        Light("l2", GreenLight)
-      ),
-      Group("g2",
-        Light("l3", GreenLight),
-        Light("l4", RedLight)
-      )
-    )
+  "A TrafficSystem" should "be materialized with TrafficSystemMaterializer" in new ActorSystemTest {
 
     val props = TrafficSystem.props(layout, "foo")(TrafficSystemMaterializer)
     val trafficSystemRef = actorSystem.actorOf(props)
 
-    eventListener.expectMsgAllOf(checkTimeout,
+    eventListener.expectMsgAllOf(
+      checkTimeout,
       StatusEvent("foo_l1", RedLight),
       StatusEvent("foo_l2", GreenLight),
       StatusEvent("foo_l3", GreenLight),
@@ -42,29 +51,53 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
 
   }
 
-  "A TrafficSystem" should "be materialized with TrafficSystemMaterializerFSM" in new ActorSystemTest {
-
-    val layout = Switch("s1", strategy,
-      Group("g1",
-        Light("l1", RedLight),
-        Light("l2", GreenLight)
-      ),
-      Group("g2",
-        Light("l3", GreenLight),
-        Light("l4", RedLight)
-      )
-    )
+  it should "be materialized with TrafficSystemMaterializerFSM" in new ActorSystemTest {
 
     val props = TrafficSystem.props(layout, "bar")(TrafficSystemMaterializerFSM)
     val trafficSystemRef = actorSystem.actorOf(props)
 
-    eventListener.expectMsgAllOf(checkTimeout,
+    eventListener.expectMsgAllOf(
+      checkTimeout,
       StatusEvent("bar_l1", RedLight),
       StatusEvent("bar_l2", GreenLight),
       StatusEvent("bar_l3", GreenLight),
       StatusEvent("bar_l4", RedLight)
     )
 
+  }
+
+  it should "start and stop with StartSystemCommand, StopSystemCommand" in new ActorSystemTest {
+
+    val props = TrafficSystem.props(layout, "foo1")(TrafficSystemMaterializer)
+    val trafficSystemRef = actorSystem.actorOf(props)
+
+    val probe = TestProbe()
+    probe watch trafficSystemRef
+    trafficSystemRef ! StartSystemCommand("foo1")
+    expectMsg(SystemStartedEvent("foo1"))
+    trafficSystemRef ! StopSystemCommand("foo1")
+    probe.expectTerminated(trafficSystemRef)
+
+  }
+
+  it should "ignore duplicate StartSystemCommand" in new ActorSystemTest {
+
+    val props = TrafficSystem.props(layout, "foo2")(TrafficSystemMaterializer)
+    val trafficSystemRef = actorSystem.actorOf(props)
+    trafficSystemRef ! StartSystemCommand("foo2")
+    expectMsg(SystemStartedEvent("foo2"))
+    trafficSystemRef ! StartSystemCommand("foo2")
+    expectMsg(CommandIgnoredEvent)
+  }
+
+  it should "ignore premature StopSystemCommand" in new ActorSystemTest {
+
+    val props = TrafficSystem.props(layout, "foo3")(TrafficSystemMaterializer)
+    val trafficSystemRef = actorSystem.actorOf(props)
+    val probe = TestProbe()
+    probe watch trafficSystemRef
+    trafficSystemRef ! StopSystemCommand("foo3")
+    expectMsg(CommandIgnoredEvent)
   }
 
 }

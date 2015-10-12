@@ -10,20 +10,23 @@ import scala.collection.mutable.{ Set, Map }
 import trafficlightscontrol.model._
 
 object GroupActor {
-  def props(id: Id,
-            memberProps: Iterable[Props],
-            configuration: Configuration): Props =
+  def props(
+    id:            Id,
+    memberProps:   Iterable[Props],
+    configuration: Configuration
+  ): Props =
     Props(classOf[GroupActor], id, memberProps, configuration)
 }
 
 /**
- * Group is a set of components (eg. lights, groups, other switches) which should be all red or green at the same time.
+ * Group is a set of traffic control components (eg. lights, groups, other switches) which should be all red or green at the same time.
  */
 class GroupActor(
 
-    val id: Id,
-    val memberProps: Iterable[Props],
-    val configuration: Configuration) extends BaseNodeActor with Stash {
+    val id:            Id,
+    val memberProps:   Iterable[Props],
+    val configuration: Configuration
+) extends BaseNodeActor with Stash {
 
   val responderSet: Set[ActorRef] = Set()
   var isGreen: Option[Boolean] = None

@@ -9,9 +9,10 @@ import trafficlightscontrol.model._
 object LightFSM {
 
   def props(
-    id: Id,
-    initialState: LightState = RedLight,
-    configuration: Configuration): Props = Props(classOf[LightFSM], id, initialState, configuration)
+    id:            Id,
+    initialState:  LightState    = RedLight,
+    configuration: Configuration
+  ): Props = Props(classOf[LightFSM], id, initialState, configuration)
 }
 
 /**
@@ -23,9 +24,10 @@ object LightFSM {
  * @param automatic should switch from yellow to red or green automatically or manually?
  */
 class LightFSM(
-  id: Id,
-  initialState: LightState = RedLight,
-  configuration: Configuration)
+  id:            Id,
+  initialState:  LightState    = RedLight,
+  configuration: Configuration
+)
     extends Actor with ActorLogging with FSM[LightState, Option[ActorRef]] {
 
   startWith(initialState, None)

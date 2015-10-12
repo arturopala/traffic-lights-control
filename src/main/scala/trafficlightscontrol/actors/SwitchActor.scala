@@ -10,10 +10,12 @@ import scala.collection.mutable.{ Set, Map }
 import trafficlightscontrol.model._
 
 object SwitchActor {
-  def props(id: Id,
-            memberProps: Iterable[Props],
-            configuration: Configuration,
-            strategy: SwitchStrategy = SwitchStrategy.RoundRobin): Props =
+  def props(
+    id:            Id,
+    memberProps:   Iterable[Props],
+    configuration: Configuration,
+    strategy:      SwitchStrategy  = SwitchStrategy.RoundRobin
+  ): Props =
     Props(classOf[SwitchActor], id, memberProps, configuration, strategy)
 }
 
@@ -22,10 +24,11 @@ object SwitchActor {
  */
 class SwitchActor(
 
-    val id: Id,
-    val memberProps: Iterable[Props],
+    val id:            Id,
+    val memberProps:   Iterable[Props],
     val configuration: Configuration,
-    strategy: SwitchStrategy = SwitchStrategy.RoundRobin) extends BaseNodeActor with Stash {
+    strategy:          SwitchStrategy  = SwitchStrategy.RoundRobin
+) extends BaseNodeActor with Stash {
 
   val responderSet: Set[ActorRef] = Set()
 

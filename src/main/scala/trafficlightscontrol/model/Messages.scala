@@ -34,7 +34,10 @@ case class InstallComponentSucceededEvent(component: Component, system: Id) exte
 
 case class StartSystemCommand(system: Id) extends Command
 case class StopSystemCommand(system: Id) extends Command
+
+case class SystemStartedEvent(system: Id) extends Event
 case class SystemStartFailureEvent(system: Id, reason: String) extends Event
+case class SystemStopFailureEvent(system: Id, reason: String) extends Event
 
 case class SystemInfoQuery(system: Id) extends Query
 case class SystemInfoEvent(system: Id, component: Component, interval: FiniteDuration, history: SystemHistory) extends Event

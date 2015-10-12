@@ -19,3 +19,9 @@ node_modules/
 
 # added by GitSavvy
 /src/main/resources/public/style.css
+
+# added by GitSavvy
+/.ensime
+
+# added by GitSavvy
+.ensime_cache/

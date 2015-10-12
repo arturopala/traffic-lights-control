@@ -22,7 +22,8 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", RedLight),
         StatusEvent("2", RedLight),
         StatusEvent("3", RedLight),
@@ -30,7 +31,8 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       )
       tested ! ChangeToGreenCommand
       expectMsg(ChangedToGreenEvent)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", ChangingToGreenLight),
         StatusEvent("2", ChangingToGreenLight),
         StatusEvent("3", ChangingToGreenLight),
@@ -47,7 +49,8 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", GreenLight),
         StatusEvent("2", GreenLight),
         StatusEvent("3", GreenLight),
@@ -55,7 +58,8 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       )
       tested ! ChangeToRedCommand
       expectMsg(ChangedToRedEvent)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", ChangingToRedLight),
         StatusEvent("2", ChangingToRedLight),
         StatusEvent("3", ChangingToRedLight),
@@ -72,7 +76,8 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", RedLight),
         StatusEvent("2", GreenLight),
         StatusEvent("3", RedLight),
@@ -80,7 +85,8 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       )
       tested ! ChangeToGreenCommand
       expectMsg(ChangedToGreenEvent)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", ChangingToGreenLight),
         StatusEvent("3", ChangingToGreenLight),
         StatusEvent("4", ChangingToGreenLight),
@@ -95,7 +101,8 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", GreenLight),
         StatusEvent("2", GreenLight),
         StatusEvent("3", RedLight),
@@ -103,7 +110,8 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       )
       tested ! ChangeToRedCommand
       expectMsg(ChangedToRedEvent)
-      eventListener.expectMsgAllOf(checkTimeout,
+      eventListener.expectMsgAllOf(
+        checkTimeout,
         StatusEvent("1", ChangingToRedLight),
         StatusEvent("2", ChangingToRedLight),
         StatusEvent("4", ChangingToRedLight),

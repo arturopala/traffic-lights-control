@@ -19,13 +19,16 @@ object SwitchFSM {
 
   case class StateData(
     greenMemberId: Id,
-    responderSet: Set[ActorRef] = Set.empty,
-    isGreen: Boolean = false)
+    responderSet:  Set[ActorRef] = Set.empty,
+    isGreen:       Boolean       = false
+  )
 
-  def props(id: Id,
-            memberProps: Iterable[Props],
-            configuration: Configuration,
-            strategy: SwitchStrategy = SwitchStrategy.RoundRobin): Props =
+  def props(
+    id:            Id,
+    memberProps:   Iterable[Props],
+    configuration: Configuration,
+    strategy:      SwitchStrategy  = SwitchStrategy.RoundRobin
+  ): Props =
     Props(classOf[SwitchFSM], id, memberProps, configuration, strategy)
 }
 
@@ -35,10 +38,11 @@ import SwitchFSM._
  * SwitchFSM is a set of components (eg. lights, groups, other switches) amongst which only one may be green at once.
  */
 class SwitchFSM(
-    id: Id,
-    memberProps: Iterable[Props],
+    id:            Id,
+    memberProps:   Iterable[Props],
     configuration: Configuration,
-    strategy: SwitchStrategy) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
+    strategy:      SwitchStrategy
+) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
   var recipient: Option[ActorRef] = None
   val members: Map[Id, ActorRef] = Map()

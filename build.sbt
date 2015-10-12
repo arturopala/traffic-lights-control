@@ -1,5 +1,3 @@
-import io.gatling.sbt.GatlingPlugin
-import io.gatling.sbt.GatlingPlugin._
 import scalariform.formatter.preferences._
 
 organization := "me.arturopala"
@@ -34,8 +32,6 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.12.5" % Test
 ).map(_.withSources())
 
-scoverage.ScoverageSbtPlugin.instrumentSettings
-
 com.typesafe.sbt.SbtScalariform.scalariformSettings
 
 ScalariformKeys.preferences := PreferencesImporterExporter.loadPreferences(baseDirectory.value / "project" / "formatterPreferences.properties" toString)
@@ -45,8 +41,6 @@ Revolver.settings
 EclipseKeys.skipParents in ThisBuild := false
 
 mainClass in (Compile, run) := Some("trafficlightscontrol.Boot")
-
-lazy val loadtester = (project in file("loadtester")).enablePlugins(GatlingPlugin)
 
 lazy val root = (project in file("."))
 

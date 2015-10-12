@@ -3,12 +3,13 @@ package trafficlightscontrol.model
 import scala.concurrent.duration._
 
 case class Configuration(
-  interval: FiniteDuration,
+  interval:        FiniteDuration,
   delayRedToGreen: FiniteDuration,
   delayGreenToRed: FiniteDuration,
-  switchDelay: FiniteDuration,
-  timeout: FiniteDuration,
-  automatic: Boolean = true)
+  switchDelay:     FiniteDuration,
+  timeout:         FiniteDuration,
+  automatic:       Boolean        = true
+)
 
 object Configuration {
 

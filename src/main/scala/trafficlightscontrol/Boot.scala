@@ -1,11 +1,10 @@
 package trafficlightscontrol
 
-import scala.concurrent.duration._
 import akka.actor.ActorSystem
-import akka.util.Timeout
-import akka.stream.ActorMaterializer
 import akka.pattern.ask
-
+import akka.stream.ActorMaterializer
+import akka.util.Timeout
+import scala.concurrent.duration._
 import trafficlightscontrol.model._
 
 object Boot extends App {
@@ -30,15 +29,16 @@ object Boot extends App {
   )
 
   val demoLayout = Switch("s1", SwitchStrategy.RoundRobin,
-    Group("g1",
+    Group(
+      "g1",
       Light("l1", RedLight),
       Light("l2", GreenLight)
     ),
-    Group("g2",
+    Group(
+      "g2",
       Light("l3", GreenLight),
       Light("l4", RedLight)
-    )
-  )
+    ))
 
   val demoId = "demo"
 

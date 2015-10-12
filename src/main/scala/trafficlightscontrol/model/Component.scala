@@ -1,7 +1,5 @@
 package trafficlightscontrol.model
 
-import scala.concurrent.duration._
-
 sealed trait Component { def id: Id; def configuration: Configuration }
 sealed trait CompositeComponent extends Component { def members: Iterable[Component] }
 

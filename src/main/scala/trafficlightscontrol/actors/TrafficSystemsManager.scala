@@ -17,54 +17,70 @@ object TrafficSystemsManager {
 
 class TrafficSystemsManager() extends Actor with ActorLogging {
 
-  var installedSystems: Map[Id, (Component, ActorRef, SystemHistory)] = Map()
+  import scala.collection.mutable.Map
+
+  val installedSystems: Map[Id, (Component, Option[ActorRef], SystemHistory)] = Map()
 
   def receive: Receive = {
 
     case InstallComponentCommand(component, system) =>
       installedSystems.get(system) match {
         case Some(_) =>
-          sender ! InstallComponentFailedEvent(component, system, s"System with id=$system already deployed!")
+          sender ! InstallComponentFailedEvent(component, system, s"System with id=$system already installed!")
           log.error(s"Traffic system $system cannot be INSTALLED twice!")
-        case None =>
-          val props = TrafficSystem.props(component, system)(TrafficSystemMaterializer)
-          val trafficSystem = context.actorOf(props)
-          context.watch(trafficSystem)
-          val startTime = System.currentTimeMillis()
-          installedSystems += (system -> (component, trafficSystem, SystemHistory().installed()))
+        case _ =>
+          installedSystems(system) = (component, None, SystemHistory().installed())
           sender ! InstallComponentSucceededEvent(component, system)
-          log.info(s"Traffic system $system has been DEPLOYED")
+          log.info(s"Traffic system $system has been INSTALLED")
       }
 
     case command @ StartSystemCommand(system) => installedSystems.get(system) match {
-      case Some((component, trafficSystem, history)) =>
+      case Some((component, None, history)) =>
+        val props = TrafficSystem.props(component, system)(TrafficSystemMaterializer)
+        val trafficSystem = context.actorOf(props)
+        context.watch(trafficSystem)
+        installedSystems(system) = (component, Some(trafficSystem), history)
         trafficSystem ! command
-        installedSystems += (system -> (component, trafficSystem, history.started()))
-      case None =>
-        sender ! SystemStartFailureEvent(system, s"Could not start, system $system not yet deployed!")
+      case Some((_, Some(_), _)) =>
+        log.warning(s"Could not start system twice, $system alredy deployed!")
+        sender ! SystemStartFailureEvent(system, s"Could not start, system $system already running!")
+      case _ =>
+        sender ! SystemStartFailureEvent(system, s"Could not start, system $system not yet installed!")
+    }
+
+    case SystemStartedEvent(system) => installedSystems.get(system) match {
+      case Some((component, trafficSystemOpt, history)) =>
+        installedSystems(system) = (component, trafficSystemOpt, history.started())
+        log.info(s"Traffic system $system just STARTED")
+      case _ =>
     }
 
     case command @ StopSystemCommand(system) => installedSystems.get(system) match {
-      case Some((component, trafficSystem, history)) =>
+      case Some((component, Some(trafficSystem), history)) =>
         trafficSystem ! command
-        installedSystems += (system -> (component, trafficSystem, history.stopped()))
-      case None =>
-        sender ! SystemStartFailureEvent(system, s"Could not stop, system $system not yet deployed!")
+        log.info(s"Traffic system $system about to STOP")
+      case Some((_, None, _)) =>
+        sender ! SystemStopFailureEvent(system, s"Could not stop, system $system not running!")
+      case _ =>
+        sender ! SystemStopFailureEvent(system, s"Could not stop, system $system not yet installed!")
     }
 
     case SystemInfoQuery(id) => installedSystems.get(id) match {
       case Some((component, _, history)) => sender ! SystemInfoEvent(id, component, component.configuration.interval, history)
-      case None                          => sender ! CommandIgnoredEvent
+      case _                             => sender ! CommandIgnoredEvent
     }
 
     case Terminated(trafficSystem) =>
       installedSystems find {
-        case (system, (_, actorRef, _)) => actorRef == trafficSystem
+        case (system, (_, Some(actorRef), _)) => actorRef == trafficSystem
+        case _                                => false
       } foreach {
-        case (system, (component, actorRef, history)) =>
-          installedSystems += (system -> (component, trafficSystem, history.terminated()))
+        case (system, (component, _, history)) =>
+          installedSystems(system) = (component, None, history.terminated())
           log.info(s"Traffic system $system is TERMINATED")
       }
+
+    case CommandIgnoredEvent =>
 
   }
 

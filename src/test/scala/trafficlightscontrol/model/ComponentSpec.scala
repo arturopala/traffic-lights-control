@@ -15,15 +15,16 @@ class ComponentSpec extends FlatSpecLike with Matchers {
 
   "Component" should "convert to and from JSON" in {
     val layout: Component = Switch("s1", SwitchStrategy.RoundRobin,
-      Group("g1",
+      Group(
+        "g1",
         Light("l1", RedLight),
         Light("l2", GreenLight)
       ),
-      Group("g2",
+      Group(
+        "g2",
         Light("l3", GreenLight),
         Light("l4", RedLight)
-      )
-    )
+      ))
 
     info("serialize layout to json")
     val json = layout.toJson.compactPrint
