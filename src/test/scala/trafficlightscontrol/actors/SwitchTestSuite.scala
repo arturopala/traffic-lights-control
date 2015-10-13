@@ -11,12 +11,12 @@ import akka.actor.ActorRef
 
 import trafficlightscontrol.model._
 
-trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with ActorSystemTestKit {
+trait SequenceTestSuite extends FlatSpecLike with Matchers with ScalaFutures with ActorSystemTestKit {
 
-  def runSuite(name: String, switch: (String, Seq[LightState]) => TestActorRef[_]) {
+  def runSuite(name: String, sequence: (String, Seq[LightState]) => TestActorRef[_]) {
 
     s"A $name" should "change status of light #1 from red to green when all are red" in new ActorSystemTest {
-      val tested = switch("s-1", Seq(RedLight, RedLight, RedLight, RedLight))
+      val tested = sequence("s-1", Seq(RedLight, RedLight, RedLight, RedLight))
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
@@ -25,7 +25,7 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
     }
 
     it should "change status of light #1 from red to green when only light #2 is green" in new ActorSystemTest {
-      val tested = switch("s-1", Seq(RedLight, GreenLight, RedLight, RedLight))
+      val tested = sequence("s-1", Seq(RedLight, GreenLight, RedLight, RedLight))
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
@@ -48,7 +48,7 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
     }
 
     it should "change status of light #1 from red to green when only all others are red" in new ActorSystemTest {
-      val tested = switch("s-1", Seq(RedLight, GreenLight, GreenLight, GreenLight))
+      val tested = sequence("s-1", Seq(RedLight, GreenLight, GreenLight, GreenLight))
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
@@ -75,7 +75,7 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
     }
 
     it should "change status of all lights to red" in new ActorSystemTest {
-      val tested = switch("s-1", Seq(GreenLight, GreenLight, RedLight, GreenLight))
+      val tested = sequence("s-1", Seq(GreenLight, GreenLight, RedLight, GreenLight))
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)
@@ -100,7 +100,7 @@ trait SwitchTestSuite extends FlatSpecLike with Matchers with ScalaFutures with 
     }
 
     it should "change status sequentially to green starting from light #1" in new ActorSystemTest {
-      val tested = switch("s-1", Seq(RedLight, RedLight, RedLight, GreenLight))
+      val tested = sequence("s-1", Seq(RedLight, RedLight, RedLight, GreenLight))
       tested ! RegisterRecipientCommand(self)
       expectMsg(RecipientRegisteredEvent("s-1"))
       Thread.sleep(100)

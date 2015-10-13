@@ -16,21 +16,21 @@ import TrafficSystem.combineId
 trait TrafficSystemMaterializer {
 
   def lightProps(light: Light, systemId: Id): Props
-  def switchProps(switch: Switch, systemId: Id): Props
+  def sequenceProps(sequence: Sequence, systemId: Id): Props
   def groupProps(group: Group, systemId: Id): Props
 
   def props(component: Component, systemId: Id)(implicit materializer: TrafficSystemMaterializer): Props = component match {
-    case light: Light   => lightProps(light, systemId)
-    case switch: Switch => switchProps(switch, systemId)
-    case group: Group   => groupProps(group, systemId)
+    case light: Light       => lightProps(light, systemId)
+    case sequence: Sequence => sequenceProps(sequence, systemId)
+    case group: Group       => groupProps(group, systemId)
   }
 }
 
 object TrafficSystemMaterializer extends TrafficSystemMaterializer {
   def lightProps(light: Light, systemId: Id): Props = LightActor.props(combineId(systemId, light.id), light.initialState, light.configuration)
-  def switchProps(switch: Switch, systemId: Id): Props = {
-    val memberProps = switch.members.map(props(_, systemId)(this))
-    SwitchActor.props(combineId(systemId, switch.id), memberProps, switch.configuration, switch.strategy)
+  def sequenceProps(sequence: Sequence, systemId: Id): Props = {
+    val memberProps = sequence.members.map(props(_, systemId)(this))
+    SequenceActor.props(combineId(systemId, sequence.id), memberProps, sequence.configuration, sequence.strategy)
   }
   def groupProps(group: Group, systemId: Id): Props = {
     val memberProps = group.members.map(props(_, systemId)(this))
@@ -40,9 +40,9 @@ object TrafficSystemMaterializer extends TrafficSystemMaterializer {
 
 object TrafficSystemMaterializerFSM extends TrafficSystemMaterializer {
   def lightProps(light: Light, systemId: Id): Props = LightFSM.props(combineId(systemId, light.id), light.initialState, light.configuration)
-  def switchProps(switch: Switch, systemId: Id): Props = {
-    val memberProps = switch.members.map(props(_, systemId)(this))
-    SwitchFSM.props(combineId(systemId, switch.id), memberProps, switch.configuration, switch.strategy)
+  def sequenceProps(sequence: Sequence, systemId: Id): Props = {
+    val memberProps = sequence.members.map(props(_, systemId)(this))
+    SequenceFSM.props(combineId(systemId, sequence.id), memberProps, sequence.configuration, sequence.strategy)
   }
   def groupProps(group: Group, systemId: Id): Props = {
     val memberProps = group.members.map(props(_, systemId)(this))

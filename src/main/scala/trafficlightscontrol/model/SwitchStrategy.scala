@@ -2,18 +2,18 @@ package trafficlightscontrol.model
 
 import scala.collection.Seq
 
-trait SwitchStrategy {
+trait SequenceStrategy {
   def name: String
   def apply(current: Id, members: Seq[Id]): Id
 }
 
-object SwitchStrategy {
+object SequenceStrategy {
 
-  def apply(byName: String): SwitchStrategy = byName match {
+  def apply(byName: String): SequenceStrategy = byName match {
     case "RoundRobin" => RoundRobin
   }
 
-  val RoundRobin: SwitchStrategy = new SwitchStrategy {
+  val RoundRobin: SequenceStrategy = new SequenceStrategy {
 
     val name = "RoundRobin"
     def apply(current: Id, members: scala.collection.Seq[Id]): Id = {

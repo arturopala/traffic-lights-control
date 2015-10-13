@@ -18,13 +18,13 @@ class TrafficSystemsManagerSpec extends FlatSpecLike with Matchers with ScalaFut
     interval = 1.second,
     delayGreenToRed = 60.milliseconds,
     delayRedToGreen = 40.milliseconds,
-    switchDelay = 10.milliseconds,
+    sequenceDelay = 10.milliseconds,
     timeout = 1.second
   )
 
-  val strategy = SwitchStrategy.RoundRobin
+  val strategy = SequenceStrategy.RoundRobin
 
-  val layout = Switch("s1", strategy,
+  val layout = Sequence("s1", strategy,
     Group(
       "g1",
       Light("l1", RedLight),

@@ -24,19 +24,19 @@ object JsonProtocol extends DefaultJsonProtocol {
   implicit val ReportEventJsonFormat = jsonFormat1(ReportEvent.apply)
   implicit val StatusEventJsonFormat = jsonFormat2(StatusEvent.apply)
 
-  implicit object SwitchStrategyJsonFormat extends RootJsonFormat[SwitchStrategy] {
-    def write(strategy: SwitchStrategy): JsValue = JsString(strategy.name)
-    def read(value: JsValue): SwitchStrategy = value match {
-      case JsString(name) => SwitchStrategy(name)
-      case _              => deserializationError("SwitchStrategy name expected")
+  implicit object SequenceStrategyJsonFormat extends RootJsonFormat[SequenceStrategy] {
+    def write(strategy: SequenceStrategy): JsValue = JsString(strategy.name)
+    def read(value: JsValue): SequenceStrategy = value match {
+      case JsString(name) => SequenceStrategy(name)
+      case _              => deserializationError("SequenceStrategy name expected")
     }
   }
 
   implicit object ComponentJsonFormat extends RootJsonFormat[Component] {
     def write(component: Component): JsValue = component match {
-      case Light(id, initialState)            => JsObject("type" -> JsString("Light"), "id" -> JsString(id), "state" -> initialState.toJson)
-      case Group(id, members @ _*)            => JsObject("type" -> JsString("Group"), "id" -> JsString(id), "members" -> members.toJson)
-      case Switch(id, strategy, members @ _*) => JsObject("type" -> JsString("Switch"), "id" -> JsString(id), "strategy" -> strategy.toJson, "members" -> members.toJson)
+      case Light(id, initialState)              => JsObject("type" -> JsString("Light"), "id" -> JsString(id), "state" -> initialState.toJson)
+      case Group(id, members @ _*)              => JsObject("type" -> JsString("Group"), "id" -> JsString(id), "members" -> members.toJson)
+      case Sequence(id, strategy, members @ _*) => JsObject("type" -> JsString("Sequence"), "id" -> JsString(id), "strategy" -> strategy.toJson, "members" -> members.toJson)
     }
     def read(value: JsValue): Component = value.asJsObject.getFields("type", "id") match {
       case Seq(JsString(elementType), JsString(id)) => elementType match {
@@ -46,12 +46,12 @@ object JsonProtocol extends DefaultJsonProtocol {
         case "Group" => value.asJsObject.getFields("members") match {
           case Seq(members) => Group(id, (members.convertTo[Seq[Component]]): _*)(Configuration.default)
         }
-        case "Switch" => value.asJsObject.getFields("strategy", "members") match {
-          case Seq(strategy, members) => Switch(id, strategy.convertTo[SwitchStrategy], (members.convertTo[Seq[Component]]): _*)(Configuration.default)
+        case "Sequence" => value.asJsObject.getFields("strategy", "members") match {
+          case Seq(strategy, members) => Sequence(id, strategy.convertTo[SequenceStrategy], (members.convertTo[Seq[Component]]): _*)(Configuration.default)
         }
       }
 
-      case _ => deserializationError("Component, one of {Light,Switch,Group} expected")
+      case _ => deserializationError("Component, one of {Light,Sequence,Group} expected")
     }
   }
 

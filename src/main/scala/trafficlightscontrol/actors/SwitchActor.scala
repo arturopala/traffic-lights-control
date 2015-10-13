@@ -9,25 +9,25 @@ import scala.collection.mutable.{ Set, Map }
 
 import trafficlightscontrol.model._
 
-object SwitchActor {
+object SequenceActor {
   def props(
     id:            Id,
     memberProps:   Iterable[Props],
     configuration: Configuration,
-    strategy:      SwitchStrategy  = SwitchStrategy.RoundRobin
+    strategy:      SequenceStrategy = SequenceStrategy.RoundRobin
   ): Props =
-    Props(classOf[SwitchActor], id, memberProps, configuration, strategy)
+    Props(classOf[SequenceActor], id, memberProps, configuration, strategy)
 }
 
 /**
- * Switch is a set of components (eg. lights, groups, other switches) amongst which only one may be green at once.
+ * Sequence is a set of components (eg. lights, groups, other sequencees) amongst which only one may be green at once.
  */
-class SwitchActor(
+class SequenceActor(
 
     val id:            Id,
     val memberProps:   Iterable[Props],
     val configuration: Configuration,
-    strategy:          SwitchStrategy  = SwitchStrategy.RoundRobin
+    strategy:          SequenceStrategy = SequenceStrategy.RoundRobin
 ) extends BaseNodeActor with Stash {
 
   val responderSet: Set[ActorRef] = Set()
@@ -36,7 +36,7 @@ class SwitchActor(
   var greenMemberId: Id = ""
   var nextGreenId: Id = _
 
-  import configuration.{ timeout, switchDelay }
+  import configuration.{ timeout, sequenceDelay }
 
   /////////////////////////////////////////
   // STATE 1: IDLE, WAITING FOR COMMANDS //
@@ -55,7 +55,7 @@ class SwitchActor(
         scheduleTimeout(timeout)
       }
       else {
-        throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
+        throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
       }
 
     case ChangeToRedCommand =>
@@ -85,7 +85,7 @@ class SwitchActor(
     case ChangeToRedCommand => //ignore, already changing to red
 
     case TimeoutEvent =>
-      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all final red acks")
+      throw new TimeoutException("Sequence ${this.id}: timeout occured when waiting for all final red acks")
   }
 
   ////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ class SwitchActor(
       responderSet += sender()
       if (responderSet.size == members.size) {
         cancelTimeout()
-        scheduleDelay(switchDelay)
+        scheduleDelay(sequenceDelay)
         isGreen = false
         context.become(receiveWhileDelayedBeforeGreen orElse receiveCommonNodeMessages)
       }
@@ -108,7 +108,7 @@ class SwitchActor(
       context.become(receiveWhileChangingToRed orElse receiveCommonNodeMessages) // avoid going green in the next step
 
     case TimeoutEvent =>
-      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for all red acks before changing to green")
+      throw new TimeoutException("Sequence ${this.id}: timeout occured when waiting for all red acks before changing to green")
   }
 
   //////////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ class SwitchActor(
           scheduleTimeout(timeout)
           context.become(receiveWhileWaitingForGreenAck orElse receiveCommonNodeMessages)
         case None =>
-          throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
+          throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
       }
 
     case ChangeToGreenCommand => //ignore
@@ -153,7 +153,7 @@ class SwitchActor(
     case ChangeToRedCommand   => stash() // we can't avoid going green at that point
 
     case TimeoutEvent =>
-      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for final green ack")
+      throw new TimeoutException("Sequence ${this.id}: timeout occured when waiting for final green ack")
   }
 
   override val receive = receiveWhenInitializing orElse receiveCommonNodeMessages

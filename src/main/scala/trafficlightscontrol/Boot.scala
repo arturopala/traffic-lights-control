@@ -24,11 +24,11 @@ object Boot extends App {
     interval = interval,
     delayRedToGreen = interval / 4,
     delayGreenToRed = interval / 6,
-    switchDelay = interval / 10,
+    sequenceDelay = interval / 10,
     timeout = interval * 10
   )
 
-  val demoLayout = Switch("s1", SwitchStrategy.RoundRobin,
+  val demoLayout = Sequence("s1", SequenceStrategy.RoundRobin,
     Group(
       "g1",
       Light("l1", RedLight),

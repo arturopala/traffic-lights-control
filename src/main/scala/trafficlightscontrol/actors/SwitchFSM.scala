@@ -8,7 +8,7 @@ import scala.concurrent.duration._
 
 import trafficlightscontrol.model._
 
-object SwitchFSM {
+object SequenceFSM {
   sealed trait State
   object Initializing extends State
   object Idle extends State
@@ -27,21 +27,21 @@ object SwitchFSM {
     id:            Id,
     memberProps:   Iterable[Props],
     configuration: Configuration,
-    strategy:      SwitchStrategy  = SwitchStrategy.RoundRobin
+    strategy:      SequenceStrategy = SequenceStrategy.RoundRobin
   ): Props =
-    Props(classOf[SwitchFSM], id, memberProps, configuration, strategy)
+    Props(classOf[SequenceFSM], id, memberProps, configuration, strategy)
 }
 
-import SwitchFSM._
+import SequenceFSM._
 
 /**
- * SwitchFSM is a set of components (eg. lights, groups, other switches) amongst which only one may be green at once.
+ * SequenceFSM is a set of components (eg. lights, groups, other sequencees) amongst which only one may be green at once.
  */
-class SwitchFSM(
+class SequenceFSM(
     id:            Id,
     memberProps:   Iterable[Props],
     configuration: Configuration,
-    strategy:      SwitchStrategy
+    strategy:      SequenceStrategy
 ) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
   var recipient: Option[ActorRef] = None
@@ -56,14 +56,14 @@ class SwitchFSM(
     case Event(RecipientRegisteredEvent(id), _) =>
       members.getOrElseUpdate(id, sender())
       memberIds = members.keys.toSeq
-      log.debug(s"Switch ${this.id}: new member registered $id")
+      log.debug(s"Sequence ${this.id}: new member registered $id")
       if (members.size == memberProps.size) {
-        log.info(s"Switch ${this.id} initialized. Members: ${memberIds.mkString(",")}, timeout: $timeout")
+        log.info(s"Sequence ${this.id} initialized. Members: ${memberIds.mkString(",")}, timeout: $timeout")
         goto(Idle)
       }
       else stay
     case Event(ChangeToGreenCommand | ChangeToRedCommand, _) =>
-      log.warning(s"Switch $id not yet initialized, skipping command")
+      log.warning(s"Sequence $id not yet initialized, skipping command")
       stay
   }
 
@@ -78,7 +78,7 @@ class SwitchFSM(
         goto(WaitingForAllRedBeforeGreen) using StateData(greenMemberId = nextGreenId, isGreen = isGreen)
       }
       else {
-        throw new IllegalStateException(s"Switch ${this.id}: Member $nextGreenId not found")
+        throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
       }
     }
     case Event(ChangeToRedCommand, _) =>
@@ -146,7 +146,7 @@ class SwitchFSM(
     case Idle -> WaitingForAllRedBeforeGreen =>
       members.values.foreach(_ ! ChangeToRedCommand)
     case WaitingForAllRedBeforeGreen -> WaitingWhileDelayedBeforeGreen =>
-      setTimer("delayChangeToGreen", CanContinueAfterDelayEvent, configuration.switchDelay, false)
+      setTimer("delayChangeToGreen", CanContinueAfterDelayEvent, configuration.sequenceDelay, false)
     case WaitingWhileDelayedBeforeGreen -> WaitingForGreen =>
       members(stateData.greenMemberId) ! ChangeToGreenCommand
     case WaitingForGreen -> Idle =>

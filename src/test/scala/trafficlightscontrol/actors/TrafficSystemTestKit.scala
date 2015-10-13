@@ -10,10 +10,10 @@ import trafficlightscontrol.model._
 
 trait TrafficSystemTestKit {
 
-  val config = Configuration(interval = 1.second, delayGreenToRed = 60.milliseconds, delayRedToGreen = 40.milliseconds, switchDelay = 10.milliseconds, timeout = 1.second)
+  val config = Configuration(interval = 1.second, delayGreenToRed = 60.milliseconds, delayRedToGreen = 40.milliseconds, sequenceDelay = 10.milliseconds, timeout = 1.second)
 
-  def testSwitchStrategy(size: Int): SwitchStrategy = new SwitchStrategy {
-    val name = "TestSwitchStrategy"
+  def testSequenceStrategy(size: Int): SequenceStrategy = new SequenceStrategy {
+    val name = "TestSequenceStrategy"
     var n = -1
     def apply(current: Id, members: scala.collection.Seq[Id]): Id = {
       n = (n + 1) % size
@@ -31,17 +31,17 @@ trait TrafficSystemTestKit {
       TestActorRef(new LightFSM(id, initialState, configuration))
   }
 
-  object TestSwitch {
+  object TestSequence {
     def apply(id: String, lights: Seq[LightState], configuration: Configuration = config)(implicit system: ActorSystem) = {
       val workers = lights zip (1 to lights.size) map { case (l, c) => LightActor.props(""+c, l, configuration) }
-      TestActorRef(new SwitchActor(id, workers, configuration, testSwitchStrategy(lights.size)))
+      TestActorRef(new SequenceActor(id, workers, configuration, testSequenceStrategy(lights.size)))
     }
   }
 
-  object TestSwitchFSM {
+  object TestSequenceFSM {
     def apply(id: String, lights: Seq[LightState], configuration: Configuration = config)(implicit system: ActorSystem) = {
       val workers = lights zip (1 to lights.size) map { case (l, c) => LightFSM.props(""+c, l, configuration) }
-      TestFSMRef(new SwitchFSM(id, workers, configuration, testSwitchStrategy(lights.size)))
+      TestFSMRef(new SequenceFSM(id, workers, configuration, testSequenceStrategy(lights.size)))
     }
   }
 

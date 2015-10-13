@@ -20,8 +20,8 @@ object LightFSM {
  * Represents single control point with possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
  * @param id UUID
  * @param initalState initial state of the light
- * @param delay green <-> red switch delay
- * @param automatic should switch from yellow to red or green automatically or manually?
+ * @param delay green <-> red sequence delay
+ * @param automatic should sequence from yellow to red or green automatically or manually?
  */
 class LightFSM(
   id:            Id,

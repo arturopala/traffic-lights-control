@@ -2,8 +2,8 @@ package trafficlightscontrol.actors
 
 import trafficlightscontrol.model._
 
-class SwitchFSMSpec extends SwitchTestSuite with TrafficSystemTestKit {
+class SequenceFSMSpec extends SequenceTestSuite with TrafficSystemTestKit {
 
-  runSuite("SwitchFSM", (id: String, initialState: Seq[LightState]) => TestSwitchFSM(id, initialState)(actorSystem))
+  runSuite("SequenceFSM", (id: String, initialState: Seq[LightState]) => TestSequenceFSM(id, initialState)(actorSystem))
 
 }

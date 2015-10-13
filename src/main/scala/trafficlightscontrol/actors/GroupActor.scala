@@ -19,7 +19,7 @@ object GroupActor {
 }
 
 /**
- * Group is a set of traffic control components (eg. lights, groups, other switches) which should be all red or green at the same time.
+ * Group is a set of traffic control components (eg. lights, groups, other sequencees) which should be all red or green at the same time.
  */
 class GroupActor(
 

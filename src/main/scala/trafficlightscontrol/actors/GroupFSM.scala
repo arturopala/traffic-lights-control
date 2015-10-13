@@ -31,7 +31,7 @@ object GroupFSM {
 import GroupFSM._
 
 /**
- * GroupFSM is a set of components (eg. lights, groups, other switches) which should be all red or green at the same time.
+ * GroupFSM is a set of components (eg. lights, groups, other sequencees) which should be all red or green at the same time.
  */
 class GroupFSM(
     id:            String,

@@ -2,8 +2,8 @@ package trafficlightscontrol.actors
 
 import trafficlightscontrol.model._
 
-class SwitchSpec extends SwitchTestSuite with TrafficSystemTestKit {
+class SequenceSpec extends SequenceTestSuite with TrafficSystemTestKit {
 
-  runSuite("Switch", (id: String, initialState: Seq[LightState]) => TestSwitch(id, initialState)(actorSystem))
+  runSuite("Sequence", (id: String, initialState: Seq[LightState]) => TestSequence(id, initialState)(actorSystem))
 
 }
