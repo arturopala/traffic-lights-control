@@ -8,45 +8,56 @@ object TrafficSystem {
     val componentProps = materializer.props(component, systemId)
     TrafficSystemActor.props(componentProps, component, systemId)
   }
-  def combineId(systemId: Id, id: Id): Id = systemId+"_"+id
 }
-
-import TrafficSystem.combineId
 
 trait TrafficSystemMaterializer {
 
   def lightProps(light: Light, systemId: Id): Props
   def sequenceProps(sequence: Sequence, systemId: Id): Props
   def groupProps(group: Group, systemId: Id): Props
+  def switchProps(switch: Switch, systemId: Id): Props
 
   def props(component: Component, systemId: Id)(implicit materializer: TrafficSystemMaterializer): Props = component match {
     case light: Light       => lightProps(light, systemId)
     case sequence: Sequence => sequenceProps(sequence, systemId)
     case group: Group       => groupProps(group, systemId)
+    case switch: Switch     => switchProps(switch, systemId)
   }
+
+  def combineId(systemId: Id, id: Id): Id = systemId+"_"+id
 }
 
-object TrafficSystemMaterializer extends TrafficSystemMaterializer {
-  def lightProps(light: Light, systemId: Id): Props = LightActor.props(combineId(systemId, light.id), light.initialState, light.configuration)
-  def sequenceProps(sequence: Sequence, systemId: Id): Props = {
+trait DefaultTrafficSystemMaterializer extends TrafficSystemMaterializer {
+  override def lightProps(light: Light, systemId: Id): Props = LightActor.props(combineId(systemId, light.id), light.initialState, light.configuration)
+  override def sequenceProps(sequence: Sequence, systemId: Id): Props = {
     val memberProps = sequence.members.map(props(_, systemId)(this))
     SequenceActor.props(combineId(systemId, sequence.id), memberProps, sequence.configuration, sequence.strategy)
   }
-  def groupProps(group: Group, systemId: Id): Props = {
+  override def groupProps(group: Group, systemId: Id): Props = {
     val memberProps = group.members.map(props(_, systemId)(this))
     GroupActor.props(combineId(systemId, group.id), memberProps, group.configuration)
   }
+  override def switchProps(switch: Switch, systemId: Id): Props = {
+    val memberProps = props(switch.member, systemId)(this)
+    SwitchActor.props(combineId(systemId, switch.id), memberProps, switch.configuration, switch.initiallyGreen, switch.skipTicks)
+  }
 }
 
+object TrafficSystemMaterializer extends DefaultTrafficSystemMaterializer
+
 object TrafficSystemMaterializerFSM extends TrafficSystemMaterializer {
-  def lightProps(light: Light, systemId: Id): Props = LightFSM.props(combineId(systemId, light.id), light.initialState, light.configuration)
-  def sequenceProps(sequence: Sequence, systemId: Id): Props = {
+  override def lightProps(light: Light, systemId: Id): Props = LightFSM.props(combineId(systemId, light.id), light.initialState, light.configuration)
+  override def sequenceProps(sequence: Sequence, systemId: Id): Props = {
     val memberProps = sequence.members.map(props(_, systemId)(this))
     SequenceFSM.props(combineId(systemId, sequence.id), memberProps, sequence.configuration, sequence.strategy)
   }
-  def groupProps(group: Group, systemId: Id): Props = {
+  override def groupProps(group: Group, systemId: Id): Props = {
     val memberProps = group.members.map(props(_, systemId)(this))
     GroupFSM.props(combineId(systemId, group.id), memberProps, group.configuration)
+  }
+  override def switchProps(switch: Switch, systemId: Id): Props = {
+    val memberProps = props(switch.member, systemId)(this)
+    SwitchActor.props(combineId(systemId, switch.id), memberProps, switch.configuration, switch.initiallyGreen, switch.skipTicks)
   }
 }
 
@@ -63,20 +74,20 @@ class TrafficSystemActor(componentProps: Props, component: Component, systemId: 
 
   def receive: Receive = {
 
-    case StartSystemCommand(id) =>
+    case cmd @ StartSystemCommand(id) =>
       if (id == systemId && !running) {
         clock = context.system.scheduler.schedule(component.configuration.delayRedToGreen, component.configuration.interval, componentRef, TickEvent)(context.system.dispatcher, self)
         running = true
         sender ! SystemStartedEvent(systemId)
       }
-      else sender ! CommandIgnoredEvent
+      else sender ! MessageIgnoredEvent(cmd)
 
-    case StopSystemCommand(id) =>
+    case cmd @ StopSystemCommand(id) =>
       if (id == systemId && running) {
         clock.cancel()
         context.stop(self)
       }
-      else sender ! CommandIgnoredEvent
+      else sender ! MessageIgnoredEvent(cmd)
 
     case message => componentRef ! message
   }

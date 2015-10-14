@@ -44,4 +44,4 @@ case class SystemInfoEvent(system: Id, component: Component, interval: FiniteDur
 
 case object TickEvent extends Event
 case object TimeoutEvent extends Event
-case object CommandIgnoredEvent extends Event
+case class MessageIgnoredEvent(message: Message) extends Event

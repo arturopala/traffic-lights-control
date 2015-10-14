@@ -54,10 +54,10 @@ class TrafficSystemsManagerSpec extends FlatSpecLike with Matchers with ScalaFut
     status.history.events.head shouldBe a[HistoryEvent.Installed]
   }
 
-  it should "receive SystemInfoQuery and return CommandIgnoredEvent for non-existent system" in new ActorSystemTest {
+  it should "receive SystemInfoQuery and return MessageIgnoredEvent for non-existent system" in new ActorSystemTest {
     val manager = actorSystem.actorOf(TrafficSystemsManager.props())
     manager ! SystemInfoQuery("foo1")
-    expectMsg(CommandIgnoredEvent)
+    expectMsg(MessageIgnoredEvent(SystemInfoQuery("foo1")))
   }
 
   it should "receive StartSystemCommand and start system" in new ActorSystemTest {

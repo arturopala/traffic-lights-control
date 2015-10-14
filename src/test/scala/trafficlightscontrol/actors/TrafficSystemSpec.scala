@@ -2,10 +2,10 @@ package trafficlightscontrol.actors
 
 import org.scalatest.{ FlatSpecLike, Matchers }
 import org.scalatest.concurrent.ScalaFutures
-import akka.actor.ActorSystem
+import akka.actor.{ ActorSystem, Props }
 import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
 import com.typesafe.config.ConfigFactory
-import akka.testkit.{ TestProbe, EventFilter }
+import akka.testkit.{ TestProbe, EventFilter, TestKitBase }
 import scala.concurrent.duration._
 import akka.actor.ActorRef
 
@@ -87,7 +87,7 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
     trafficSystemRef ! StartSystemCommand("foo2")
     expectMsg(SystemStartedEvent("foo2"))
     trafficSystemRef ! StartSystemCommand("foo2")
-    expectMsg(CommandIgnoredEvent)
+    expectMsg(MessageIgnoredEvent(StartSystemCommand("foo2")))
   }
 
   it should "ignore premature StopSystemCommand" in new ActorSystemTest {
@@ -97,7 +97,15 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
     val probe = TestProbe()
     probe watch trafficSystemRef
     trafficSystemRef ! StopSystemCommand("foo3")
-    expectMsg(CommandIgnoredEvent)
+    expectMsg(MessageIgnoredEvent(StopSystemCommand("foo3")))
   }
 
+}
+
+class TestTrafficSystemMaterializer(implicit val system: ActorSystem) extends DefaultTrafficSystemMaterializer with TestKitBase {
+  val probe = TestProbe()
+  override def lightProps(light: Light, systemId: Id): Props = {
+    val props = LightActor.props(combineId(systemId, light.id), light.initialState, light.configuration)
+    ProxyTestProps(probe, props, light.id)
+  }
 }

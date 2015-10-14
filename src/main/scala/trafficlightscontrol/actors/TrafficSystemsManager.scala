@@ -65,9 +65,9 @@ class TrafficSystemsManager() extends Actor with ActorLogging {
         sender ! SystemStopFailureEvent(system, s"Could not stop, system $system not yet installed!")
     }
 
-    case SystemInfoQuery(id) => installedSystems.get(id) match {
+    case cmd @ SystemInfoQuery(id) => installedSystems.get(id) match {
       case Some((component, _, history)) => sender ! SystemInfoEvent(id, component, component.configuration.interval, history)
-      case _                             => sender ! CommandIgnoredEvent
+      case _                             => sender ! MessageIgnoredEvent(cmd)
     }
 
     case Terminated(trafficSystem) =>
@@ -80,7 +80,7 @@ class TrafficSystemsManager() extends Actor with ActorLogging {
           log.info(s"Traffic system $system is TERMINATED")
       }
 
-    case CommandIgnoredEvent =>
+    case MessageIgnoredEvent(_) =>
 
   }
 

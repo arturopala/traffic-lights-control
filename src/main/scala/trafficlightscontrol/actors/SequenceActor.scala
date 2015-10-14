@@ -50,7 +50,7 @@ class SequenceActor(
       }
       else if (members.contains(nextGreenId)) {
         responderSet.clear()
-        context.become(receiveWhileChangingToAllRedBeforeGreen orElse receiveCommonNodeMessages)
+        becomeNow(receiveWhileChangingToAllRedBeforeGreen)
         members ! ChangeToRedCommand
         scheduleTimeout(timeout)
       }
@@ -60,7 +60,7 @@ class SequenceActor(
 
     case ChangeToRedCommand =>
       responderSet.clear()
-      context.become(receiveWhileChangingToRed orElse receiveCommonNodeMessages)
+      becomeNow(receiveWhileChangingToRed)
       members ! ChangeToRedCommand
       scheduleTimeout(timeout)
   }
@@ -68,19 +68,19 @@ class SequenceActor(
   ///////////////////////////////////////////////////
   // STATE 2: WAITING FOR ALL IS RED CONFIRMATION  //
   ///////////////////////////////////////////////////
-  val receiveWhileChangingToRed: Receive = {
+  private val receiveWhileChangingToRed: Receive = {
 
     case ChangedToRedEvent =>
       responderSet += sender()
       if (responderSet.size == members.size) {
         cancelTimeout()
         isGreen = false
-        context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
+        becomeNow(receiveWhenIdle)
         recipient ! ChangedToRedEvent
       }
 
     case ChangeToGreenCommand =>
-      context.become(receiveWhileChangingToAllRedBeforeGreen orElse receiveCommonNodeMessages) // enable going green in the next step
+      becomeNow(receiveWhileChangingToAllRedBeforeGreen) // enable going green in the next step
 
     case ChangeToRedCommand => //ignore, already changing to red
 
@@ -91,7 +91,7 @@ class SequenceActor(
   ////////////////////////////////////////////////////////
   // STATE 3: WAITING FOR ALL IS RED BEFORE GOING GREEN //
   ////////////////////////////////////////////////////////
-  val receiveWhileChangingToAllRedBeforeGreen: Receive = {
+  private val receiveWhileChangingToAllRedBeforeGreen: Receive = {
 
     case ChangedToRedEvent =>
       responderSet += sender()
@@ -99,13 +99,13 @@ class SequenceActor(
         cancelTimeout()
         scheduleDelay(sequenceDelay)
         isGreen = false
-        context.become(receiveWhileDelayedBeforeGreen orElse receiveCommonNodeMessages)
+        becomeNow(receiveWhileDelayedBeforeGreen)
       }
 
     case ChangeToGreenCommand => //ignore
 
     case ChangeToRedCommand =>
-      context.become(receiveWhileChangingToRed orElse receiveCommonNodeMessages) // avoid going green in the next step
+      becomeNow(receiveWhileChangingToRed) // avoid going green in the next step
 
     case TimeoutEvent =>
       throw new TimeoutException("Sequence ${this.id}: timeout occured when waiting for all red acks before changing to green")
@@ -114,14 +114,14 @@ class SequenceActor(
   //////////////////////////////////////////////////////////
   // STATE 4: WAITING WHEN DELAY BEFORE GOING GREEN       //
   //////////////////////////////////////////////////////////
-  val receiveWhileDelayedBeforeGreen: Receive = {
+  private val receiveWhileDelayedBeforeGreen: Receive = {
 
     case CanContinueAfterDelayEvent =>
       members.get(nextGreenId) match {
         case Some(member) =>
           member ! ChangeToGreenCommand
           scheduleTimeout(timeout)
-          context.become(receiveWhileWaitingForGreenAck orElse receiveCommonNodeMessages)
+          becomeNow(receiveWhileWaitingForGreenAck)
         case None =>
           throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
       }
@@ -131,20 +131,20 @@ class SequenceActor(
     case ChangedToRedEvent =>
       cancelDelay()
       isGreen = false
-      context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
+      becomeNow(receiveWhenIdle)
       recipient ! ChangedToRedEvent
   }
 
   /////////////////////////////////////////////////////////
   // STATE 5: WAITING FOR CONFIRMATION FROM GREEN MEMBER //
   /////////////////////////////////////////////////////////
-  val receiveWhileWaitingForGreenAck: Receive = {
+  private val receiveWhileWaitingForGreenAck: Receive = {
 
     case ChangedToGreenEvent =>
       cancelTimeout()
       isGreen = true
       greenMemberId = nextGreenId
-      context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
+      becomeNow(receiveWhenIdle)
       recipient ! ChangedToGreenEvent
       unstashAll()
 
@@ -155,7 +155,5 @@ class SequenceActor(
     case TimeoutEvent =>
       throw new TimeoutException("Sequence ${this.id}: timeout occured when waiting for final green ack")
   }
-
-  override val receive = receiveWhenInitializing orElse receiveCommonNodeMessages
 
 }

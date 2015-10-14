@@ -34,9 +34,11 @@ object JsonProtocol extends DefaultJsonProtocol {
 
   implicit object ComponentJsonFormat extends RootJsonFormat[Component] {
     def write(component: Component): JsValue = component match {
-      case Light(id, initialState)              => JsObject("type" -> JsString("Light"), "id" -> JsString(id), "state" -> initialState.toJson)
-      case Group(id, members @ _*)              => JsObject("type" -> JsString("Group"), "id" -> JsString(id), "members" -> members.toJson)
-      case Sequence(id, strategy, members @ _*) => JsObject("type" -> JsString("Sequence"), "id" -> JsString(id), "strategy" -> strategy.toJson, "members" -> members.toJson)
+      case Light(id, initialState)                       => JsObject("type" -> JsString("Light"), "id" -> JsString(id), "state" -> initialState.toJson)
+      case Group(id, members @ _*)                       => JsObject("type" -> JsString("Group"), "id" -> JsString(id), "members" -> members.toJson)
+      case Sequence(id, strategy, members @ _*)          => JsObject("type" -> JsString("Sequence"), "id" -> JsString(id), "strategy" -> strategy.toJson, "members" -> members.toJson)
+      case Switch(id, member, initiallyGreen, skipTicks) => JsObject("type" -> JsString("Switch"), "id" -> JsString(id), "initially" -> JsBoolean(initiallyGreen), "skip" -> JsNumber(skipTicks), "member" -> member.toJson)
+      case Pulse(id, member, skipTicks)                  => JsObject("type" -> JsString("Pulse"), "id" -> JsString(id), "skip" -> JsNumber(skipTicks), "member" -> member.toJson)
     }
     def read(value: JsValue): Component = value.asJsObject.getFields("type", "id") match {
       case Seq(JsString(elementType), JsString(id)) => elementType match {
@@ -48,6 +50,12 @@ object JsonProtocol extends DefaultJsonProtocol {
         }
         case "Sequence" => value.asJsObject.getFields("strategy", "members") match {
           case Seq(strategy, members) => Sequence(id, strategy.convertTo[SequenceStrategy], (members.convertTo[Seq[Component]]): _*)(Configuration.default)
+        }
+        case "Switch" => value.asJsObject.getFields("member", "initially", "skip") match {
+          case Seq(member, initially, skip) => Switch(id, member.convertTo[Component], initially.convertTo[Boolean], skip.convertTo[Int])(Configuration.default)
+        }
+        case "Pulse" => value.asJsObject.getFields("member", "skip") match {
+          case Seq(member, skip) => Pulse(id, member.convertTo[Component], skip.convertTo[Int])(Configuration.default)
         }
       }
 

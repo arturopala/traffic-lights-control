@@ -41,7 +41,7 @@ class GroupActor(
     case ChangeToGreenCommand => isGreen match {
       case None | Some(false) =>
         responderSet.clear()
-        context.become(receiveWhileChangingToGreen orElse receiveCommonNodeMessages)
+        becomeNow(receiveWhileChangingToGreen)
         members ! ChangeToGreenCommand
         scheduleTimeout(timeout)
       case Some(true) =>
@@ -51,7 +51,7 @@ class GroupActor(
     case ChangeToRedCommand => isGreen match {
       case None | Some(true) =>
         responderSet.clear()
-        context.become(receiveWhileChangingToRed orElse receiveCommonNodeMessages)
+        becomeNow(receiveWhileChangingToRed)
         members ! ChangeToRedCommand
         scheduleTimeout(timeout)
       case Some(false) =>
@@ -62,14 +62,14 @@ class GroupActor(
   ///////////////////////////////////////////////////
   // STATE 2: WAITING FOR ALL IS RED CONFIRMATION  //
   ///////////////////////////////////////////////////
-  val receiveWhileChangingToRed: Receive = {
+  private val receiveWhileChangingToRed: Receive = {
 
     case ChangedToRedEvent =>
       responderSet += sender()
       if (responderSet.size == members.size) {
         cancelTimeout()
         isGreen = Some(false)
-        context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
+        becomeNow(receiveWhenIdle)
         recipient ! ChangedToRedEvent
       }
 
@@ -84,14 +84,14 @@ class GroupActor(
   ////////////////////////////////////////////////////
   // STATE 3: WAITING FOR ALL IS GREEN CONFIRMATION //
   ////////////////////////////////////////////////////
-  val receiveWhileChangingToGreen: Receive = {
+  private val receiveWhileChangingToGreen: Receive = {
 
     case ChangedToGreenEvent =>
       responderSet += sender()
       if (responderSet.size == members.size) {
         cancelTimeout()
         isGreen = Some(true)
-        context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
+        becomeNow(receiveWhenIdle)
         recipient ! ChangedToGreenEvent
       }
 
@@ -102,7 +102,5 @@ class GroupActor(
     case TimeoutEvent =>
       throw new TimeoutException("Group ${this.id}: timeout occured when waiting for all final green acks")
   }
-
-  override val receive = receiveWhenInitializing orElse receiveCommonNodeMessages
 
 }

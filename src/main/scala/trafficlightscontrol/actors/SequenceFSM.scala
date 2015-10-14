@@ -170,6 +170,9 @@ class SequenceFSM(
         recipient ! RecipientRegisteredEvent(id)
       }
       stay
+    case Event(TickEvent, state) =>
+      members.values.foreach(_ ! TickEvent)
+      stay
     case Event(other, state) =>
       log.error(s"Unhandled $other from $sender when $stateName using $state")
       stay

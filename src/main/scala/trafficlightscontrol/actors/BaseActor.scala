@@ -24,10 +24,12 @@ trait BaseLeafActor extends Actor with ActorLogging {
       }
   }
 
-  val receiveUnhandled: Receive = {
-    case TickEvent => ()
+  private val receiveUnhandled: Receive = {
+    case event: Event => ()
+    case command: Command =>
+      recipient ! MessageIgnoredEvent(command)
     case other =>
-      log.error(s"Component ${this.id}: command not recognized $other")
+      log.debug(s"Component ${this.id}: message not recognized $other")
   }
 
   private var delayTask: Cancellable = _
@@ -41,6 +43,8 @@ trait BaseLeafActor extends Actor with ActorLogging {
   }
 
   val receiveCommonLeafMessages: Receive = receiveRecipient orElse receiveUnhandled
+
+  def becomeNow(receive: Receive) = context.become(receive orElse receiveCommonLeafMessages)
 
 }
 
@@ -78,7 +82,7 @@ trait BaseNodeActor extends BaseLeafActor {
   /////////////////////////////////////////////////////////////////
   // STATE 0: INITIALIZING, WAITING FOR ALL MEMBERS REGISTRATION //
   /////////////////////////////////////////////////////////////////
-  val receiveWhenInitializing: Receive = {
+  private val receiveWhenInitializing: Receive = {
     case RecipientRegisteredEvent(id) =>
       _members = _members + (id -> sender())
       _memberIds = _members.keys.toSeq
@@ -93,7 +97,11 @@ trait BaseNodeActor extends BaseLeafActor {
     case TickEvent => members ! TickEvent
   }
 
-  val receiveCommonNodeMessages: Receive = receiveTick orElse receiveCommonLeafMessages
+  private val receiveCommonNodeMessages: Receive = receiveTick orElse receiveCommonLeafMessages
+
+  override val receive = receiveWhenInitializing orElse receiveCommonNodeMessages
+
+  override def becomeNow(receive: Receive) = super.becomeNow(receive orElse receiveCommonNodeMessages)
 
 }
 
