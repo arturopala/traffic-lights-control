@@ -118,3 +118,13 @@ trait BaseNodeActor extends BaseLeafActor {
 
 }
 
+/**
+ * Base trait of node-like traffic system components (wrapping only one member)
+ */
+trait SingleNodeActor extends BaseNodeActor {
+
+  def memberProp: Props
+  final override val memberProps = Seq(memberProp)
+
+}
+

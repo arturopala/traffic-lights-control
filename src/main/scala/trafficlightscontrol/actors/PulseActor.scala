@@ -27,14 +27,13 @@ object PulseActor {
  */
 class PulseActor(
     val id:            Id,
-    memberProp:        Props,
+    val memberProp:    Props,
     val configuration: Configuration,
     skipTicks:         Int,
     command:           Command,
     ackEvent:          Event
-) extends BaseNodeActor {
+) extends SingleNodeActor {
 
-  val memberProps = Seq(memberProp)
   var remainingTicksToSkip: Int = 0
 
   import configuration.{ timeout }

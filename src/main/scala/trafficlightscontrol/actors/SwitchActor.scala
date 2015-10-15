@@ -26,13 +26,11 @@ object SwitchActor {
  */
 class SwitchActor(
     val id:            Id,
-    val member:        Props,
+    val memberProp:    Props,
     val configuration: Configuration,
     initiallyGreen:    Boolean,
     skipTicks:         Int
-) extends BaseNodeActor {
-
-  val memberProps = Seq(member)
+) extends SingleNodeActor {
 
   var isGreen: Boolean = initiallyGreen
   var remainingTicksToSkip: Int = 0
