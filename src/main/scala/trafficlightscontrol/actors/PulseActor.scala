@@ -50,6 +50,7 @@ class PulseActor(
       members ! command
       members ! TickEvent
       scheduleTimeout(timeout)
+
     case TickEvent =>
       remainingTicksToSkip = remainingTicksToSkip - 1
   }
@@ -68,7 +69,7 @@ class PulseActor(
       becomeNow(receiveWhenIdle)
 
     case TimeoutEvent =>
-      throw new TimeoutException("Pulse ${this.id}: timeout occured when waiting for change confirmation")
+      throw new TimeoutException(s"Pulse ${this.id}: timeout occured when waiting for change confirmation")
 
   }
 

@@ -70,7 +70,7 @@ class SequenceActor(
   ///////////////////////////////////////////////////
   private val receiveWhileChangingToRed: Receive = {
 
-    case ChangedToRedEvent =>
+    case ChangedToRedEvent | MessageIgnoredEvent(ChangeToRedCommand) =>
       responderSet += sender()
       if (responderSet.size == members.size) {
         cancelTimeout()
@@ -85,7 +85,7 @@ class SequenceActor(
     case ChangeToRedCommand => //ignore, already changing to red
 
     case TimeoutEvent =>
-      throw new TimeoutException("Sequence ${this.id}: timeout occured when waiting for all final red acks")
+      throw new TimeoutException(s"Sequence ${this.id}: timeout occured when waiting for all final red acks")
   }
 
   ////////////////////////////////////////////////////////
@@ -93,7 +93,7 @@ class SequenceActor(
   ////////////////////////////////////////////////////////
   private val receiveWhileChangingToAllRedBeforeGreen: Receive = {
 
-    case ChangedToRedEvent =>
+    case ChangedToRedEvent | MessageIgnoredEvent(ChangeToRedCommand) =>
       responderSet += sender()
       if (responderSet.size == members.size) {
         cancelTimeout()
@@ -108,7 +108,7 @@ class SequenceActor(
       becomeNow(receiveWhileChangingToRed) // avoid going green in the next step
 
     case TimeoutEvent =>
-      throw new TimeoutException("Sequence ${this.id}: timeout occured when waiting for all red acks before changing to green")
+      throw new TimeoutException(s"Sequence ${this.id}: timeout occured when waiting for all red acks before changing to green")
   }
 
   //////////////////////////////////////////////////////////
@@ -140,7 +140,7 @@ class SequenceActor(
   /////////////////////////////////////////////////////////
   private val receiveWhileWaitingForGreenAck: Receive = {
 
-    case ChangedToGreenEvent =>
+    case ChangedToGreenEvent | MessageIgnoredEvent(ChangeToGreenCommand) =>
       cancelTimeout()
       isGreen = true
       greenMemberId = nextGreenId
@@ -153,7 +153,7 @@ class SequenceActor(
     case ChangeToRedCommand   => stash() // we can't avoid going green at that point
 
     case TimeoutEvent =>
-      throw new TimeoutException("Sequence ${this.id}: timeout occured when waiting for final green ack")
+      throw new TimeoutException(s"Sequence ${this.id}: timeout occured when waiting for final green ack")
   }
 
 }

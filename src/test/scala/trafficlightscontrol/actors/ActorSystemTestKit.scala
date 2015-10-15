@@ -2,7 +2,7 @@ package trafficlightscontrol.actors
 
 import com.typesafe.config.ConfigFactory
 import akka.testkit.TestKit
-import akka.actor.{ Actor, ActorSystem, ActorRef, Props }
+import akka.actor.{ Actor, ActorSystem, ActorRef, Props, Terminated }
 import akka.testkit.ImplicitSender
 import akka.testkit.TestProbe
 import org.scalatest.BeforeAndAfter
@@ -48,18 +48,4 @@ object TestProps {
       case message => probe.ref forward message
     }
   })
-}
-
-case class MessageEcho(id: String, message: Any)
-
-object ProxyTestProps {
-  def apply(probe: TestProbe, props: Props, id: String): Props = Props(new Actor {
-    val target = context.actorOf(props)
-    val receive: Receive = {
-      case message =>
-        target forward message
-        probe.ref forward MessageEcho(id, message)
-    }
-  })
-
 }

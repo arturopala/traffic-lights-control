@@ -37,7 +37,7 @@ class TrafficSystemsManager() extends Actor with ActorLogging {
     case command @ StartSystemCommand(system) => installedSystems.get(system) match {
       case Some((component, None, history)) =>
         val props = TrafficSystem.props(component, system)(TrafficSystemMaterializer)
-        val trafficSystem = context.actorOf(props)
+        val trafficSystem = context.actorOf(props, name = system)
         context.watch(trafficSystem)
         installedSystems(system) = (component, Some(trafficSystem), history)
         trafficSystem ! command

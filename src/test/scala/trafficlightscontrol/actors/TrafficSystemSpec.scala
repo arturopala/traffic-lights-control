@@ -22,9 +22,7 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
     timeout = 1.second
   )
 
-  val strategy = SequenceStrategy.RoundRobin
-
-  val layout = Sequence("s1", strategy,
+  val layout = Sequence("s1", SequenceStrategy.roundRobin("g1", "g2"),
     Group(
       "g1",
       Light("l1", RedLight),
@@ -88,6 +86,7 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
     expectMsg(SystemStartedEvent("foo2"))
     trafficSystemRef ! StartSystemCommand("foo2")
     expectMsg(MessageIgnoredEvent(StartSystemCommand("foo2")))
+    trafficSystemRef ! StopSystemCommand("foo2")
   }
 
   it should "ignore premature StopSystemCommand" in new ActorSystemTest {
@@ -100,12 +99,39 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
     expectMsg(MessageIgnoredEvent(StopSystemCommand("foo3")))
   }
 
-}
+  it should "emit TickEvents after start" in new ActorSystemTest {
+    val props = TrafficSystem.props(layout, "foo3")(TrafficSystemMaterializer)
+    val trafficSystemRef = actorSystem.actorOf(props, "foo3")
+    trafficSystemRef ! StartSystemCommand("foo3")
+    expectMsg(SystemStartedEvent("foo3"))
 
-class TestTrafficSystemMaterializer(implicit val system: ActorSystem) extends DefaultTrafficSystemMaterializer with TestKitBase {
-  val probe = TestProbe()
-  override def lightProps(light: Light, systemId: Id): Props = {
-    val props = LightActor.props(combineId(systemId, light.id), light.initialState, light.configuration)
-    ProxyTestProps(probe, props, light.id)
+    Thread.sleep(1000)
+
+    eventListener.expectMsgAllOf(
+      checkTimeout,
+      StatusEvent("foo3_l1", RedLight),
+      StatusEvent("foo3_l2", GreenLight),
+      StatusEvent("foo3_l3", GreenLight),
+      StatusEvent("foo3_l4", RedLight)
+    )
+
+    eventListener.expectMsgAllOf(
+      checkTimeout,
+      StatusEvent("foo3_l2", ChangingToRedLight),
+      StatusEvent("foo3_l3", ChangingToRedLight)
+    )
+
+    eventListener.expectMsgAllOf(
+      checkTimeout,
+      StatusEvent("foo3_l2", RedLight),
+      StatusEvent("foo3_l3", RedLight),
+      StatusEvent("foo3_l1", ChangingToGreenLight),
+      StatusEvent("foo3_l2", ChangingToGreenLight),
+      StatusEvent("foo3_l1", GreenLight),
+      StatusEvent("foo3_l2", GreenLight)
+    )
+
+    trafficSystemRef ! StopSystemCommand("foo3")
   }
+
 }

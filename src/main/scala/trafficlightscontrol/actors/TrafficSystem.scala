@@ -6,7 +6,13 @@ import trafficlightscontrol.model._
 object TrafficSystem {
   def props(component: Component, systemId: Id)(implicit materializer: TrafficSystemMaterializer): Props = {
     val componentProps = materializer.props(component, systemId)
-    TrafficSystemActor.props(componentProps, component, systemId)
+    val rootProps = component match {
+      case p: Pulse    => componentProps
+      case s: Switch   => componentProps
+      case s: Sequence => PulseActor.props("rootPulse", componentProps, component.configuration)
+      case c           => SwitchActor.props("rootSwitch", componentProps, component.configuration)
+    }
+    TrafficSystemActor.props(rootProps, component, systemId)
   }
 }
 
@@ -16,12 +22,14 @@ trait TrafficSystemMaterializer {
   def sequenceProps(sequence: Sequence, systemId: Id): Props
   def groupProps(group: Group, systemId: Id): Props
   def switchProps(switch: Switch, systemId: Id): Props
+  def pulseProps(pulse: Pulse, systemId: Id): Props
 
   def props(component: Component, systemId: Id)(implicit materializer: TrafficSystemMaterializer): Props = component match {
     case light: Light       => lightProps(light, systemId)
     case sequence: Sequence => sequenceProps(sequence, systemId)
     case group: Group       => groupProps(group, systemId)
     case switch: Switch     => switchProps(switch, systemId)
+    case pulse: Pulse       => pulseProps(pulse, systemId)
   }
 
   def combineId(systemId: Id, id: Id): Id = systemId+"_"+id
@@ -41,11 +49,13 @@ trait DefaultTrafficSystemMaterializer extends TrafficSystemMaterializer {
     val memberProps = props(switch.member, systemId)(this)
     SwitchActor.props(combineId(systemId, switch.id), memberProps, switch.configuration, switch.initiallyGreen, switch.skipTicks)
   }
+  override def pulseProps(pulse: Pulse, systemId: Id): Props = {
+    val memberProps = props(pulse.member, systemId)(this)
+    PulseActor.props(combineId(systemId, pulse.id), memberProps, pulse.configuration, skipTicks = pulse.skipTicks)
+  }
 }
 
-object TrafficSystemMaterializer extends DefaultTrafficSystemMaterializer
-
-object TrafficSystemMaterializerFSM extends TrafficSystemMaterializer {
+trait TrafficSystemMaterializerFSM extends DefaultTrafficSystemMaterializer {
   override def lightProps(light: Light, systemId: Id): Props = LightFSM.props(combineId(systemId, light.id), light.initialState, light.configuration)
   override def sequenceProps(sequence: Sequence, systemId: Id): Props = {
     val memberProps = sequence.members.map(props(_, systemId)(this))
@@ -55,11 +65,10 @@ object TrafficSystemMaterializerFSM extends TrafficSystemMaterializer {
     val memberProps = group.members.map(props(_, systemId)(this))
     GroupFSM.props(combineId(systemId, group.id), memberProps, group.configuration)
   }
-  override def switchProps(switch: Switch, systemId: Id): Props = {
-    val memberProps = props(switch.member, systemId)(this)
-    SwitchActor.props(combineId(systemId, switch.id), memberProps, switch.configuration, switch.initiallyGreen, switch.skipTicks)
-  }
 }
+
+object TrafficSystemMaterializer extends DefaultTrafficSystemMaterializer
+object TrafficSystemMaterializerFSM extends TrafficSystemMaterializerFSM
 
 object TrafficSystemActor {
   def props(componentProps: Props, component: Component, systemId: Id): Props = Props(classOf[TrafficSystemActor], componentProps, component, systemId)
@@ -67,7 +76,7 @@ object TrafficSystemActor {
 
 class TrafficSystemActor(componentProps: Props, component: Component, systemId: Id) extends Actor with ActorLogging {
 
-  val componentRef = context.actorOf(componentProps)
+  val componentRef = context.actorOf(componentProps, componentProps.args.head.asInstanceOf[Id])
   var clock: Cancellable = _
 
   var running: Boolean = false

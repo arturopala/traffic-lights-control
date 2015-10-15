@@ -28,7 +28,7 @@ class PulseActorSpec extends FlatSpecLike with Matchers with ScalaFutures with A
   "A PulseActor" should "receive TickEvents and emit default ChangeToGreenCommand, then wait for a default ChangedToGreenEvent" in new ActorSystemTest {
 
     val probe = TestProbe()
-    val pulse = system.actorOf(PulseActor.props("s1", TestProps(probe), config))
+    val pulse = system.actorOf(PulseActor.props("p1", TestProps(probe), config))
     probe.expectMsgType[RegisterRecipientCommand]
     probe.reply(RecipientRegisteredEvent("probe"))
     (1 to 10) foreach { i =>
@@ -42,10 +42,12 @@ class PulseActorSpec extends FlatSpecLike with Matchers with ScalaFutures with A
     }
   }
 
-  it should "receive TickEvents and emit given command, then wait for a given ackEvent" in new ActorSystemTest {
+  it should "receive TickEvent and emit given command, then wait for a given ackEvent" in new ActorSystemTest {
 
     val probe = TestProbe()
-    val pulse = system.actorOf(PulseActor.props("s1", TestProps(probe), config, TestCommand, TestEvent))
+    val pulse = system.actorOf(PulseActor.props("p1", TestProps(probe), config, TestCommand, TestEvent))
+    pulse ! RegisterRecipientCommand(testActor)
+    expectMsg(RecipientRegisteredEvent("p1"))
     probe.expectMsgType[RegisterRecipientCommand]
     probe.reply(RecipientRegisteredEvent("probe"))
     (1 to 10) foreach { i =>
@@ -56,7 +58,7 @@ class PulseActorSpec extends FlatSpecLike with Matchers with ScalaFutures with A
       pulse ! TickEvent //second tick event when pulse is pending
       probe.reply(TestEvent)
       probe.expectMsg(TickEvent)
-      //expectMsg(MessageIgnoredEvent(TestCommand)) //external command should be ignored
+      expectMsg(MessageIgnoredEvent(TestCommand)) //command from outside should be ignored
     }
   }
 

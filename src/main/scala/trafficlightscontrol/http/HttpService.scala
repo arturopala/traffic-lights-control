@@ -91,7 +91,7 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
       case None          ⇒ reject(ExpectedWebsocketRequestRejection)
     }
 
-  def publisherAsMessageSource[A](p: Publisher[A])(f: A => String): Source[TextMessage, Unit] = Source(p).map(e => TextMessage.Strict(f(e)))
+  def publisherAsMessageSource[A](p: Publisher[A])(f: A => String): Source[TextMessage, Unit] = Source(p).map(e => TextMessage.Strict(f(e))).named("tms")
 
   val idPattern = "\\w{1,128}".r
   val statusEventToString: StatusEvent => String = e => s"${e.id}:${e.state.id}"
@@ -121,14 +121,14 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
               pathEnd {
                 handleWebsocket { websocket =>
                   onSuccess(getStatusPublisher(forAllIds)) { p =>
-                    complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString), None))
+                    complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString).named("ws-lights"), None))
                   }
                 }
               } ~
                 path(idPattern) { id =>
                   handleWebsocket { websocket =>
                     onSuccess(getStatusPublisher(onlyFor(id))) { p =>
-                      complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(lightStateToString), None))
+                      complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(lightStateToString).named("ws-lights-id"), None))
                     }
                   }
                 }

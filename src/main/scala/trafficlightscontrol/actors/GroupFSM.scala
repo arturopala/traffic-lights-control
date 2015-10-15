@@ -80,7 +80,7 @@ class GroupFSM(
   }
 
   when(WaitingForAllRed, stateTimeout = timeout) {
-    case Event(ChangedToRedEvent, state @ StateData(responderSet, _)) =>
+    case Event(ChangedToRedEvent | MessageIgnoredEvent(ChangeToRedCommand), state @ StateData(responderSet, _)) =>
       responderSet += sender
       responderSet.size == members.size match {
         case false => stay
@@ -96,7 +96,7 @@ class GroupFSM(
   }
 
   when(WaitingForAllGreen, stateTimeout = timeout) {
-    case Event(ChangedToGreenEvent, state @ StateData(responderSet, _)) =>
+    case Event(ChangedToGreenEvent | MessageIgnoredEvent(ChangeToGreenCommand), state @ StateData(responderSet, _)) =>
       responderSet += sender
       responderSet.size == members.size match {
         case false => stay

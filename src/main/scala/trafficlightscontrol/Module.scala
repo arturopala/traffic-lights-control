@@ -21,15 +21,8 @@ class Module(implicit system: ActorSystem, materializer: ActorMaterializer) exte
 
   val interval: FiniteDuration = 5.seconds
   lazy val manager: ActorRef = actorOf[TrafficSystemsManager]("manager")
-  lazy val monitoring: Monitoring = Monitoring(actorOf[MonitoringActor]("monitoring"))
+  lazy val monitoring: Monitoring = Monitoring(system.actorOf(Props(classOf[MonitoringActor]).withDispatcher("monitoring-pinned-dispatcher"), "monitoring"))
   lazy val httpService: HttpService = wire[HttpService]
-
-  //lazy val httpService: TrafficHttpService = wire[TrafficHttpService]
-  //lazy val httpServiceActor: ActorRef = actorOf[TrafficHttpServiceActor]("http", httpService)
-  /*lazy val webSocketRoute: ws.Route[ActorRef] = ws.Routes(
-    "/light/status/stream" -> monitoring.actor)
-  lazy val webSocketServiceActor: ActorRef = actorOf[WebSocketServiceActor]("websocket", webSocketRoute, httpServiceActor)*/
-
 }
 
 trait ActorOf {

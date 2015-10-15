@@ -49,8 +49,10 @@ class MonitoringActor extends Actor with ActorLogging {
       publishers = publishers + (predicate -> publisherActor)
       val publisher = ActorPublisher(publisherActor)
       sender ! publisher
+      log.info(s"Started new status publisher ${publisherActor.path}")
 
     case Terminated(publisherActor) =>
+      log.info(s"Terminated status publisher ${publisherActor.path}")
       publishers = publishers filterNot { case (_, ref) => ref == publisherActor }
   }
 

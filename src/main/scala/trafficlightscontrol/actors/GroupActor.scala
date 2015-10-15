@@ -54,6 +54,7 @@ class GroupActor(
         becomeNow(receiveWhileChangingToRed)
         members ! ChangeToRedCommand
         scheduleTimeout(timeout)
+
       case Some(false) =>
         recipient ! ChangedToRedEvent
     }
@@ -64,7 +65,7 @@ class GroupActor(
   ///////////////////////////////////////////////////
   private val receiveWhileChangingToRed: Receive = {
 
-    case ChangedToRedEvent =>
+    case ChangedToRedEvent | MessageIgnoredEvent(ChangeToRedCommand) =>
       responderSet += sender()
       if (responderSet.size == members.size) {
         cancelTimeout()
@@ -78,7 +79,7 @@ class GroupActor(
     case ChangeToRedCommand   => //ignore, already changing to red
 
     case TimeoutEvent =>
-      throw new TimeoutException("Group ${this.id}: timeout occured when waiting for all final red acks")
+      throw new TimeoutException(s"Group ${this.id}: timeout occured when waiting for all final red acks")
   }
 
   ////////////////////////////////////////////////////
@@ -86,7 +87,7 @@ class GroupActor(
   ////////////////////////////////////////////////////
   private val receiveWhileChangingToGreen: Receive = {
 
-    case ChangedToGreenEvent =>
+    case ChangedToGreenEvent | MessageIgnoredEvent(ChangeToGreenCommand) =>
       responderSet += sender()
       if (responderSet.size == members.size) {
         cancelTimeout()
@@ -100,7 +101,7 @@ class GroupActor(
     case ChangeToGreenCommand => //ignore, already changing to red
 
     case TimeoutEvent =>
-      throw new TimeoutException("Group ${this.id}: timeout occured when waiting for all final green acks")
+      throw new TimeoutException(s"Group ${this.id}: timeout occured when waiting for all final green acks")
   }
 
 }

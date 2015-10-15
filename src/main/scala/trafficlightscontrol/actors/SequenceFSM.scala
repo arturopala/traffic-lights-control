@@ -86,7 +86,7 @@ class SequenceFSM(
   }
 
   when(WaitingForAllRed, stateTimeout = timeout) {
-    case Event(ChangedToRedEvent, state @ StateData(_, responderSet, _)) =>
+    case Event(ChangedToRedEvent | MessageIgnoredEvent(ChangeToRedCommand), state @ StateData(_, responderSet, _)) =>
       responderSet += sender
       responderSet.size == members.size match {
         case false => stay
@@ -101,7 +101,7 @@ class SequenceFSM(
   }
 
   when(WaitingForAllRedBeforeGreen, stateTimeout = timeout) {
-    case Event(ChangedToRedEvent, state @ StateData(_, responderSet, _)) =>
+    case Event(ChangedToRedEvent | MessageIgnoredEvent(ChangeToRedCommand), state @ StateData(_, responderSet, _)) =>
       responderSet += sender
       (responderSet.size == members.size) match {
         case false =>
@@ -129,7 +129,7 @@ class SequenceFSM(
   }
 
   when(WaitingForGreen, stateTimeout = timeout) {
-    case Event(ChangedToGreenEvent, state) =>
+    case Event(ChangedToGreenEvent | MessageIgnoredEvent(ChangeToGreenCommand), state) =>
       goto(Idle) using state.copy(isGreen = true)
     case Event(ChangeToGreenCommand, _) =>
       stay

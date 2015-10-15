@@ -72,7 +72,7 @@ class SwitchActor(
       becomeNow(receiveWhenIdle)
 
     case TimeoutEvent =>
-      throw new TimeoutException("Switch ${this.id}: timeout occured when waiting for change confirmation")
+      throw new TimeoutException(s"Switch ${this.id}: timeout occured when waiting for change confirmation")
 
   }
 

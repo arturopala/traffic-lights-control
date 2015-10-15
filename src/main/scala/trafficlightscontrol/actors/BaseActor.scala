@@ -63,10 +63,15 @@ trait BaseNodeActor extends BaseLeafActor {
   private var _memberIds: Seq[Id] = _
 
   override def preStart = {
-    for (prop <- memberProps) {
-      val member = context.actorOf(prop)
+    for (props <- memberProps) {
+      val member = context.actorOf(props, getIdFromProps(props))
       member ! RegisterRecipientCommand(self)
     }
+  }
+
+  private def getIdFromProps(props: Props): Id = props.args.headOption match {
+    case Some(id: Id) => id
+    case _            => "member"
   }
 
   private var timeoutTask: Cancellable = _
@@ -83,14 +88,20 @@ trait BaseNodeActor extends BaseLeafActor {
   // STATE 0: INITIALIZING, WAITING FOR ALL MEMBERS REGISTRATION //
   /////////////////////////////////////////////////////////////////
   private val receiveWhenInitializing: Receive = {
+
     case RecipientRegisteredEvent(id) =>
       _members = _members + (id -> sender())
       _memberIds = _members.keys.toSeq
       log.debug(s"Node ${this.id}: new member registered $id")
       if (_members.size == memberProps.size) {
+        cancelTimeout()
         log.info(s"Node ${this.id} initialized. Members: ${memberIds.mkString(",")}")
         context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
       }
+
+    case TimeoutEvent =>
+      log.warning(s"Timeout ocurred. Node ${this.id} PARTIALLY initialized. Members: ${memberIds.mkString(",")}")
+      context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
   }
 
   private val receiveTick: Receive = {
@@ -102,6 +113,8 @@ trait BaseNodeActor extends BaseLeafActor {
   override val receive = receiveWhenInitializing orElse receiveCommonNodeMessages
 
   override def becomeNow(receive: Receive) = super.becomeNow(receive orElse receiveCommonNodeMessages)
+
+  scheduleTimeout(configuration.timeout)
 
 }
 
