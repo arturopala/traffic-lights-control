@@ -8,11 +8,14 @@ trait Command extends Message
 trait Query extends Message
 trait Event extends Message
 
+trait OperationCommand extends Command
+trait LifecycleCommand extends Command
+
 case class RegisterRecipientCommand(director: ActorRef) extends Command
 case class RecipientRegisteredEvent(id: Id) extends Event
 
-case object ChangeToRedCommand extends Command
-case object ChangeToGreenCommand extends Command
+case object ChangeToRedCommand extends OperationCommand
+case object ChangeToGreenCommand extends OperationCommand
 
 case object CanContinueAfterDelayEvent extends Event
 
@@ -28,12 +31,12 @@ case class ReportEvent(report: Map[Id, LightState]) extends Event
 
 case class GetPublisherQuery(p: Id => Boolean) extends Command
 
-case class InstallComponentCommand(component: Component, system: Id) extends Command
+case class InstallComponentCommand(component: Component, system: Id) extends LifecycleCommand
 case class InstallComponentFailedEvent(component: Component, system: Id, reason: String) extends Event
 case class InstallComponentSucceededEvent(component: Component, system: Id) extends Event
 
-case class StartSystemCommand(system: Id) extends Command
-case class StopSystemCommand(system: Id) extends Command
+case class StartSystemCommand(system: Id) extends LifecycleCommand
+case class StopSystemCommand(system: Id) extends LifecycleCommand
 
 case class SystemStartedEvent(system: Id) extends Event
 case class SystemStartFailureEvent(system: Id, reason: String) extends Event
