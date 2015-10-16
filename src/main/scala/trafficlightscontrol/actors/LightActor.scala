@@ -82,7 +82,6 @@ class LightActor(
   def changeStateTo(newState: LightState) = {
     state = newState
     context.system.eventStream.publish(StatusEvent(id, state))
-    log.info(s"$id is $state")
     context.become(receiveByState orElse receiveQuery orElse receiveCommonLeafMessages)
   }
 

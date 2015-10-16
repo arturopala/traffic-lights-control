@@ -37,12 +37,10 @@ class LightBoard extends mixin(React.Component, WebSocketListenerMixin) {
   render() {
   	const lightId = this.props.params.lightId || this.props.lightId
     return (
-    	<div>
-	    	<div><Link to="/lights">Dashboard</Link></div>
-	    	<div>
-	    		<Light lightId={lightId} lightState={this.state.lightState}/>
-	    		<div>{this.state.recent}</div>
-	    	</div>
+    	<div className="lightboard">
+        <div className="panel">
+	    	  <Link to="/lights"><Light lightId={lightId} lightState={this.state.lightState}/></Link>
+        </div>
     	</div>
 	);
   }

@@ -1,4 +1,111 @@
-.light {
-	display: block;
+body {
+	margin: 0;
 	padding: 1rem;
+	height: 100%;
+	background-color: #0F0F0F;
+	color: #2F2F2F;
+	font-family: sans-serif;
+}
+
+a {
+	color: #2F2F2F;
+	text-decoration: none;
+}
+
+.welcome {
+	text-align: center;
+	font-size: 300%;
+	padding-top: 10%;
+}
+
+.welcome .panel {
+	margin: 1em;
+	padding: 1em;
+	font-size: 70%;
+}
+
+.welcome .panel a {
+	color: #AAAAAA;
+}
+
+.dashboard {
+	padding: 3rem;
+	text-align: center;
+	height: 100%;
+}
+
+.lightboard {
+	padding: 3rem;
+	text-align: center;
+	height: 100%;
+	font-size: 300%;
+}
+
+.light {
+	display: inline-block;
+	padding: 0.5rem;
+	background-color: #0F0F0F;
+}
+
+.light .label {
+	display: inline-block;
+	padding-bottom: 0.5em;
+}
+
+.light .panel {
+	display: block;
+	padding: 1em 0.5em 0.5em 0.5em;
+	width: 5em;
+	height: 16.5em;
+	background-color: black;
+	border-radius: 1em;
+}
+
+.light .panel .box {
+	display: block;
+	width: 5em;
+	height: 5em;
+	margin: 0 0 0.5em 0;
+	border-radius: 2.5em;
+	box-shadow: 0px -0.1em 0px 0.05em rgba(70,70,70,0.4);
+}
+
+.stateR .boxRed {
+	background-color: red
+}
+.stateR .boxYellow {
+	background-color: #0F0F0F;
+}
+.stateR .boxGreen {
+	background-color: #0F0F0F;
+}
+
+.stateG .boxRed {
+	background-color: #0F0F0F;
+}
+.stateG .boxYellow {
+	background-color: #0F0F0F;
+}
+.stateG .boxGreen {
+	background-color: green
+}
+
+.stateA .boxRed {
+	background-color: red
+}
+.stateA .boxYellow {
+	background-color: yellow
+}
+.stateA .boxGreen {
+	background-color: #0F0F0F;
+}
+
+.stateY .boxRed {
+	background-color: #0F0F0F;
+}
+.stateY .boxYellow {
+	background-color: yellow
+}
+.stateY .boxGreen {
+	background-color: #0F0F0F;
 }

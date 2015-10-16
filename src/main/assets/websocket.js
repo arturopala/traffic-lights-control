@@ -2,11 +2,14 @@ const websocket = window['MozWebSocket'] ? MozWebSocket : WebSocket
 
 export default function WS(path, onmessage, onerror, onopen, onclose){
 
-  let socket = new websocket("ws://"+window.location.host+path)
+  let host = window.location.host
+
+  if (host === "localhost:8081") host = "localhost:8080"
+
+  let socket = new websocket("ws://"+host+path)
 
   if(onmessage) socket.onmessage = function (event){
     if(typeof event.data !== undefined){
-      console.log(event.data)
       onmessage(event.data)
     }
   }

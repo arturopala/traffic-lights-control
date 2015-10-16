@@ -32,11 +32,13 @@ class Dashboard extends mixin(React.Component, WebSocketListenerMixin) {
   render() {
   	const { lightStateMap } = this.state
     return (
-		<div className="dashboard">
-		{Object.getOwnPropertyNames(lightStateMap).map(
-			lightId => <Link key={lightId} to={`/lights/${lightId}`}><Light lightId={lightId} lightState={lightStateMap[lightId]}/></Link>
-		)}
-	    </div>
+      <div className="dashboard">
+    		<div className="panel">
+    		{Object.getOwnPropertyNames(lightStateMap).map(
+    			lightId => <Link key={lightId} to={`/lights/${lightId}`}><Light lightId={lightId} lightState={lightStateMap[lightId]}/></Link>
+    		)}
+	     </div>
+      </div>
 	);
   }
 
