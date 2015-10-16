@@ -26,7 +26,8 @@ class TimeOffsetActor(
 ) extends SingleNodeActor {
 
   val receiveWhenIdle: Receive = {
-    case msg => context.system.scheduler.scheduleOnce(offset, members.head._2, msg)(context.system.dispatcher)
+    case msg if sender() == member                                => recipient ! msg
+    case msg if msg.getClass != classOf[RegisterRecipientCommand] => context.system.scheduler.scheduleOnce(offset, members.head._2, msg)(context.system.dispatcher)
   }
 
 }

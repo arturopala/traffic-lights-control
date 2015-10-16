@@ -23,6 +23,7 @@ trait TrafficSystemMaterializer {
   def groupProps(group: Group, systemId: Id): Props
   def switchProps(switch: Switch, systemId: Id): Props
   def pulseProps(pulse: Pulse, systemId: Id): Props
+  def offsetProps(offset: Offset, systemId: Id): Props
 
   def props(component: Component, systemId: Id)(implicit materializer: TrafficSystemMaterializer): Props = component match {
     case light: Light       => lightProps(light, systemId)
@@ -30,6 +31,7 @@ trait TrafficSystemMaterializer {
     case group: Group       => groupProps(group, systemId)
     case switch: Switch     => switchProps(switch, systemId)
     case pulse: Pulse       => pulseProps(pulse, systemId)
+    case offset: Offset     => offsetProps(offset, systemId)
   }
 
   def combineId(systemId: Id, id: Id): Id = systemId+"_"+id
@@ -52,6 +54,10 @@ trait DefaultTrafficSystemMaterializer extends TrafficSystemMaterializer {
   override def pulseProps(pulse: Pulse, systemId: Id): Props = {
     val memberProps = props(pulse.member, systemId)(this)
     PulseActor.props(combineId(systemId, pulse.id), memberProps, pulse.configuration, skipTicks = pulse.skipTicks)
+  }
+  override def offsetProps(offset: Offset, systemId: Id): Props = {
+    val memberProps = props(offset.member, systemId)(this)
+    TimeOffsetActor.props(combineId(systemId, offset.id), memberProps, offset.configuration, offset = offset.offset)
   }
 }
 

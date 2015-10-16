@@ -31,7 +31,8 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
     Group(
       "g2",
       Light("l3", GreenLight),
-      Light("l4", RedLight)
+      Offset("off1", 100.millis,
+        Light("l4", RedLight))
     ))
 
   "A TrafficSystem" should "be materialized with TrafficSystemMaterializer" in new ActorSystemTest {
