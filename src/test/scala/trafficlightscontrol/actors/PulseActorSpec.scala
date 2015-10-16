@@ -10,7 +10,6 @@ import scala.concurrent.duration._
 import akka.actor.ActorRef
 
 import trafficlightscontrol.model._
-import trafficlightscontrol.actors._
 
 class PulseActorSpec extends FlatSpecLike with Matchers with ScalaFutures with ActorSystemTestKit {
 

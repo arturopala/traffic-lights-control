@@ -1,12 +1,7 @@
 package trafficlightscontrol.actors
 
 import akka.actor._
-import akka.pattern.ask
-import scala.collection._
-import scala.concurrent._
 import scala.concurrent.duration._
-import scala.collection.mutable.{ Set, Map }
-
 import trafficlightscontrol.model._
 
 object TimeOffsetActor {

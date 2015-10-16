@@ -25,7 +25,8 @@ class ComponentSpec extends FlatSpecLike with Matchers {
         Group(
           "g2",
           Light("l3", GreenLight),
-          Light("l4", RedLight)
+          Offset("off1", 500.millis,
+            Light("l4", RedLight))
         ),
         Pulse(
           "p1",
@@ -40,11 +41,12 @@ class ComponentSpec extends FlatSpecLike with Matchers {
     info("serialize layout to JSON string")
     val json = layout.toJson.compactPrint
 
-    json should include("\"type\":\"Switch\"")
-    json should include("\"type\":\"Light\"")
-    json should include("\"type\":\"Group\"")
-    json should include("\"type\":\"Sequence\"")
-    json should include("\"type\":\"Pulse\"")
+    json should include("\"type\":\"switch\"")
+    json should include("\"type\":\"light\"")
+    json should include("\"type\":\"group\"")
+    json should include("\"type\":\"sequence\"")
+    json should include("\"type\":\"pulse\"")
+    json should include("\"type\":\"offset\"")
     json should include("\"id\":\"sw1\"")
     json should include("\"id\":\"s1\"")
     json should include("\"id\":\"g1\"")
@@ -62,10 +64,31 @@ class ComponentSpec extends FlatSpecLike with Matchers {
     json should include("\"state\":\"R\"")
     json should include("\"state\":\"G\"")
     json should include("\"strategy\":\"RoundRobin\"")
+    json should include("\"offset\":\"500 milliseconds\"")
 
     info("deserialize it back as a Component")
     val result = json.parseJson.convertTo[Component]
     result should be(layout)
+  }
+
+  "FiniteDuration" should "umarshall from valid string or number" in {
+
+    def offsetFrom(json: String): FiniteDuration = json.parseJson.asJsObject.getFields("offset").head.convertTo[FiniteDuration]
+
+    offsetFrom("{\"offset\":\"125\"}") should be(125.millis)
+    offsetFrom("{\"offset\":125}") should be(125.millis)
+    offsetFrom("{\"offset\":\"100 milliseconds\"}") should be(100.millis)
+    offsetFrom("{\"offset\":\"100 millis\"}") should be(100.millis)
+    offsetFrom("{\"offset\":\"125 ms\"}") should be(125.millis)
+    offsetFrom("{\"offset\":\"100 secs\"}") should be(100.seconds)
+    offsetFrom("{\"offset\":\"100.milliseconds\"}") should be(100.millis)
+    offsetFrom("{\"offset\":\"100.millis\"}") should be(100.millis)
+    offsetFrom("{\"offset\":\"125.ms\"}") should be(125.millis)
+    offsetFrom("{\"offset\":\"100.secs\"}") should be(100.seconds)
+    offsetFrom("{\"offset\":\"100milliseconds\"}") should be(100.millis)
+    offsetFrom("{\"offset\":\"100millis\"}") should be(100.millis)
+    offsetFrom("{\"offset\":\"125ms\"}") should be(125.millis)
+    offsetFrom("{\"offset\":\"100secs\"}") should be(100.seconds)
   }
 
 }
