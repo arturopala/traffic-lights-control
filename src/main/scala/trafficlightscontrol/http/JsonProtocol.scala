@@ -50,32 +50,32 @@ object JsonProtocol extends DefaultJsonProtocol {
 
   implicit object ComponentJsonFormat extends RootJsonFormat[Component] {
     def write(component: Component): JsValue = component match {
-      case Light(id, initialState)                       => JsObject("type" -> JsString("light"), "id" -> JsString(id), "state" -> initialState.toJson)
-      case Group(id, members @ _*)                       => JsObject("type" -> JsString("group"), "id" -> JsString(id), "members" -> members.toJson)
-      case Sequence(id, strategy, members @ _*)          => JsObject("type" -> JsString("sequence"), "id" -> JsString(id), "strategy" -> strategy.toJson, "members" -> members.toJson)
-      case Switch(id, member, initiallyGreen, skipTicks) => JsObject("type" -> JsString("switch"), "id" -> JsString(id), "initially" -> JsBoolean(initiallyGreen), "skip" -> JsNumber(skipTicks), "member" -> member.toJson)
-      case Pulse(id, member, skipTicks)                  => JsObject("type" -> JsString("pulse"), "id" -> JsString(id), "skip" -> JsNumber(skipTicks), "member" -> member.toJson)
-      case Offset(id, offset, member)                    => JsObject("type" -> JsString("offset"), "id" -> JsString(id), "offset" -> offset.toJson, "member" -> member.toJson)
+      case Light(id, initialState)                   => JsObject("type" -> JsString("light"), "id" -> JsString(id), "state" -> initialState.toJson)
+      case Group(id, members @ _*)                   => JsObject("type" -> JsString("group"), "id" -> JsString(id), "members" -> members.toJson)
+      case Sequence(id, strategy, members @ _*)      => JsObject("type" -> JsString("sequence"), "id" -> JsString(id), "strategy" -> strategy.toJson, "members" -> members.toJson)
+      case Switch(member, initiallyGreen, skipTicks) => JsObject("type" -> JsString("switch"), "initially" -> JsBoolean(initiallyGreen), "skip" -> JsNumber(skipTicks), "member" -> member.toJson)
+      case Pulse(member, skipTicks)                  => JsObject("type" -> JsString("pulse"), "skip" -> JsNumber(skipTicks), "member" -> member.toJson)
+      case Offset(offset, member)                    => JsObject("type" -> JsString("offset"), "offset" -> offset.toJson, "member" -> member.toJson)
     }
-    def read(value: JsValue): Component = value.asJsObject.getFields("type", "id") match {
-      case Seq(JsString(elementType), JsString(id)) => elementType match {
-        case "light" => value.asJsObject.getFields("state") match {
-          case Seq(state) => Light(id, state.convertTo[LightState])(Configuration.default)
+    def read(value: JsValue): Component = value.asJsObject.getFields("type") match {
+      case Seq(JsString(elementType)) => elementType match {
+        case "light" => value.asJsObject.getFields("id", "state") match {
+          case Seq(JsString(id), state) => Light(id, state.convertTo[LightState])(Configuration.default)
         }
-        case "group" => value.asJsObject.getFields("members") match {
-          case Seq(members) => Group(id, (members.convertTo[Seq[Component]]): _*)(Configuration.default)
+        case "group" => value.asJsObject.getFields("id", "members") match {
+          case Seq(JsString(id), members) => Group(id, (members.convertTo[Seq[Component]]): _*)(Configuration.default)
         }
-        case "sequence" => value.asJsObject.getFields("strategy", "members") match {
-          case Seq(strategy, members) => Sequence(id, strategy.convertTo[SequenceStrategy], (members.convertTo[Seq[Component]]): _*)(Configuration.default)
+        case "sequence" => value.asJsObject.getFields("id", "strategy", "members") match {
+          case Seq(JsString(id), strategy, members) => Sequence(id, strategy.convertTo[SequenceStrategy], (members.convertTo[Seq[Component]]): _*)(Configuration.default)
         }
         case "switch" => value.asJsObject.getFields("member", "initially", "skip") match {
-          case Seq(member, initially, skip) => Switch(id, member.convertTo[Component], initially.convertTo[Boolean], skip.convertTo[Int])(Configuration.default)
+          case Seq(member, initially, skip) => Switch(member.convertTo[Component], initially.convertTo[Boolean], skip.convertTo[Int])(Configuration.default)
         }
         case "pulse" => value.asJsObject.getFields("member", "skip") match {
-          case Seq(member, skip) => Pulse(id, member.convertTo[Component], skip.convertTo[Int])(Configuration.default)
+          case Seq(member, skip) => Pulse(member.convertTo[Component], skip.convertTo[Int])(Configuration.default)
         }
         case "offset" => value.asJsObject.getFields("member", "offset") match {
-          case Seq(member, offset) => Offset(id, offset.convertTo[FiniteDuration], member.convertTo[Component])(Configuration.default)
+          case Seq(member, offset) => Offset(offset.convertTo[FiniteDuration], member.convertTo[Component])(Configuration.default)
         }
       }
 

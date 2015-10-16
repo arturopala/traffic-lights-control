@@ -32,12 +32,18 @@ object Boot extends App {
     Group(
       "g1",
       Light("l1", RedLight),
-      Light("l2", GreenLight)
+      Offset(
+        500.millis,
+        Light("l2", GreenLight)
+      )
     ),
-    Group(
-      "g2",
-      Light("l3", GreenLight),
-      Light("l4", RedLight)
+    Offset(
+      1.second,
+      Group(
+        "g2",
+        Light("l3", GreenLight),
+        Light("l4", RedLight)
+      )
     ))
 
   val demoId = "demo"

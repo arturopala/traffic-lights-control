@@ -15,7 +15,6 @@ class ComponentSpec extends FlatSpecLike with Matchers {
 
   "Component" should "convert to and from JSON" in {
     val layout: Component = Switch(
-      "sw1",
       Sequence("s1", SequenceStrategy.RoundRobin,
         Group(
           "g1",
@@ -25,11 +24,12 @@ class ComponentSpec extends FlatSpecLike with Matchers {
         Group(
           "g2",
           Light("l3", GreenLight),
-          Offset("off1", 500.millis,
-            Light("l4", RedLight))
+          Offset(
+            500.millis,
+            Light("l4", RedLight)
+          )
         ),
         Pulse(
-          "p1",
           Sequence("s2", SequenceStrategy.RoundRobin,
             Light("l5", GreenLight),
             Light("l6", RedLight))
@@ -47,7 +47,6 @@ class ComponentSpec extends FlatSpecLike with Matchers {
     json should include("\"type\":\"sequence\"")
     json should include("\"type\":\"pulse\"")
     json should include("\"type\":\"offset\"")
-    json should include("\"id\":\"sw1\"")
     json should include("\"id\":\"s1\"")
     json should include("\"id\":\"g1\"")
     json should include("\"id\":\"g2\"")

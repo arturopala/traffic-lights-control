@@ -4,7 +4,12 @@ import scala.concurrent.duration._
 
 sealed trait Component { def id: Id; def configuration: Configuration }
 sealed trait CompositeComponent extends Component { def members: Iterable[Component] }
-sealed trait SingleMemberComponent extends CompositeComponent { def member: Component; def members: Iterable[Component] = Seq(member) }
+sealed trait SingleMemberComponent extends CompositeComponent {
+  def member: Component
+  def prefix: Id
+  def id: Id = prefix + member.id
+  def members: Iterable[Component] = Seq(member)
+}
 
 case class Light(
   id:           Id,
@@ -23,21 +28,24 @@ case class Group(
 )(implicit val configuration: Configuration) extends CompositeComponent
 
 case class Switch(
-  id:             Id,
-  member:         Component,
-  initiallyGreen: Boolean   = false,
-  skipTicks:      Int       = 0
-)(implicit val configuration: Configuration) extends SingleMemberComponent
+    member:         Component,
+    initiallyGreen: Boolean   = false,
+    skipTicks:      Int       = 0
+)(implicit val configuration: Configuration) extends SingleMemberComponent {
+  val prefix = "switchOf"
+}
 
 case class Pulse(
-  id:        Id,
-  member:    Component,
-  skipTicks: Int       = 0
-)(implicit val configuration: Configuration) extends SingleMemberComponent
+    member:    Component,
+    skipTicks: Int       = 0
+)(implicit val configuration: Configuration) extends SingleMemberComponent {
+  val prefix = "pulseOf"
+}
 
 case class Offset(
-  id:     Id,
-  offset: FiniteDuration,
-  member: Component
-)(implicit val configuration: Configuration) extends SingleMemberComponent
+    offset: FiniteDuration,
+    member: Component
+)(implicit val configuration: Configuration) extends SingleMemberComponent {
+  val prefix = "offsetOf"
+}
 
