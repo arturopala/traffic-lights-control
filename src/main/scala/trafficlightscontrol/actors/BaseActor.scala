@@ -77,7 +77,11 @@ trait BaseNodeActor extends BaseLeafActor {
   private var timeoutTask: Cancellable = _
 
   def scheduleTimeout(timeout: FiniteDuration): Unit = {
-    timeoutTask = context.system.scheduler.scheduleOnce(timeout, self, TimeoutEvent)(context.system.dispatcher)
+    timeoutTask = schedule(timeout, TimeoutEvent)
+  }
+
+  def schedule(timeout: FiniteDuration, msg: Any): Cancellable = {
+    context.system.scheduler.scheduleOnce(timeout, self, msg)(context.system.dispatcher)
   }
 
   def cancelTimeout(): Unit = {
@@ -90,13 +94,18 @@ trait BaseNodeActor extends BaseLeafActor {
   private val receiveWhenInitializing: Receive = {
 
     case RecipientRegisteredEvent(id) =>
-      _members = _members + (id -> sender())
-      _memberIds = _members.keys.toSeq
-      log.debug(s"Node ${this.id}: new member registered $id")
-      if (_members.size == memberProps.size) {
-        cancelTimeout()
-        log.info(s"Node ${this.id} initialized. Members: ${memberIds.mkString(",")}")
-        context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
+      _members.get(id) match {
+        case Some(_) =>
+          log.error(s"Node ${this.id}: member DUPLICATED $id")
+        case None =>
+          _members = _members + (id -> sender())
+          _memberIds = _members.keys.toSeq
+          log.debug(s"Node ${this.id}: new member registered $id")
+          if (_members.size == memberProps.size) {
+            cancelTimeout()
+            log.info(s"Node ${this.id} initialized. Members: ${memberIds.mkString(",")}")
+            context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
+          }
       }
 
     case TimeoutEvent =>
@@ -125,6 +134,8 @@ trait SingleNodeActor extends BaseNodeActor {
 
   def memberProp: Props
   final override val memberProps = Seq(memberProp)
+
+  def member: ActorRef = members.head._2
 
 }
 
