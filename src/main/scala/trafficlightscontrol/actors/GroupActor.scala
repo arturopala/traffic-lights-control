@@ -36,7 +36,7 @@ class GroupActor(
   /////////////////////////////////////////
   // STATE 1: IDLE, WAITING FOR COMMANDS //
   /////////////////////////////////////////
-  val receiveWhenIdle: Receive = {
+  val receiveWhenIdle: Receive = composeWithDefault {
 
     case ChangeToGreenCommand => isGreen match {
       case None | Some(false) =>
@@ -63,7 +63,7 @@ class GroupActor(
   ///////////////////////////////////////////////////
   // STATE 2: WAITING FOR ALL IS RED CONFIRMATION  //
   ///////////////////////////////////////////////////
-  private val receiveWhileChangingToRed: Receive = {
+  private val receiveWhileChangingToRed: Receive = composeWithDefault {
 
     case ChangedToRedEvent | MessageIgnoredEvent(ChangeToRedCommand) =>
       responderSet += sender()
@@ -85,7 +85,7 @@ class GroupActor(
   ////////////////////////////////////////////////////
   // STATE 3: WAITING FOR ALL IS GREEN CONFIRMATION //
   ////////////////////////////////////////////////////
-  private val receiveWhileChangingToGreen: Receive = {
+  private val receiveWhileChangingToGreen: Receive = composeWithDefault {
 
     case ChangedToGreenEvent | MessageIgnoredEvent(ChangeToGreenCommand) =>
       responderSet += sender()

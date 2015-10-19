@@ -16,7 +16,7 @@ object LightActor {
 }
 
 /**
- * Light is a primitive building block of a traffic control system.
+ * LightActor is a primitive building block of a traffic control system.
  * Possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
  */
 class LightActor(
@@ -30,62 +30,88 @@ class LightActor(
 
   import configuration.{ delayRedToGreen, delayGreenToRed }
 
-  def receiveByState: Receive = state match {
+  def receiveByState(): Receive = state match {
     case RedLight             => receiveWhenRed
     case GreenLight           => receiveWhenGreen
     case ChangingToRedLight   => receiveWhenChangingToRed
     case ChangingToGreenLight => receiveWhenChangingToGreen
   }
 
-  val receiveQuery: Receive = {
+  private val receiveQuery: Receive = {
     case GetStatusQuery => recipient ! StatusEvent(id, state)
   }
 
-  val receiveWhenRed: Receive = {
+  /////////////////////////////////////
+  // STATE 1: IDLE WHEN STATE IS RED //
+  /////////////////////////////////////
+  private val receiveWhenRed: Receive = composeWithDefault {
+
     case ChangeToRedCommand =>
       recipient ! ChangedToRedEvent
 
     case ChangeToGreenCommand =>
       changeStateTo(ChangingToGreenLight)
       scheduleDelay(delayRedToGreen)
+
   }
 
-  val receiveWhenGreen: Receive = {
+  ///////////////////////////////////////
+  // STATE 2: IDLE WHEN STATE IS GREEN //
+  ///////////////////////////////////////
+  private val receiveWhenGreen: Receive = composeWithDefault {
+
     case ChangeToRedCommand =>
       changeStateTo(ChangingToRedLight)
       scheduleDelay(delayGreenToRed)
+
     case ChangeToGreenCommand => {
       recipient ! ChangedToGreenEvent
     }
+
   }
 
-  val receiveWhenChangingToRed: Receive = {
+  ///////////////////////////////////////////////
+  // STATE 3: PENDING CHANGE FROM GREEN TO RED //
+  ///////////////////////////////////////////////
+  private val receiveWhenChangingToRed: Receive = composeWithDefault {
+
     case CanContinueAfterDelayEvent =>
       changeStateTo(RedLight)
       recipient ! ChangedToRedEvent
+
     case ChangeToGreenCommand =>
       changeStateTo(ChangingToGreenLight)
+
     case ChangeToRedCommand => //ignore
+
   }
 
-  val receiveWhenChangingToGreen: Receive = {
+  ///////////////////////////////////////////////
+  // STATE 4: PENDING CHANGE FROM RED TO GREEN //
+  ///////////////////////////////////////////////
+  private val receiveWhenChangingToGreen: Receive = composeWithDefault {
+
     case CanContinueAfterDelayEvent =>
       changeStateTo(GreenLight)
       recipient ! ChangedToGreenEvent
+
     case ChangeToRedCommand =>
       changeStateTo(ChangingToRedLight)
-    case ChangeToGreenCommand => //ignore
-  }
 
-  override val receive: Receive = receiveByState orElse receiveQuery orElse receiveCommonLeafMessages
+    case ChangeToGreenCommand => //ignore
+
+  }
 
   def changeStateTo(newState: LightState) = {
     state = newState
     context.system.eventStream.publish(StatusEvent(id, state))
-    context.become(receiveByState orElse receiveQuery orElse receiveCommonLeafMessages)
+    context.become(receiveByState())
   }
 
   changeStateTo(state)
 
+  override def composeWithDefault(receive: Receive): Receive = super.composeWithDefault(receive orElse receiveQuery)
+
+  override val receive: Receive = receiveByState()
   override val toString: String = s"Light($id,$state)"
 }

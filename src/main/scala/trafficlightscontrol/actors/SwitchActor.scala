@@ -40,12 +40,12 @@ class SwitchActor(
   ////////////////////////////////////////////
   // STEP 1: WAIT FOR TICK EVENT            //
   ////////////////////////////////////////////
-  val receiveWhenIdle: Receive = {
+  val receiveWhenIdle: Receive = composeWithDefault {
     case TickEvent if (remainingTicksToSkip <= 0) =>
       remainingTicksToSkip = skipTicks
       becomeNow(receiveWhenPending)
-      members ! (if (isGreen) ChangeToRedCommand else ChangeToGreenCommand)
-      members ! TickEvent
+      member ! (if (isGreen) ChangeToRedCommand else ChangeToGreenCommand)
+      member ! TickEvent
       scheduleTimeout(timeout)
     case TickEvent =>
       remainingTicksToSkip = remainingTicksToSkip - 1
@@ -54,7 +54,7 @@ class SwitchActor(
   /////////////////////////////////////////////
   // STEP 2: WAIT FOR CHANGE ACKNOWLEDGEMENT //
   /////////////////////////////////////////////
-  private val receiveWhenPending: Receive = {
+  private val receiveWhenPending: Receive = composeWithDefault {
     case ChangedToGreenEvent =>
       cancelTimeout()
       isGreen = true

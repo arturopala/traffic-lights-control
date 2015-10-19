@@ -41,13 +41,13 @@ class PulseActor(
   ////////////////////////////////////////////
   // STEP 1: WAIT FOR TICK EVENT            //
   ////////////////////////////////////////////
-  val receiveWhenIdle: Receive = {
+  val receiveWhenIdle: Receive = composeWithDefault {
 
     case TickEvent if (remainingTicksToSkip <= 0) =>
       remainingTicksToSkip = skipTicks
       becomeNow(receiveWhenPending)
-      members ! command
-      members ! TickEvent
+      member ! command
+      member ! TickEvent
       scheduleTimeout(timeout)
 
     case TickEvent =>
@@ -57,7 +57,7 @@ class PulseActor(
   /////////////////////////////////////////////
   // STEP 2: WAIT FOR CHANGE ACKNOWLEDGEMENT //
   /////////////////////////////////////////////
-  private val receiveWhenPending: Receive = {
+  private val receiveWhenPending: Receive = composeWithDefault {
 
     case msg: Event if (msg == ackEvent) =>
       cancelTimeout()

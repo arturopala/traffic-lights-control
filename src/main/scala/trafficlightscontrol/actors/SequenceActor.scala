@@ -41,7 +41,7 @@ class SequenceActor(
   /////////////////////////////////////////
   // STATE 1: IDLE, WAITING FOR COMMANDS //
   /////////////////////////////////////////
-  val receiveWhenIdle: Receive = {
+  val receiveWhenIdle: Receive = composeWithDefault {
 
     case ChangeToGreenCommand =>
       nextGreenId = strategy(greenMemberId, memberIds)
@@ -68,7 +68,7 @@ class SequenceActor(
   ///////////////////////////////////////////////////
   // STATE 2: WAITING FOR ALL IS RED CONFIRMATION  //
   ///////////////////////////////////////////////////
-  private val receiveWhileChangingToRed: Receive = {
+  private val receiveWhileChangingToRed: Receive = composeWithDefault {
 
     case ChangedToRedEvent | MessageIgnoredEvent(ChangeToRedCommand) =>
       responderSet += sender()
@@ -91,7 +91,7 @@ class SequenceActor(
   ////////////////////////////////////////////////////////
   // STATE 3: WAITING FOR ALL IS RED BEFORE GOING GREEN //
   ////////////////////////////////////////////////////////
-  private val receiveWhileChangingToAllRedBeforeGreen: Receive = {
+  private val receiveWhileChangingToAllRedBeforeGreen: Receive = composeWithDefault {
 
     case ChangedToRedEvent | MessageIgnoredEvent(ChangeToRedCommand) =>
       responderSet += sender()
@@ -114,7 +114,7 @@ class SequenceActor(
   //////////////////////////////////////////////////////////
   // STATE 4: WAITING WHEN DELAY BEFORE GOING GREEN       //
   //////////////////////////////////////////////////////////
-  private val receiveWhileDelayedBeforeGreen: Receive = {
+  private val receiveWhileDelayedBeforeGreen: Receive = composeWithDefault {
 
     case CanContinueAfterDelayEvent =>
       members.get(nextGreenId) match {
@@ -138,7 +138,7 @@ class SequenceActor(
   /////////////////////////////////////////////////////////
   // STATE 5: WAITING FOR CONFIRMATION FROM GREEN MEMBER //
   /////////////////////////////////////////////////////////
-  private val receiveWhileWaitingForGreenAck: Receive = {
+  private val receiveWhileWaitingForGreenAck: Receive = composeWithDefault {
 
     case ChangedToGreenEvent | MessageIgnoredEvent(ChangeToGreenCommand) =>
       cancelTimeout()

@@ -12,7 +12,7 @@ trait BaseLeafActor extends Actor with ActorLogging {
   def id: Id
   def configuration: Configuration
 
-  def recipient: Option[ActorRef] = _recipient
+  final def recipient: Option[ActorRef] = _recipient
 
   private var _recipient: Option[ActorRef] = None
 
@@ -34,18 +34,23 @@ trait BaseLeafActor extends Actor with ActorLogging {
 
   private var delayTask: Cancellable = _
 
-  def scheduleDelay(delay: FiniteDuration): Unit = {
-    if (configuration.automatic) delayTask = context.system.scheduler.scheduleOnce(delay, self, CanContinueAfterDelayEvent)(context.system.dispatcher)
+  final def schedule(timeout: FiniteDuration, msg: Any): Cancellable = {
+    context.system.scheduler.scheduleOnce(timeout, self, msg)(context.system.dispatcher)
   }
 
-  def cancelDelay(): Unit = {
+  final def scheduleDelay(delay: FiniteDuration): Unit = {
+    if (configuration.automatic) delayTask = schedule(delay, CanContinueAfterDelayEvent)
+  }
+
+  final def cancelDelay(): Unit = {
     delayTask.cancel()
   }
 
-  val receiveCommonLeafMessages: Receive = receiveRecipient orElse receiveUnhandled
+  private val receiveCommonLeafMessages: Receive = receiveRecipient orElse receiveUnhandled
 
-  def becomeNow(receive: Receive) = context.become(receive orElse receiveCommonLeafMessages)
+  final def becomeNow(receive: Receive): Unit = context.become(receive)
 
+  def composeWithDefault(receive: Receive): Receive = receive orElse receiveCommonLeafMessages
 }
 
 /**
@@ -56,8 +61,8 @@ trait BaseNodeActor extends BaseLeafActor {
   def receiveWhenIdle: Receive
   def memberProps: Iterable[Props]
 
-  def members: Map[Id, ActorRef] = _members
-  def memberIds: Seq[Id] = _memberIds
+  final def members: Map[Id, ActorRef] = _members
+  final def memberIds: Seq[Id] = _memberIds
 
   private var _members: Map[Id, ActorRef] = Map()
   private var _memberIds: Seq[Id] = _
@@ -76,15 +81,11 @@ trait BaseNodeActor extends BaseLeafActor {
 
   private var timeoutTask: Cancellable = _
 
-  def scheduleTimeout(timeout: FiniteDuration): Unit = {
+  final def scheduleTimeout(timeout: FiniteDuration): Unit = {
     timeoutTask = schedule(timeout, TimeoutEvent)
   }
 
-  def schedule(timeout: FiniteDuration, msg: Any): Cancellable = {
-    context.system.scheduler.scheduleOnce(timeout, self, msg)(context.system.dispatcher)
-  }
-
-  def cancelTimeout(): Unit = {
+  final def cancelTimeout(): Unit = {
     timeoutTask.cancel()
   }
 
@@ -104,24 +105,24 @@ trait BaseNodeActor extends BaseLeafActor {
           if (_members.size == memberProps.size) {
             cancelTimeout()
             log.info(s"Node ${this.id} initialized. Members: ${memberIds.mkString(",")}")
-            context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
+            becomeNow(receiveWhenIdle)
           }
       }
 
     case TimeoutEvent =>
       log.warning(s"Timeout ocurred. Node ${this.id} PARTIALLY initialized. Members: ${memberIds.mkString(",")}")
-      context.become(receiveWhenIdle orElse receiveCommonNodeMessages)
+      becomeNow(receiveWhenIdle)
   }
 
   private val receiveTick: Receive = {
     case TickEvent => members ! TickEvent
   }
 
-  private val receiveCommonNodeMessages: Receive = receiveTick orElse receiveCommonLeafMessages
+  private val receiveCommonNodeMessages: Receive = receiveTick
 
-  override val receive = receiveWhenInitializing orElse receiveCommonNodeMessages
+  override val receive = composeWithDefault(receiveWhenInitializing)
 
-  override def becomeNow(receive: Receive) = super.becomeNow(receive orElse receiveCommonNodeMessages)
+  override def composeWithDefault(receive: Receive): Receive = super.composeWithDefault(receive orElse receiveCommonNodeMessages)
 
   scheduleTimeout(configuration.timeout)
 
@@ -133,9 +134,9 @@ trait BaseNodeActor extends BaseLeafActor {
 trait SingleNodeActor extends BaseNodeActor {
 
   def memberProp: Props
-  final override val memberProps = Seq(memberProp)
 
-  def member: ActorRef = members.head._2
+  final override val memberProps = Seq(memberProp)
+  final def member: ActorRef = members.head._2
 
 }
 
