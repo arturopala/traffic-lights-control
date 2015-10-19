@@ -12,14 +12,20 @@ import trafficlightscontrol.model._
 import trafficlightscontrol.actors._
 
 object TrafficSystemsManager {
-  def props(): Props = Props(classOf[TrafficSystemsManager])
+  def props(): Props = Props(classOf[TrafficSystemsManagerActor], Map())
 }
 
-class TrafficSystemsManager() extends Actor with ActorLogging {
+case class TrafficSystemsManager(actor: ActorRef)
+
+class TrafficSystemsManagerActor(initialLayouts: Map[Id, Component]) extends Actor with ActorLogging {
 
   import scala.collection.mutable.Map
 
   val installedSystems: Map[Id, (Component, Option[ActorRef], SystemHistory)] = Map()
+
+  initialLayouts foreach {
+    case (id, component) => installedSystems(id) = (component, None, SystemHistory().installed())
+  }
 
   def receive: Receive = {
 

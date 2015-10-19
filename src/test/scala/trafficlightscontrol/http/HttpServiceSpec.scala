@@ -41,6 +41,14 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
     }
   }
 
+  it should "return index.html page for GET /foo" in {
+    Get("/foo") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentType(MediaTypes.`text/html`, HttpCharsets.`UTF-8`))
+      responseAs[String] should include("""<title>Traffic Lights Control</title>""")
+    }
+  }
+
   it should "return app.js file for GET /app.js" in {
     Get("/app.js") ~> module.httpService.route ~> check {
       status should be(OK)
@@ -49,24 +57,8 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
     }
   }
 
-  it should "return app.js file for GET /foobar/app.js" in {
-    Get("/foobar/app.js") ~> module.httpService.route ~> check {
-      status should be(OK)
-      contentType should be(ContentType(MediaTypes.`application/javascript`, HttpCharsets.`UTF-8`))
-      responseAs[String] should include("""function(module, exports) {""")
-    }
-  }
-
   it should "return style.css file for GET /style.css" in {
     Get("/style.css") ~> module.httpService.route ~> check {
-      status should be(OK)
-      contentType should be(ContentType(MediaTypes.`text/css`, HttpCharsets.`UTF-8`))
-      responseAs[String] should include(""".light {""")
-    }
-  }
-
-  it should "return style.css file for GET /foo/bar/style.css" in {
-    Get("/foo/bar/style.css") ~> module.httpService.route ~> check {
       status should be(OK)
       contentType should be(ContentType(MediaTypes.`text/css`, HttpCharsets.`UTF-8`))
       responseAs[String] should include(""".light {""")
@@ -95,6 +87,16 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
     Get("/api/lights/l1") ~> module.httpService.route ~> check {
       status should be(OK)
       responseAs[String].parseJson.convertTo[StatusEvent] should be(lightStatus)
+    }
+  }
+
+  it should "return layout json for GET /api/layouts/demo" in {
+    Get("/api/layouts/demo") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentTypes.`application/json`)
+      val body = responseAs[String]
+      val layout = body.parseJson.convertTo[Component]
+      layout shouldBe module.initialLayouts("demo")
     }
   }
 

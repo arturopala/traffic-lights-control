@@ -33,7 +33,7 @@ import trafficlightscontrol.model._
 /**
  * Http service exposing REST and WS API.
  */
-class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, materializer: ActorMaterializer) extends SprayJsonSupport {
+class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implicit system: ActorSystem, materializer: ActorMaterializer) extends SprayJsonSupport {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -77,6 +77,10 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
     monitoring.actor ? GetStatusQuery(id) map (_.asInstanceOf[Option[StatusEvent]])
   }
 
+  def getSystemInfo(id: Id): Future[Component] = {
+    manager.actor ? SystemInfoQuery(id) map (_.asInstanceOf[SystemInfoEvent].component)
+  }
+
   def getStatusPublisher(predicate: Id => Boolean): Future[Publisher[StatusEvent]] = {
     monitoring.actor ? GetPublisherQuery(predicate) map (_.asInstanceOf[Publisher[StatusEvent]])
   }
@@ -106,17 +110,26 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
     handleExceptions(exceptionHandler) {
       logRequestResult("http", Logging.InfoLevel) {
         get {
-          pathPrefix("api" / "lights") {
-            pathEnd {
-              complete(getReport)
-            } ~
-              path(idPattern) { id =>
-                onSuccess(getStatusOpt(id)) {
-                  case Some(status) => complete(status)
-                  case None         => complete(NotFound, s"Light #$id not found!")
+          path("app.js") { getFromResource("public/app.js") } ~
+            path("style.css") { getFromResource("public/style.css") } ~
+            pathPrefix("api") {
+              pathPrefix("lights") {
+                pathEnd {
+                  complete(getReport)
+                } ~
+                  path(idPattern) { id =>
+                    onSuccess(getStatusOpt(id)) {
+                      case Some(status) => complete(status)
+                      case None         => complete(NotFound, s"Light #$id not found!")
+                    }
+                  }
+              } ~
+                pathPrefix("layouts" / idPattern) { id =>
+                  onSuccess(getSystemInfo(id)) { layout =>
+                    complete(layout)
+                  }
                 }
-              }
-          } ~
+            } ~
             pathPrefix("ws" / "lights") {
               pathEnd {
                 handleWebsocket { websocket =>
@@ -133,10 +146,10 @@ class HttpService(monitoring: Monitoring)(implicit system: ActorSystem, material
                   }
                 }
             } ~
-            pathSuffix("app.js") { getFromResource("public/app.js") } ~
-            pathSuffix("style.css") { getFromResource("public/style.css") } ~
-            (pathSingleSlash | path("") | pathPrefix("lights")) { getFromResource("public/index.html") } ~
-            getFromResourceDirectory("public/")
+            pathPrefix("assets") {
+              getFromResourceDirectory("public/")
+            } ~
+            getFromResource("public/index.html")
         }
       }
     }

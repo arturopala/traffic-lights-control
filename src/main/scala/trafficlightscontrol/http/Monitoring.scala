@@ -16,6 +16,8 @@ import trafficlightscontrol.actors._
 
 import akka.stream.actor._
 
+case class Monitoring(actor: ActorRef)
+
 /**
  * Actor responsible of listening on EventStream for StatusEvents. <br>
  * Keeps current system status and spreads it responding on:
@@ -62,8 +64,6 @@ class MonitoringActor extends Actor with ActorLogging {
 
   context.system.eventStream.subscribe(self, classOf[StatusEvent])
 }
-
-case class Monitoring(actor: ActorRef)
 
 class StatusPublisherActor extends Actor with ActorPublisher[StatusEvent] {
 
