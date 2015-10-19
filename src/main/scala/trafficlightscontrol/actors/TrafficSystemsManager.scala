@@ -71,10 +71,12 @@ class TrafficSystemsManagerActor(initialLayouts: Map[Id, Component]) extends Act
         sender ! SystemStopFailureEvent(system, s"Could not stop, system $system not yet installed!")
     }
 
-    case cmd @ SystemInfoQuery(id) => installedSystems.get(id) match {
+    case cmd @ GetSystemInfoQuery(id) => installedSystems.get(id) match {
       case Some((component, _, history)) => sender ! SystemInfoEvent(id, component, component.configuration.interval, history)
       case _                             => sender ! MessageIgnoredEvent(cmd)
     }
+
+    case GetSystemListQuery => sender ! installedSystems.keys
 
     case Terminated(trafficSystem) =>
       installedSystems find {

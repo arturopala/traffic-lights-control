@@ -7,8 +7,7 @@ import mixin from '../mixin.js'
 import Light from './light.jsx'
 
 const initialState = {
-  lightId: undefined,
-  lightState: undefined,
+  lightStateMap: {},
   socket: undefined
 }
 
@@ -20,9 +19,10 @@ class LightBoard extends mixin(React.Component, WebSocketListenerMixin) {
   }
 
   webSocketPath(){
+    const systemId = this.props.params.systemId || this.props.systemId
     const lightId = this.props.params.lightId || this.props.lightId
     if(lightId){
-      return `/ws/lights/${lightId}`
+      return `/ws/lights/${systemId}/${lightId}`
     } else {
       throw new Error("Some lightId expected")
     }
@@ -30,16 +30,21 @@ class LightBoard extends mixin(React.Component, WebSocketListenerMixin) {
 
   receiveMessage(message){
     if(message){
-      this.setState({ lightState: message})
+      const [id, lightState] = message.split(':')
+      if(id && lightState){
+        this.setState(merge(this.state, {lightStateMap:{ [id]:lightState }}))
+      }
     }
   }
 
   render() {
+    const { lightStateMap } = this.state
+    const systemId = this.props.params.systemId || this.props.systemId
   	const lightId = this.props.params.lightId || this.props.lightId
     return (
     	<div className="lightboard">
         <div className="panel">
-	    	  <Link to="/lights"><Light lightId={lightId} lightState={this.state.lightState}/></Link>
+	    	  <Link to={`/${systemId}`}><Light systemId={systemId} lightId={lightId} lightState={lightStateMap[systemId+'_'+lightId]}/></Link>
         </div>
     	</div>
 	);

@@ -36,6 +36,9 @@ class MonitoringActor extends Actor with ActorLogging {
       report += (id -> status)
       sendToPublishers(event)
 
+    case GetReportQuery(system) =>
+      sender ! ReportEvent(report.filterKeys(k => k.startsWith(system)))
+
     case GetReportQuery =>
       sender ! ReportEvent(report)
 

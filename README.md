@@ -38,8 +38,11 @@ Http server runs at <http://localhost:8080/>
 
 ## API
 
--   GET /api/lights : returns current system status as JSON
--   GET /api/lights/{id} : returns state of light for id = {id}
+-   GET /api/layouts/{systemId} : returns system layout as JSON
+
+-   GET /api/lights/{systemId} : returns system status as JSON
+-   GET /api/lights/{systemId}/{lightId} : returns light state as JSON
 
 -   GET /ws/lights : live stream of all light state events
--   GET /ws/lights/{id} : live stream of light state events for id = {id}
+-   GET /ws/lights/{systemId} : live stream of light state events for systemId = {systemId}
+-   GET /ws/lights/{systemId}/{lightId} : live stream of light state events for light = systemId_lightId

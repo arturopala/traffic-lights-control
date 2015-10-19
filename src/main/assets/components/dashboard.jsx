@@ -19,14 +19,16 @@ class Dashboard extends mixin(React.Component, WebSocketListenerMixin) {
   }
 
   webSocketPath(){
-  	return '/ws/lights'
+  	return `/ws/lights/${this.props.params.systemId}`
   }
 
   receiveMessage(message){
-	const [lightId, lightState] = message.split(':')
-	if(lightId && lightState){
-		this.setState(merge(this.state, {lightStateMap:{ [lightId]:lightState }}))
-	}
+    if(message){
+    	const [id, lightState] = message.split(':')
+    	if(id && lightState){
+    		this.setState(merge(this.state, {lightStateMap:{ [id]:lightState }}))
+    	}
+    }
   }
 
   render() {
@@ -34,8 +36,12 @@ class Dashboard extends mixin(React.Component, WebSocketListenerMixin) {
     return (
       <div className="dashboard">
     		<div className="panel">
+
     		{Object.getOwnPropertyNames(lightStateMap).map(
-    			lightId => <Link key={lightId} to={`/lights/${lightId}`}><Light lightId={lightId} lightState={lightStateMap[lightId]}/></Link>
+    			id => {
+            const [systemId, lightId] = id.split('_');
+            return <Link key={id} to={`/${systemId}/${lightId}`}><Light systemId={systemId} lightId={lightId} lightState={lightStateMap[id]}/></Link>;
+          }
     		)}
 	     </div>
       </div>

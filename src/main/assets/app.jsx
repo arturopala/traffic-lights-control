@@ -15,8 +15,8 @@ const routes = () => {
 		<Router history={createBrowserHistory()}>
     		<Route path="/" component={Page}>
 	    		<IndexRoute component={Welcome} />
-	    		<Route path="/lights" component={Dashboard} />
-	    		<Route path="/lights/:lightId" component={LightBoard} />
+	    		<Route path="/:systemId" component={Dashboard} />
+	    		<Route path="/:systemId/:lightId" component={LightBoard} />
 		    </Route>
 		</Router>
 	);

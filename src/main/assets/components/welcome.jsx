@@ -7,7 +7,7 @@ export default class Welcome extends React.Component {
     	<div className="welcome">
     		Traffic Lights Control
     		<div className="panel">
-    			[ <Link to="/lights">Dashboard</Link> ]
+    			[ <Link to="/demo">Dashboard</Link> ]
     		</div>
     	</div>
 	);

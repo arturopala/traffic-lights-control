@@ -96,6 +96,66 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r7.report.get("2") should be(Some(GreenLight))
   }
 
+  it must "receive GetReportQuery(demo) and send back current system status report as a ReportEvent" in new MonitoringTest {
+    info("case 1: when none event yet happened")
+    tested ! GetReportQuery("demo")
+    val r1 = expectMsgAnyClassOf(classOf[ReportEvent])
+    r1.report should have size 0
+
+    info("case 2: when light #demo_1 became red")
+    tested ! StatusEvent("demo_1", RedLight)
+    tested ! StatusEvent("foo_1", GreenLight)
+    tested ! GetReportQuery("demo")
+    val r2 = expectMsgAnyClassOf(classOf[ReportEvent])
+    r2 should not be r1
+    r2.report should have size 1
+    r2.report.get("demo_1") should be(Some(RedLight))
+    r2.report.get("foo_1") shouldBe None
+
+    info("case 3: when light #demo_1 became green")
+    tested ! StatusEvent("demo_1", GreenLight)
+    tested ! StatusEvent("foo_1", RedLight)
+    tested ! GetReportQuery("demo")
+    val r3 = expectMsgAnyClassOf(classOf[ReportEvent])
+    r3.report should have size 1
+    r3.report.get("demo_1") should be(Some(GreenLight))
+    r3.report.get("foo_1") shouldBe None
+
+    info("case 4: when light #demo_2 became red")
+    tested ! StatusEvent("demo_2", RedLight)
+    tested ! StatusEvent("foo_2", GreenLight)
+    tested ! GetReportQuery("demo")
+    val r4 = expectMsgAnyClassOf(classOf[ReportEvent])
+    r4.report should have size 2
+    r4.report.get("demo_1") should be(Some(GreenLight))
+    r4.report.get("demo_2") should be(Some(RedLight))
+
+    info("case 5: when light #demo_2 became green")
+    tested ! StatusEvent("demo_2", GreenLight)
+    tested ! GetReportQuery("demo")
+    val r5 = expectMsgAnyClassOf(classOf[ReportEvent])
+    r5.report should have size 2
+    r5.report.get("demo_1") should be(Some(GreenLight))
+    r5.report.get("demo_2") should be(Some(GreenLight))
+
+    info("case 6: when light #demo_1 became again red")
+    tested ! StatusEvent("demo_1", RedLight)
+    tested ! GetReportQuery("demo")
+    val r6 = expectMsgAnyClassOf(classOf[ReportEvent])
+    r6.report should have size 2
+    r6.report.get("demo_1") should be(Some(RedLight))
+    r6.report.get("demo_2") should be(Some(GreenLight))
+    r6.report.get("foo_1") shouldBe None
+    r6.report.get("foo_2") shouldBe None
+
+    info("case 7: when asking again without any new event")
+    tested ! GetReportQuery("demo")
+    val r7 = expectMsgAnyClassOf(classOf[ReportEvent])
+    r7.report should have size 2
+    r7.report.get("demo_1") should be(Some(RedLight))
+    r7.report.get("demo_2") should be(Some(GreenLight))
+  }
+
   it must "receive GetStatusQuery(id=1) and send back light status as an Option[StatusEvent]" in new MonitoringTest {
     info("case 1: when light #1 state is not known yet")
     tested ! GetStatusQuery("1")

@@ -45,7 +45,7 @@ class TrafficSystemsManagerSpec extends FlatSpecLike with Matchers with ScalaFut
     expectMsg(InstallComponentSucceededEvent(layout, "foo"))
 
     info("check status")
-    manager ! SystemInfoQuery("foo")
+    manager ! GetSystemInfoQuery("foo")
     val status = expectMsgType[SystemInfoEvent]
     status.system shouldBe "foo"
     status.component shouldBe layout
@@ -54,10 +54,10 @@ class TrafficSystemsManagerSpec extends FlatSpecLike with Matchers with ScalaFut
     status.history.events.head shouldBe a[HistoryEvent.Installed]
   }
 
-  it should "receive SystemInfoQuery and return MessageIgnoredEvent for non-existent system" in new ActorSystemTest {
+  it should "receive GetSystemInfoQuery and return MessageIgnoredEvent for non-existent system" in new ActorSystemTest {
     val manager = actorSystem.actorOf(TrafficSystemsManager.props())
-    manager ! SystemInfoQuery("foo1")
-    expectMsg(MessageIgnoredEvent(SystemInfoQuery("foo1")))
+    manager ! GetSystemInfoQuery("foo1")
+    expectMsg(MessageIgnoredEvent(GetSystemInfoQuery("foo1")))
   }
 
   it should "receive StartSystemCommand and start system" in new ActorSystemTest {
@@ -70,7 +70,7 @@ class TrafficSystemsManagerSpec extends FlatSpecLike with Matchers with ScalaFut
     eventListener.receiveN(4, checkTimeout)
     info("check status")
     Thread.sleep(200)
-    manager ! SystemInfoQuery("foo1")
+    manager ! GetSystemInfoQuery("foo1")
     val status = expectMsgType[SystemInfoEvent]
     status.system shouldBe "foo1"
     status.component shouldBe layout
@@ -92,7 +92,7 @@ class TrafficSystemsManagerSpec extends FlatSpecLike with Matchers with ScalaFut
     manager ! StopSystemCommand("foo2")
     info("check status")
     Thread.sleep(200)
-    manager ! SystemInfoQuery("foo2")
+    manager ! GetSystemInfoQuery("foo2")
     val status = expectMsgType[SystemInfoEvent]
     status.system shouldBe "foo2"
     status.component shouldBe layout
@@ -118,7 +118,7 @@ class TrafficSystemsManagerSpec extends FlatSpecLike with Matchers with ScalaFut
     manager ! StartSystemCommand("foo3")
     info("check status")
     Thread.sleep(200)
-    manager ! SystemInfoQuery("foo3")
+    manager ! GetSystemInfoQuery("foo3")
     val status = expectMsgType[SystemInfoEvent]
     status.system shouldBe "foo3"
     status.component shouldBe layout

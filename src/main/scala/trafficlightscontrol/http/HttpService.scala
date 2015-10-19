@@ -69,16 +69,16 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
       .result()
   }
 
-  def getReport: Future[ReportEvent] = {
+  def getFullReport: Future[ReportEvent] = {
     monitoring.actor ? GetReportQuery map (_.asInstanceOf[ReportEvent])
+  }
+
+  def getReport(systemId: Id): Future[ReportEvent] = {
+    monitoring.actor ? GetReportQuery(systemId) map (_.asInstanceOf[ReportEvent])
   }
 
   def getStatusOpt(id: Id): Future[Option[StatusEvent]] = {
     monitoring.actor ? GetStatusQuery(id) map (_.asInstanceOf[Option[StatusEvent]])
-  }
-
-  def getSystemInfo(id: Id): Future[Component] = {
-    manager.actor ? SystemInfoQuery(id) map (_.asInstanceOf[SystemInfoEvent].component)
   }
 
   def getStatusPublisher(predicate: Id => Boolean): Future[Publisher[StatusEvent]] = {
@@ -87,6 +87,14 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
 
   def getStatusPublisher: Future[Publisher[StatusEvent]] = {
     monitoring.actor ? GetPublisherQuery(_ => true) map (_.asInstanceOf[Publisher[StatusEvent]])
+  }
+
+  def getLayoutList: Future[Iterable[String]] = {
+    manager.actor ? GetSystemListQuery map (_.asInstanceOf[Iterable[String]])
+  }
+
+  def getLayout(id: Id): Future[Component] = {
+    manager.actor ? GetSystemInfoQuery(id) map (_.asInstanceOf[SystemInfoEvent].component)
   }
 
   def handleWebsocket: Directive1[UpgradeToWebsocket] =
@@ -98,10 +106,13 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
   def publisherAsMessageSource[A](p: Publisher[A])(f: A => String): Source[TextMessage, Unit] = Source(p).map(e => TextMessage.Strict(f(e))).named("tms")
 
   val idPattern = "\\w{1,128}".r
-  val statusEventToString: StatusEvent => String = e => s"${e.id}:${e.state.id}"
+  val statusEventToString: StatusEvent => String = e => e.id+":"+e.state.id
   val lightStateToString: StatusEvent => String = e => e.state.id
   val forAllIds: Id => Boolean = _ => true
-  def onlyFor(id: Id): Id => Boolean = x => x == id
+  def forSystem(systemId: Id): Id => Boolean = x => x.startsWith(systemId)
+  def forLight(id: Id): Id => Boolean = x => x == id
+
+  val pathEmpty: Directive0 = pathEnd | pathSingleSlash
 
   //////////////////////////////////////////////////////////////////////
   //                   Main routing configuration                     //
@@ -114,36 +125,53 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
             path("style.css") { getFromResource("public/style.css") } ~
             pathPrefix("api") {
               pathPrefix("lights") {
-                pathEnd {
-                  complete(getReport)
+                pathEmpty {
+                  complete(getFullReport)
                 } ~
-                  path(idPattern) { id =>
-                    onSuccess(getStatusOpt(id)) {
-                      case Some(status) => complete(status)
-                      case None         => complete(NotFound, s"Light #$id not found!")
-                    }
+                  pathPrefix(idPattern) { systemId =>
+                    pathEmpty {
+                      complete(getReport(systemId))
+                    } ~
+                      path(idPattern) { lightId =>
+                        onSuccess(getStatusOpt(systemId+"_"+lightId)) {
+                          case Some(status) => complete(status)
+                          case None         => complete(NotFound)
+                        }
+                      }
                   }
               } ~
-                pathPrefix("layouts" / idPattern) { id =>
-                  onSuccess(getSystemInfo(id)) { layout =>
-                    complete(layout)
-                  }
+                pathPrefix("layouts") {
+                  pathEmpty {
+                    onSuccess(getLayoutList) { layouts => complete(layouts) }
+                  } ~
+                    path(idPattern) { systemId =>
+                      onSuccess(getLayout(systemId)) { layout => complete(layout) }
+                    }
                 }
             } ~
             pathPrefix("ws" / "lights") {
-              pathEnd {
+              pathEmpty {
                 handleWebsocket { websocket =>
                   onSuccess(getStatusPublisher(forAllIds)) { p =>
-                    complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString).named("ws-lights"), None))
+                    complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString), None))
                   }
                 }
               } ~
-                path(idPattern) { id =>
-                  handleWebsocket { websocket =>
-                    onSuccess(getStatusPublisher(onlyFor(id))) { p =>
-                      complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(lightStateToString).named("ws-lights-id"), None))
+                pathPrefix(idPattern) { systemId =>
+                  pathEmpty {
+                    handleWebsocket { websocket =>
+                      onSuccess(getStatusPublisher(forSystem(systemId))) { p =>
+                        complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString), None))
+                      }
                     }
-                  }
+                  } ~
+                    path(idPattern) { lightId =>
+                      handleWebsocket { websocket =>
+                        onSuccess(getStatusPublisher(forLight(systemId+"_"+lightId))) { p =>
+                          complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString), None))
+                        }
+                      }
+                    }
                 }
             } ~
             pathPrefix("assets") {

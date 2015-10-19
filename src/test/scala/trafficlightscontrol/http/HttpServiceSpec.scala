@@ -30,6 +30,9 @@ import DefaultJsonProtocol._
 class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest with ActorSystemTestKit {
 
   val module = new Module
+  module.monitoring.actor ! StatusEvent("demo_l1", GreenLight)
+  module.monitoring.actor ! StatusEvent("foo_l2", RedLight)
+  module.monitoring.actor ! StatusEvent("demo_l3", RedLight)
 
   import JsonProtocol._
 
@@ -65,28 +68,77 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
     }
   }
 
-  "HttpService" should "return a json report for GET /lights" in {
+  "HttpService" should "return a json report for GET /api/lights/demo" in {
+    Get("/api/lights/demo") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentTypes.`application/json`)
+      val body = responseAs[String].parseJson.convertTo[ReportEvent]
+      body.report("demo_l1") shouldBe GreenLight
+      body.report("demo_l3") shouldBe RedLight
+      body.report.get("foo_l2") shouldBe None
+    }
+  }
+
+  it should "return a json report for GET /api/lights/demo/" in {
+    Get("/api/lights/demo/") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentTypes.`application/json`)
+      val body = responseAs[String].parseJson.convertTo[ReportEvent]
+      body.report("demo_l1") shouldBe GreenLight
+      body.report("demo_l3") shouldBe RedLight
+      body.report.get("foo_l2") shouldBe None
+    }
+  }
+
+  it should "return a json report for GET /api/lights" in {
     Get("/api/lights") ~> module.httpService.route ~> check {
       status should be(OK)
       contentType should be(ContentTypes.`application/json`)
       val body = responseAs[String].parseJson.convertTo[ReportEvent]
-      body.report should not be null
+      body.report("demo_l1") shouldBe GreenLight
+      body.report("demo_l3") shouldBe RedLight
+      body.report("foo_l2") shouldBe RedLight
     }
   }
 
-  it should "return 404 for GET /lights/foo" in {
-    Get("/api/lights/foo") ~> module.httpService.route ~> check {
-      status should be(NotFound)
-      responseAs[String] should be("""Light #foo not found!""")
+  it should "return a json report for GET /api/lights/" in {
+    Get("/api/lights/") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentTypes.`application/json`)
+      val body = responseAs[String].parseJson.convertTo[ReportEvent]
+      body.report("demo_l1") shouldBe GreenLight
+      body.report("demo_l3") shouldBe RedLight
+      body.report("foo_l2") shouldBe RedLight
     }
   }
 
-  it should "return status for GET /lights/l1" in {
-    val lightStatus = StatusEvent("l1", GreenLight)
+  it should "return status for GET /api/lights/demo/l1" in {
+    val lightStatus = StatusEvent("demo_l1", GreenLight)
     module.monitoring.actor ! lightStatus
-    Get("/api/lights/l1") ~> module.httpService.route ~> check {
+    module.monitoring.actor ! StatusEvent("foo_l1", RedLight)
+    Get("/api/lights/demo/l1") ~> module.httpService.route ~> check {
       status should be(OK)
       responseAs[String].parseJson.convertTo[StatusEvent] should be(lightStatus)
+    }
+  }
+
+  it should "return layouts list json for GET /api/layouts" in {
+    Get("/api/layouts") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentTypes.`application/json`)
+      val body = responseAs[String]
+      val list = body.parseJson.convertTo[Seq[String]]
+      list should contain("demo")
+    }
+  }
+
+  it should "return layouts list json for GET /api/layouts/" in {
+    Get("/api/layouts/") ~> module.httpService.route ~> check {
+      status should be(OK)
+      contentType should be(ContentTypes.`application/json`)
+      val body = responseAs[String]
+      val list = body.parseJson.convertTo[Seq[String]]
+      list should contain("demo")
     }
   }
 

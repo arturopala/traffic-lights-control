@@ -27,6 +27,7 @@ case class GetStatusQuery(id: Id) extends Query
 case class StatusEvent(id: Id, state: LightState) extends Event
 
 case object GetReportQuery extends Query
+case class GetReportQuery(system: Id) extends Query
 case class ReportEvent(report: Map[Id, LightState]) extends Event
 
 case class GetPublisherQuery(p: Id => Boolean) extends Command
@@ -42,8 +43,10 @@ case class SystemStartedEvent(system: Id) extends Event
 case class SystemStartFailureEvent(system: Id, reason: String) extends Event
 case class SystemStopFailureEvent(system: Id, reason: String) extends Event
 
-case class SystemInfoQuery(system: Id) extends Query
+case class GetSystemInfoQuery(system: Id) extends Query
 case class SystemInfoEvent(system: Id, component: Component, interval: FiniteDuration, history: SystemHistory) extends Event
+
+case object GetSystemListQuery extends Query
 
 case object TickEvent extends Event
 case object TimeoutEvent extends Event
