@@ -15,6 +15,7 @@ import akka.http.scaladsl._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.ws._
+import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.server._
 import StatusCodes._
 import Directives._
@@ -114,6 +115,8 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
 
   val pathEmpty: Directive0 = pathEnd | pathSingleSlash
 
+  val AccessControlAllowAll = RawHeader("Access-Control-Allow-Origin", "*")
+
   //////////////////////////////////////////////////////////////////////
   //                   Main routing configuration                     //
   //////////////////////////////////////////////////////////////////////
@@ -124,30 +127,32 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
           path("app.js") { getFromResource("public/app.js") } ~
             path("style.css") { getFromResource("public/style.css") } ~
             pathPrefix("api") {
-              pathPrefix("lights") {
-                pathEmpty {
-                  complete(getFullReport)
-                } ~
-                  pathPrefix(idPattern) { systemId =>
-                    pathEmpty {
-                      complete(getReport(systemId))
-                    } ~
-                      path(idPattern) { lightId =>
-                        onSuccess(getStatusOpt(systemId+"_"+lightId)) {
-                          case Some(status) => complete(status)
-                          case None         => complete(NotFound)
+              respondWithHeaders(AccessControlAllowAll) {
+                pathPrefix("lights") {
+                  pathEmpty {
+                    complete(getFullReport)
+                  } ~
+                    pathPrefix(idPattern) { systemId =>
+                      pathEmpty {
+                        complete(getReport(systemId))
+                      } ~
+                        path(idPattern) { lightId =>
+                          onSuccess(getStatusOpt(systemId+"_"+lightId)) {
+                            case Some(status) => complete(status)
+                            case None         => complete(NotFound)
+                          }
                         }
+                    }
+                } ~
+                  pathPrefix("layouts") {
+                    pathEmpty {
+                      onSuccess(getLayoutList) { layouts => complete(layouts) }
+                    } ~
+                      path(idPattern) { systemId =>
+                        onSuccess(getLayout(systemId)) { layout => complete(layout) }
                       }
                   }
-              } ~
-                pathPrefix("layouts") {
-                  pathEmpty {
-                    onSuccess(getLayoutList) { layouts => complete(layouts) }
-                  } ~
-                    path(idPattern) { systemId =>
-                      onSuccess(getLayout(systemId)) { layout => complete(layout) }
-                    }
-                }
+              }
             } ~
             pathPrefix("ws" / "lights") {
               pathEmpty {

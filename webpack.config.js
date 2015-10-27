@@ -15,9 +15,10 @@ module.exports = {
   },
 
   plugins: [
-    new ExtractTextPlugin('style.css', { allChunks: true })
+    new ExtractTextPlugin('style.css', { allChunks: true }),
+    new webpack.ProvidePlugin({'fetch': 'imports?this=>global!exports?global.fetch!whatwg-fetch'})
   ],
-
+  
   module: {
     loaders: [
       { test: /\.jsx?$/, exclude: node_modules, loader: 'babel' },

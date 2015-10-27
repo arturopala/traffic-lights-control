@@ -1,7 +1,7 @@
 body {
 	margin: 0;
 	padding: 1rem;
-	height: 100%;
+	min-height: 100%;
 	background-color: #0F0F0F;
 	color: #2F2F2F;
 	font-family: sans-serif;
@@ -18,13 +18,13 @@ a {
 	padding-top: 10%;
 }
 
-.welcome .panel {
+.welcome > .panel {
 	margin: 1em;
 	padding: 1em;
 	font-size: 70%;
 }
 
-.welcome .panel a {
+.welcome > .panel > a {
 	color: #AAAAAA;
 }
 
@@ -34,11 +34,49 @@ a {
 	height: 100%;
 }
 
+.dashboard > .panel {
+
+}
+
+.dashboard > .label {
+	position: absolute;
+	top: 1.5rem;
+	left: 4rem;
+	color: #AAAAAA;
+}
+
 .lightboard {
 	padding: 3rem;
 	text-align: center;
 	height: 100%;
 	font-size: 300%;
+}
+
+.sequence {
+	position: relative;
+	display: block;
+	padding: 1rem;
+	border: dashed 1px #2F2F2F;
+}
+
+.sequence > .label {
+	position: absolute;
+	left: 0.2rem;
+	top: 0.2rem;
+}
+
+.group {
+	position: relative;
+	display: inline-block;
+	padding: 1rem;
+	margin: 0 1rem;
+	border: dotted 1px #2F2F2F;
+}
+
+.group > .label {
+	position: absolute;
+	left: 0.2rem;
+	top: 0.2rem;
 }
 
 .light {
@@ -47,12 +85,13 @@ a {
 	background-color: #0F0F0F;
 }
 
-.light .label {
+.light > .label {
 	display: inline-block;
 	padding-bottom: 0.5em;
+	color: #555555;
 }
 
-.light .panel {
+.light > .panel {
 	display: block;
 	padding: 1em 0.5em 0.5em 0.5em;
 	width: 5em;
@@ -61,7 +100,7 @@ a {
 	border-radius: 1em;
 }
 
-.light .panel .box {
+.light > .panel > .box {
 	display: block;
 	width: 5em;
 	height: 5em;
@@ -71,7 +110,8 @@ a {
 }
 
 .stateR .boxRed {
-	background-color: red
+	background-color: red;
+	box-shadow: 0px 0px 4rem 4px red!important;
 }
 .stateR .boxYellow {
 	background-color: #0F0F0F;
@@ -87,14 +127,17 @@ a {
 	background-color: #0F0F0F;
 }
 .stateG .boxGreen {
-	background-color: green
+	background-color: #33ff00;
+	box-shadow: 0px 0px 4rem 4px #33ff00!important;
 }
 
 .stateA .boxRed {
-	background-color: red
+	background-color: red;
+	box-shadow: 0px 0px 40px 2px red!important;
 }
 .stateA .boxYellow {
-	background-color: yellow
+	background-color: #ffd500;
+	box-shadow: 0px 0px 4rem 4px #ffd500!important;
 }
 .stateA .boxGreen {
 	background-color: #0F0F0F;
@@ -104,7 +147,8 @@ a {
 	background-color: #0F0F0F;
 }
 .stateY .boxYellow {
-	background-color: yellow
+	background-color: #ffd500;
+	box-shadow: 0px 0px 4rem 4px #ffd500!important;
 }
 .stateY .boxGreen {
 	background-color: #0F0F0F;

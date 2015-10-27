@@ -1,56 +1,57 @@
 import React from 'react'
 import { Link } from 'react-router'
-import WS , { WebSocketListenerMixin } from '../websocket.js'
+import Fetch from '../fetch.js'
 import merge from 'deepmerge'
 import mixin from '../mixin.js'
-
 import Light from './light.jsx'
+import Sequence from './sequence.jsx'
+import Group from './group.jsx'
 
-const initialState = {
-	lightStateMap: {},
-	socket: undefined
-}
+class Dashboard extends React.Component {
 
-class Dashboard extends mixin(React.Component, WebSocketListenerMixin) {
-
-  constructor() {
-  	super()
-  	this.state = initialState
+  constructor(){
+    super()
+    this.state = {}
   }
 
-  webSocketPath(){
-  	return `/ws/lights/${this.props.params.systemId}`
+  componentDidMount(){
+    Fetch(`/api/layouts/${this.props.params.systemId}`, this.receiveLayoutResponse.bind(this))
   }
 
-  receiveMessage(message){
-    if(message){
-    	const [id, lightState] = message.split(':')
-    	if(id && lightState){
-    		this.setState(merge(this.state, {lightStateMap:{ [id]:lightState }}))
-    	}
+  receiveLayoutResponse(response){
+    if (response.status >= 200 && response.status < 300) {
+      response.json().then(layout => this.setState({layout: layout}))
+    } else {
+      this.setState({error: response.statusText})
     }
   }
 
   render() {
-  	const { lightStateMap } = this.state
+    let systemId = this.props.params.systemId
+    let generate = function(comp) {
+      if(comp) {
+        switch(comp['type']){
+          case "sequence":
+            return <Sequence key={comp.id} compId={comp.id} systemId={systemId} members={comp.members} generate={generate}/>
+          case "group":
+            return <Group key={comp.id} compId={comp.id} systemId={systemId} members={comp.members} generate={generate}/>
+          case "light":
+            return <Light key={comp.id} compId={comp.id} systemId={systemId}/>
+        }
+      } else {
+        return <div/>
+      }
+    }
     return (
       <div className="dashboard">
+        <span className="label">Traffic Lights Control / <b>{this.props.params.systemId}</b></span>
     		<div className="panel">
-
-    		{Object.getOwnPropertyNames(lightStateMap).map(
-    			id => {
-            const [systemId, lightId] = id.split('_');
-            return <Link key={id} to={`/${systemId}/${lightId}`}><Light systemId={systemId} lightId={lightId} lightState={lightStateMap[id]}/></Link>;
-          }
-    		)}
+        {generate(this.state.layout)}
 	     </div>
       </div>
 	);
   }
 
 }
-
-Dashboard.propTypes = { lightStateMap: React.PropTypes.object.isRequired };
-Dashboard.defaultProps = { lightStateMap: {} };
 
 export default Dashboard
