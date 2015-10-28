@@ -35,6 +35,8 @@ class Dashboard extends React.Component {
             return <Sequence key={comp.id} compId={comp.id} systemId={systemId} members={comp.members} generate={generate}/>
           case "group":
             return <Group key={comp.id} compId={comp.id} systemId={systemId} members={comp.members} generate={generate}/>
+          case "offset":
+            return generate(comp.member)
           case "light":
             return <Light key={comp.id} compId={comp.id} systemId={systemId}/>
         }
