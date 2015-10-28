@@ -108,7 +108,7 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
     trafficSystemRef ! StartSystemCommand("foo3")
     expectMsg(SystemStartedEvent("foo3"))
 
-    Thread.sleep(1000)
+    Thread.sleep(100)
 
     eventListener.expectMsgAllOf(
       checkTimeout,
@@ -120,18 +120,24 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
 
     eventListener.expectMsgAllOf(
       checkTimeout,
+      StatusEvent("foo3_g2", ChangingToRedLight),
+      StatusEvent("foo3_g1", ChangingToRedLight),
       StatusEvent("foo3_l2", ChangingToRedLight),
       StatusEvent("foo3_l3", ChangingToRedLight)
     )
 
     eventListener.expectMsgAllOf(
       checkTimeout,
+      StatusEvent("foo3_g2", RedLight),
+      StatusEvent("foo3_g1", RedLight),
       StatusEvent("foo3_l2", RedLight),
       StatusEvent("foo3_l3", RedLight),
+      StatusEvent("foo3_g1", ChangingToGreenLight),
       StatusEvent("foo3_l1", ChangingToGreenLight),
       StatusEvent("foo3_l2", ChangingToGreenLight),
       StatusEvent("foo3_l1", GreenLight),
-      StatusEvent("foo3_l2", GreenLight)
+      StatusEvent("foo3_l2", GreenLight),
+      StatusEvent("foo3_g1", GreenLight)
     )
 
     trafficSystemRef ! StopSystemCommand("foo3")

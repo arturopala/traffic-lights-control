@@ -23,7 +23,6 @@ object SequenceActor {
  * Sequence is a set of components (eg. lights, groups, other sequencees) amongst which only one may be green at once.
  */
 class SequenceActor(
-
     val id:            Id,
     val memberProps:   Iterable[Props],
     val configuration: Configuration,
@@ -46,11 +45,11 @@ class SequenceActor(
     case ChangeToGreenCommand =>
       nextGreenId = strategy(greenMemberId, memberIds)
       if (isGreen && nextGreenId == greenMemberId) {
-        recipient ! ChangedToGreenEvent
+        signal(ChangedToGreenEvent)
       }
       else if (members.contains(nextGreenId)) {
         responderSet.clear()
-        becomeNow(receiveWhileChangingToAllRedBeforeGreen)
+        become(receiveWhileChangingToAllRedBeforeGreen)
         members ! ChangeToRedCommand
         scheduleTimeout(timeout)
       }
@@ -60,7 +59,7 @@ class SequenceActor(
 
     case ChangeToRedCommand =>
       responderSet.clear()
-      becomeNow(receiveWhileChangingToRed)
+      become(receiveWhileChangingToRed)
       members ! ChangeToRedCommand
       scheduleTimeout(timeout)
   }
@@ -75,12 +74,12 @@ class SequenceActor(
       if (responderSet.size == members.size) {
         cancelTimeout()
         isGreen = false
-        becomeNow(receiveWhenIdle)
-        recipient ! ChangedToRedEvent
+        become(receiveWhenIdle)
+        signal(ChangedToRedEvent)
       }
 
     case ChangeToGreenCommand =>
-      becomeNow(receiveWhileChangingToAllRedBeforeGreen) // enable going green in the next step
+      become(receiveWhileChangingToAllRedBeforeGreen) // enable going green in the next step
 
     case ChangeToRedCommand => //ignore, already changing to red
 
@@ -99,13 +98,13 @@ class SequenceActor(
         cancelTimeout()
         scheduleDelay(sequenceDelay)
         isGreen = false
-        becomeNow(receiveWhileDelayedBeforeGreen)
+        become(receiveWhileDelayedBeforeGreen)
       }
 
     case ChangeToGreenCommand => //ignore
 
     case ChangeToRedCommand =>
-      becomeNow(receiveWhileChangingToRed) // avoid going green in the next step
+      become(receiveWhileChangingToRed) // avoid going green in the next step
 
     case TimeoutEvent =>
       throw new TimeoutException(s"Sequence ${this.id}: timeout occured when waiting for all red acks before changing to green")
@@ -121,7 +120,7 @@ class SequenceActor(
         case Some(member) =>
           member ! ChangeToGreenCommand
           scheduleTimeout(timeout)
-          becomeNow(receiveWhileWaitingForGreenAck)
+          become(receiveWhileWaitingForGreenAck)
         case None =>
           throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
       }
@@ -131,8 +130,8 @@ class SequenceActor(
     case ChangedToRedEvent =>
       cancelDelay()
       isGreen = false
-      becomeNow(receiveWhenIdle)
-      recipient ! ChangedToRedEvent
+      become(receiveWhenIdle)
+      signal(ChangedToRedEvent)
   }
 
   /////////////////////////////////////////////////////////
@@ -144,8 +143,8 @@ class SequenceActor(
       cancelTimeout()
       isGreen = true
       greenMemberId = nextGreenId
-      becomeNow(receiveWhenIdle)
-      recipient ! ChangedToGreenEvent
+      become(receiveWhenIdle)
+      signal(ChangedToGreenEvent)
       unstashAll()
 
     case ChangeToGreenCommand => //ignore, already changing to green

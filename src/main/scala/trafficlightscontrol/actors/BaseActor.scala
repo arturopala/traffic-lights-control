@@ -12,8 +12,6 @@ trait BaseLeafActor extends Actor with ActorLogging {
   def id: Id
   def configuration: Configuration
 
-  final def recipient: Option[ActorRef] = _recipient
-
   private var _recipient: Option[ActorRef] = None
 
   private val receiveRecipient: Receive = {
@@ -27,10 +25,14 @@ trait BaseLeafActor extends Actor with ActorLogging {
   private val receiveUnhandled: Receive = {
     case event: Event => ()
     case command: Command =>
-      recipient ! MessageIgnoredEvent(command)
+      _recipient ! MessageIgnoredEvent(command)
     case other =>
       log.debug(s"Component ${this.id}: message not recognized $other")
   }
+
+  private val receiveCommonLeafMessages: Receive = receiveRecipient orElse receiveUnhandled
+
+  def composeWithDefault(receive: Receive): Receive = receive orElse receiveCommonLeafMessages
 
   private var delayTask: Cancellable = _
 
@@ -46,11 +48,13 @@ trait BaseLeafActor extends Actor with ActorLogging {
     delayTask.cancel()
   }
 
-  private val receiveCommonLeafMessages: Receive = receiveRecipient orElse receiveUnhandled
+  final def signal(event: Event): Unit = {
+    _recipient ! event
+  }
 
-  final def becomeNow(receive: Receive): Unit = context.become(receive)
+  final def become(receive: Receive): Unit = context.become(receive)
 
-  def composeWithDefault(receive: Receive): Receive = receive orElse receiveCommonLeafMessages
+  final def publish(event: Event): Unit = context.system.eventStream.publish(event)
 }
 
 /**
@@ -105,13 +109,13 @@ trait BaseNodeActor extends BaseLeafActor {
           if (_members.size == memberProps.size) {
             cancelTimeout()
             log.info(s"Node ${this.id} initialized. Members: ${memberIds.mkString(",")}")
-            becomeNow(receiveWhenIdle)
+            become(receiveWhenIdle)
           }
       }
 
     case TimeoutEvent =>
       log.warning(s"Timeout ocurred. Node ${this.id} PARTIALLY initialized. Members: ${memberIds.mkString(",")}")
-      becomeNow(receiveWhenIdle)
+      become(receiveWhenIdle)
   }
 
   private val receiveTick: Receive = {

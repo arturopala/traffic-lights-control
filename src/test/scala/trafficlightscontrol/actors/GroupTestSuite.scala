@@ -18,9 +18,9 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
   def runSuite(name: String, group: (String, Seq[LightState]) => TestActorRef[_]) {
 
     s"A $name" should "change status of lights from red to green when all are red" in new ActorSystemTest {
-      val tested = group("s-1", Seq(RedLight, RedLight, RedLight, RedLight))
+      val tested = group("g1", Seq(RedLight, RedLight, RedLight, RedLight))
       tested ! RegisterRecipientCommand(self)
-      expectMsg(RecipientRegisteredEvent("s-1"))
+      expectMsg(RecipientRegisteredEvent("g1"))
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
@@ -33,6 +33,7 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       expectMsg(ChangedToGreenEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
+        StatusEvent("g1", ChangingToGreenLight),
         StatusEvent("1", ChangingToGreenLight),
         StatusEvent("2", ChangingToGreenLight),
         StatusEvent("3", ChangingToGreenLight),
@@ -40,14 +41,15 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
         StatusEvent("1", GreenLight),
         StatusEvent("2", GreenLight),
         StatusEvent("3", GreenLight),
-        StatusEvent("4", GreenLight)
+        StatusEvent("4", GreenLight),
+        StatusEvent("g1", GreenLight)
       )
     }
 
     it should "change status of lights from green to red when all are green" in new ActorSystemTest {
-      val tested = group("s-1", Seq(GreenLight, GreenLight, GreenLight, GreenLight))
+      val tested = group("g1", Seq(GreenLight, GreenLight, GreenLight, GreenLight))
       tested ! RegisterRecipientCommand(self)
-      expectMsg(RecipientRegisteredEvent("s-1"))
+      expectMsg(RecipientRegisteredEvent("g1"))
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
@@ -60,6 +62,7 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       expectMsg(ChangedToRedEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
+        StatusEvent("g1", ChangingToRedLight),
         StatusEvent("1", ChangingToRedLight),
         StatusEvent("2", ChangingToRedLight),
         StatusEvent("3", ChangingToRedLight),
@@ -67,14 +70,15 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
         StatusEvent("1", RedLight),
         StatusEvent("2", RedLight),
         StatusEvent("3", RedLight),
-        StatusEvent("4", RedLight)
+        StatusEvent("4", RedLight),
+        StatusEvent("g1", RedLight)
       )
     }
 
     s"A $name" should "change status of lights from red to green when some are red" in new ActorSystemTest {
-      val tested = group("s-1", Seq(RedLight, GreenLight, RedLight, RedLight))
+      val tested = group("g1", Seq(RedLight, GreenLight, RedLight, RedLight))
       tested ! RegisterRecipientCommand(self)
-      expectMsg(RecipientRegisteredEvent("s-1"))
+      expectMsg(RecipientRegisteredEvent("g1"))
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
@@ -87,19 +91,21 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       expectMsg(ChangedToGreenEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
+        StatusEvent("g1", ChangingToGreenLight),
         StatusEvent("1", ChangingToGreenLight),
         StatusEvent("3", ChangingToGreenLight),
         StatusEvent("4", ChangingToGreenLight),
         StatusEvent("1", GreenLight),
         StatusEvent("3", GreenLight),
-        StatusEvent("4", GreenLight)
+        StatusEvent("4", GreenLight),
+        StatusEvent("g1", GreenLight)
       )
     }
 
     it should "change status of lights from green to red when some are green" in new ActorSystemTest {
-      val tested = group("s-1", Seq(GreenLight, GreenLight, RedLight, GreenLight))
+      val tested = group("g1", Seq(GreenLight, GreenLight, RedLight, GreenLight))
       tested ! RegisterRecipientCommand(self)
-      expectMsg(RecipientRegisteredEvent("s-1"))
+      expectMsg(RecipientRegisteredEvent("g1"))
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
@@ -112,12 +118,14 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       expectMsg(ChangedToRedEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
+        StatusEvent("g1", ChangingToRedLight),
         StatusEvent("1", ChangingToRedLight),
         StatusEvent("2", ChangingToRedLight),
         StatusEvent("4", ChangingToRedLight),
         StatusEvent("1", RedLight),
         StatusEvent("2", RedLight),
-        StatusEvent("4", RedLight)
+        StatusEvent("4", RedLight),
+        StatusEvent("g1", RedLight)
       )
     }
 

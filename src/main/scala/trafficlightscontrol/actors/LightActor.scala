@@ -20,7 +20,6 @@ object LightActor {
  * Possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
  */
 class LightActor(
-
     val id:            Id,
     initialState:      LightState    = RedLight,
     val configuration: Configuration
@@ -31,14 +30,14 @@ class LightActor(
   import configuration.{ delayRedToGreen, delayGreenToRed }
 
   def receiveByState(): Receive = state match {
-    case RedLight             => receiveWhenRed
-    case GreenLight           => receiveWhenGreen
-    case ChangingToRedLight   => receiveWhenChangingToRed
-    case ChangingToGreenLight => receiveWhenChangingToGreen
+    case RedLight | UnknownLight => receiveWhenRed
+    case GreenLight              => receiveWhenGreen
+    case ChangingToRedLight      => receiveWhenChangingToRed
+    case ChangingToGreenLight    => receiveWhenChangingToGreen
   }
 
   private val receiveQuery: Receive = {
-    case GetStatusQuery => recipient ! StatusEvent(id, state)
+    case GetStatusQuery => signal(StatusEvent(id, state))
   }
 
   /////////////////////////////////////
@@ -47,7 +46,7 @@ class LightActor(
   private val receiveWhenRed: Receive = composeWithDefault {
 
     case ChangeToRedCommand =>
-      recipient ! ChangedToRedEvent
+      signal(ChangedToRedEvent)
 
     case ChangeToGreenCommand =>
       changeStateTo(ChangingToGreenLight)
@@ -65,7 +64,7 @@ class LightActor(
       scheduleDelay(delayGreenToRed)
 
     case ChangeToGreenCommand => {
-      recipient ! ChangedToGreenEvent
+      signal(ChangedToGreenEvent)
     }
 
   }
@@ -77,7 +76,7 @@ class LightActor(
 
     case CanContinueAfterDelayEvent =>
       changeStateTo(RedLight)
-      recipient ! ChangedToRedEvent
+      signal(ChangedToRedEvent)
 
     case ChangeToGreenCommand =>
       changeStateTo(ChangingToGreenLight)
@@ -93,7 +92,7 @@ class LightActor(
 
     case CanContinueAfterDelayEvent =>
       changeStateTo(GreenLight)
-      recipient ! ChangedToGreenEvent
+      signal(ChangedToGreenEvent)
 
     case ChangeToRedCommand =>
       changeStateTo(ChangingToRedLight)
@@ -104,8 +103,8 @@ class LightActor(
 
   def changeStateTo(newState: LightState) = {
     state = newState
-    context.system.eventStream.publish(StatusEvent(id, state))
-    context.become(receiveByState())
+    publish(StatusEvent(id, state))
+    become(receiveByState())
   }
 
   changeStateTo(state)

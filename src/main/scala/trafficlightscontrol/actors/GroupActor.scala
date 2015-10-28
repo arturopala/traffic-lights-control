@@ -22,7 +22,6 @@ object GroupActor {
  * Group is a set of traffic control components (eg. lights, groups, other sequencees) which should be all red or green at the same time.
  */
 class GroupActor(
-
     val id:            Id,
     val memberProps:   Iterable[Props],
     val configuration: Configuration
@@ -41,22 +40,25 @@ class GroupActor(
     case ChangeToGreenCommand => isGreen match {
       case None | Some(false) =>
         responderSet.clear()
-        becomeNow(receiveWhileChangingToGreen)
+        become(receiveWhileChangingToGreen)
         members ! ChangeToGreenCommand
         scheduleTimeout(timeout)
+        publish(StatusEvent(id, ChangingToGreenLight))
+
       case Some(true) =>
-        recipient ! ChangedToGreenEvent
+        signal(ChangedToGreenEvent)
     }
 
     case ChangeToRedCommand => isGreen match {
       case None | Some(true) =>
         responderSet.clear()
-        becomeNow(receiveWhileChangingToRed)
+        become(receiveWhileChangingToRed)
         members ! ChangeToRedCommand
         scheduleTimeout(timeout)
+        publish(StatusEvent(id, ChangingToRedLight))
 
       case Some(false) =>
-        recipient ! ChangedToRedEvent
+        signal(ChangedToRedEvent)
     }
   }
 
@@ -70,8 +72,9 @@ class GroupActor(
       if (responderSet.size == members.size) {
         cancelTimeout()
         isGreen = Some(false)
-        becomeNow(receiveWhenIdle)
-        recipient ! ChangedToRedEvent
+        become(receiveWhenIdle)
+        signal(ChangedToRedEvent)
+        publish(StatusEvent(id, RedLight))
       }
 
     case ChangeToGreenCommand => stash() // we can't avoid going red at that point
@@ -92,8 +95,9 @@ class GroupActor(
       if (responderSet.size == members.size) {
         cancelTimeout()
         isGreen = Some(true)
-        becomeNow(receiveWhenIdle)
-        recipient ! ChangedToGreenEvent
+        become(receiveWhenIdle)
+        signal(ChangedToGreenEvent)
+        publish(StatusEvent(id, GreenLight))
       }
 
     case ChangeToRedCommand   => stash() // we can't avoid going green at that point
@@ -103,5 +107,7 @@ class GroupActor(
     case TimeoutEvent =>
       throw new TimeoutException(s"Group ${this.id}: timeout occured when waiting for all final green acks")
   }
+
+  //if (isGreen.isDefined) publish(StatusEvent(id, if (isGreen.get) GreenLight else RedLight))
 
 }

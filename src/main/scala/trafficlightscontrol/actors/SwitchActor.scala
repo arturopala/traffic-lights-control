@@ -43,7 +43,7 @@ class SwitchActor(
   val receiveWhenIdle: Receive = composeWithDefault {
     case TickEvent if (remainingTicksToSkip <= 0) =>
       remainingTicksToSkip = skipTicks
-      becomeNow(receiveWhenPending)
+      become(receiveWhenPending)
       member ! (if (isGreen) ChangeToRedCommand else ChangeToGreenCommand)
       member ! TickEvent
       scheduleTimeout(timeout)
@@ -58,16 +58,16 @@ class SwitchActor(
     case ChangedToGreenEvent =>
       cancelTimeout()
       isGreen = true
-      becomeNow(receiveWhenIdle)
+      become(receiveWhenIdle)
 
     case ChangedToRedEvent =>
       cancelTimeout()
       isGreen = false
-      becomeNow(receiveWhenIdle)
+      become(receiveWhenIdle)
 
     case MessageIgnoredEvent(ChangeToGreenCommand | ChangeToRedCommand) =>
       cancelTimeout()
-      becomeNow(receiveWhenIdle)
+      become(receiveWhenIdle)
 
     case TimeoutEvent =>
       throw new TimeoutException(s"Switch ${this.id}: timeout occured when waiting for change confirmation")
