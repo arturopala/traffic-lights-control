@@ -113,12 +113,16 @@ class GroupFSM(
 
   onTransition {
     case Idle -> WaitingForAllRed =>
+      context.system.eventStream.publish(StatusEvent(id, ChangingToRedLight))
       members.values.foreach(_ ! ChangeToRedCommand)
     case Idle -> WaitingForAllGreen =>
+      context.system.eventStream.publish(StatusEvent(id, ChangingToGreenLight))
       members.values.foreach(_ ! ChangeToGreenCommand)
     case WaitingForAllGreen -> Idle =>
+      context.system.eventStream.publish(StatusEvent(id, GreenLight))
       recipient ! ChangedToGreenEvent
     case WaitingForAllRed -> Idle =>
+      context.system.eventStream.publish(StatusEvent(id, RedLight))
       recipient ! ChangedToRedEvent
   }
 
