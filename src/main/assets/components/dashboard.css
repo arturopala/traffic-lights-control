@@ -1,0 +1,14 @@
+.dashboard {
+	padding: 3em;
+	text-align: center;
+}
+
+.dashboard > .panel {
+
+}
+
+.dashboard > .label {
+	position: relative;
+	top: -1em;
+	color: #AAAAAA;
+}

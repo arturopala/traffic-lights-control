@@ -1,0 +1,15 @@
+.welcome {
+	text-align: center;
+	font-size: 300%;
+	padding-top: 10%;
+}
+
+.welcome > .panel {
+	margin: 1em;
+	padding: 1em;
+	font-size: 70%;
+}
+
+.welcome > .panel > a {
+	color: #AAAAAA;
+}

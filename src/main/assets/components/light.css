@@ -1,82 +1,3 @@
-body {
-	margin: 0;
-	padding: 1em;
-	min-height: 100%;
-	background-color: #0F0F0F;
-	color: #2F2F2F;
-	font-family: sans-serif;
-}
-
-a {
-	color: #2F2F2F;
-	text-decoration: none;
-}
-
-.welcome {
-	text-align: center;
-	font-size: 300%;
-	padding-top: 10%;
-}
-
-.welcome > .panel {
-	margin: 1em;
-	padding: 1em;
-	font-size: 70%;
-}
-
-.welcome > .panel > a {
-	color: #AAAAAA;
-}
-
-.dashboard {
-	padding: 3em;
-	text-align: center;
-}
-
-.dashboard > .panel {
-
-}
-
-.dashboard > .label {
-	position: relative;
-	top: -1em;
-	color: #AAAAAA;
-}
-
-.lightboard {
-	padding: 3em;
-	text-align: center;
-	height: 100%;
-	font-size: 300%;
-}
-
-.sequence {
-	position: relative;
-	display: inline-block;
-	padding: 1em;
-	border: dashed 1px #2F2F2F;
-}
-
-.sequence > .label {
-	position: absolute;
-	left: 0.2em;
-	top: 0.2em;
-}
-
-.group {
-	position: relative;
-	display: inline-block;
-	padding: 1em;
-	margin: 0.5em 0.5em;
-	border: dotted 1px #2F2F2F;
-}
-
-.group > .label {
-	position: absolute;
-	left: 0.2em;
-	top: 0.2em;
-}
-
 .light {
 	display: inline-block;
 	padding: 0.5em;
@@ -107,47 +28,47 @@ a {
 	box-shadow: 0px -0.1em 0px 0.05em rgba(70,70,70,0.4);
 }
 
-.stateR .boxRed {
+.light_stateR .boxRed {
 	background-color: red;
 	box-shadow: 0px 0px 4em 4px red!important;
 }
-.stateR .boxYellow {
+.light_stateR .boxYellow {
 	background-color: #0F0F0F;
 }
-.stateR .boxGreen {
+.light_stateR .boxGreen {
 	background-color: #0F0F0F;
 }
 
-.stateG .boxRed {
+.light_stateG .boxRed {
 	background-color: #0F0F0F;
 }
-.stateG .boxYellow {
+.light_stateG .boxYellow {
 	background-color: #0F0F0F;
 }
-.stateG .boxGreen {
+.light_stateG .boxGreen {
 	background-color: #33ff00;
 	box-shadow: 0px 0px 4em 4px #33ff00!important;
 }
 
-.stateA .boxRed {
+.light_stateA .boxRed {
 	background-color: red;
 	box-shadow: 0px 0px 40px 2px red!important;
 }
-.stateA .boxYellow {
+.light_stateA .boxYellow {
 	background-color: #ffd500;
 	box-shadow: 0px 0px 4em 4px #ffd500!important;
 }
-.stateA .boxGreen {
+.light_stateA .boxGreen {
 	background-color: #0F0F0F;
 }
 
-.stateY .boxRed {
+.light_stateY .boxRed {
 	background-color: #0F0F0F;
 }
-.stateY .boxYellow {
+.light_stateY .boxYellow {
 	background-color: #ffd500;
 	box-shadow: 0px 0px 4em 4px #ffd500!important;
 }
-.stateY .boxGreen {
+.light_stateY .boxGreen {
 	background-color: #0F0F0F;
 }

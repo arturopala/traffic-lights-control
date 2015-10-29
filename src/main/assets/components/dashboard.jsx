@@ -6,6 +6,7 @@ import mixin from '../mixin.js'
 import Light from './light.jsx'
 import Sequence from './sequence.jsx'
 import Group from './group.jsx'
+import './dashboard.css'
 
 class Dashboard extends React.Component {
 

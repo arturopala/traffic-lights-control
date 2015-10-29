@@ -1,0 +1,29 @@
+.sequence {
+	position: relative;
+	display: inline-block;
+	padding: 1em;
+	margin: 0.5em 0.5em;
+	border: dashed 1px #2F2F2F;
+}
+
+.sequence > .label {
+	position: absolute;
+	left: 0.2em;
+	top: 0.2em;
+}
+
+.sequence_stateR {
+	border-color: rgba(255, 0, 0, 0.5);
+}
+
+.sequence_stateG {
+	border-color: rgba(51, 255, 0, 0.5);
+}
+
+.sequence_stateA {
+	border-color: rgba(255, 213, 0, 0.5);
+}
+
+.sequence_stateY {
+	border-color: rgba(255, 213, 0, 0.5);
+}

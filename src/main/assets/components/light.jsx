@@ -1,27 +1,15 @@
-import React from 'react';
+import React from 'react'
 import './light.css'
 import Store from '../store.js'
 import {registerLightStateListener, unregisterLightStateListener} from '../actions.js'
+import {LightStateListenerMixin} from './component.js'
+import mixin from '../mixin.js'
 
-export default class Light extends React.Component {
+export default class Light extends mixin(React.Component, LightStateListenerMixin) {
 
   constructor(){
     super()
     this.state = {lightState: 'R'}
-  }
-
-  componentDidMount(){
-	let {systemId,compId} = this.props
-  	Store.dispatch(registerLightStateListener(`${systemId}_${compId}`, this.updateLightState.bind(this)));
-  }
-
-  componentWillUnmount(){
-	let {systemId,compId} = this.props
-  	Store.dispatch(unregisterLightStateListener(`${systemId}_${compId}`));
-  }
-
-  updateLightState(newState){
-  	if(newState) this.setState({lightState: newState})
   }
 
   render() {
@@ -29,7 +17,7 @@ export default class Light extends React.Component {
     return (
     	<span className="light">
     		<span className="label">{compId}</span>
-	    	<span className={"panel state"+this.state.lightState}>
+	    	<span className={"panel light_state"+this.state.lightState}>
 	    		<span className="box boxRed"></span>
 	    		<span className="box boxYellow"></span>
 	    		<span className="box boxGreen"></span>
