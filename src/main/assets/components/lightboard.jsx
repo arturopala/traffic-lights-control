@@ -8,6 +8,23 @@ import './lightboard.css'
 
 class LightBoard extends React.Component {
 
+  constructor(){
+    super()
+    this.state = {}
+  }
+
+  componentDidMount(){
+    Fetch(`/api/layouts/${this.props.params.systemId}`/`${this.props.params.compId}`, this.receiveLayoutResponse.bind(this))
+  }
+
+  receiveLayoutResponse(response){
+    if (response.status >= 200 && response.status < 300) {
+      response.json().then(layout => this.setState({layout: layout}))
+    } else {
+      this.setState({error: response.statusText})
+    }
+  }
+
   render() {
     return (
     	<div className="lightboard">

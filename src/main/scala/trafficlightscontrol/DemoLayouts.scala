@@ -29,10 +29,13 @@ object DemoLayouts {
         ),
         Group(
           "g2",
-          Light("l3", GreenLight),
-          Offset(
-            1.second,
-            Light("l4", RedLight)
+          Group(
+            "g2a",
+            Light("l3", GreenLight),
+            Offset(
+              1.second,
+              Light("l4", RedLight)
+            )
           )
         ),
         Group(
@@ -51,18 +54,18 @@ object DemoLayouts {
         Group(
           "g11",
           Offset(
-            500.millis,
+            300.millis,
             Light("l12", GreenLight)
-          ),
-          Light("l11", RedLight)
+          )
         ),
         Group(
           "g12",
+          Light("l11", RedLight),
           Offset(
             1.second,
             Sequence("s14", SequenceStrategy.RoundRobin,
               Light("l14a", RedLight),
-              Light("l14b", RedLight))
+              Light("l14b", GreenLight))
           ),
           Light("l13", GreenLight)
         ),
@@ -71,7 +74,7 @@ object DemoLayouts {
           Light("l15", GreenLight),
           Light("l16", RedLight),
           Offset(
-            1.second,
+            2.second,
             Sequence("s13", SequenceStrategy.RoundRobin,
               Light("l17", RedLight),
               Light("l19", RedLight))

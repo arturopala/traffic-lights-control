@@ -45,14 +45,22 @@ class SequenceActor(
     case ChangeToGreenCommand =>
       nextGreenId = strategy(greenMemberId, memberIds)
       if (isGreen && nextGreenId == greenMemberId) {
-        signal(ChangedToGreenEvent)
+        members.get(nextGreenId) match {
+          case Some(member) =>
+            become(receiveWhileWaitingForGreenAck)
+            member ! ChangeToGreenCommand
+            publish(ChangingToGreenLight)
+            scheduleTimeout(timeout)
+          case None =>
+            throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
+        }
       }
       else if (members.contains(nextGreenId)) {
         responderSet.clear()
         become(receiveWhileChangingToAllRedBeforeGreen)
         members ! ChangeToRedCommand
-        scheduleTimeout(timeout)
         publish(ChangingToGreenLight)
+        scheduleTimeout(timeout)
       }
       else {
         throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
@@ -62,8 +70,8 @@ class SequenceActor(
       responderSet.clear()
       become(receiveWhileChangingToRed)
       members ! ChangeToRedCommand
-      scheduleTimeout(timeout)
       publish(ChangingToRedLight)
+      scheduleTimeout(timeout)
   }
 
   ///////////////////////////////////////////////////

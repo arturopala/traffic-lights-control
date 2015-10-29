@@ -35,7 +35,7 @@ sbt test
 
 ```sbt run```
 
-Http server runs at <http://localhost:8080/>
+Http server runs at <http://localhost:8080/demo>
 
 ## API
 

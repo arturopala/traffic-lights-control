@@ -37,25 +37,20 @@ class GroupActor(
   /////////////////////////////////////////
   val receiveWhenIdle: Receive = composeWithDefault {
 
-    case ChangeToGreenCommand => isGreen match {
-      case None | Some(false) =>
-        responderSet.clear()
-        become(receiveWhileChangingToGreen)
-        members ! ChangeToGreenCommand
-        scheduleTimeout(timeout)
-        publish(ChangingToGreenLight)
-
-      case Some(true) =>
-        signal(ChangedToGreenEvent)
-    }
+    case ChangeToGreenCommand =>
+      responderSet.clear()
+      become(receiveWhileChangingToGreen)
+      members ! ChangeToGreenCommand
+      publish(ChangingToGreenLight)
+      scheduleTimeout(timeout)
 
     case ChangeToRedCommand => isGreen match {
       case None | Some(true) =>
         responderSet.clear()
         become(receiveWhileChangingToRed)
         members ! ChangeToRedCommand
-        scheduleTimeout(timeout)
         publish(ChangingToRedLight)
+        scheduleTimeout(timeout)
 
       case Some(false) =>
         signal(ChangedToRedEvent)

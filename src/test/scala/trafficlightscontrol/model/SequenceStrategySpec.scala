@@ -42,6 +42,18 @@ class SequenceStrategySpec extends FlatSpecLike with Matchers {
     strategy("bla", members) should be("bla")
   }
 
+  it should "terminate and return currentId if only one member exists" in {
+    val strategy = SequenceStrategy.RoundRobin
+    val members = Seq("foo_1")
+    strategy("foo_1", members) should be("foo_1")
+    strategy("foo_1", members) should be("foo_1")
+    strategy("foo_2", members) should be("foo_1")
+    strategy("foo_3", members) should be("foo_1")
+    strategy("foo_4", members) should be("foo_1")
+    strategy("foo_1", members) should be("foo_1")
+    strategy("bla", members) should be("foo_1")
+  }
+
   "A SequenceStrategy" should "parse \"RoundRobin\" as a RoundRobin strategy" in {
     SequenceStrategy("RoundRobin") should be(SequenceStrategy.RoundRobin)
   }
