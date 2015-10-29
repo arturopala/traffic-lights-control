@@ -43,7 +43,7 @@ class GroupActor(
         become(receiveWhileChangingToGreen)
         members ! ChangeToGreenCommand
         scheduleTimeout(timeout)
-        publish(StatusEvent(id, ChangingToGreenLight))
+        publish(ChangingToGreenLight)
 
       case Some(true) =>
         signal(ChangedToGreenEvent)
@@ -55,7 +55,7 @@ class GroupActor(
         become(receiveWhileChangingToRed)
         members ! ChangeToRedCommand
         scheduleTimeout(timeout)
-        publish(StatusEvent(id, ChangingToRedLight))
+        publish(ChangingToRedLight)
 
       case Some(false) =>
         signal(ChangedToRedEvent)
@@ -74,7 +74,7 @@ class GroupActor(
         isGreen = Some(false)
         become(receiveWhenIdle)
         signal(ChangedToRedEvent)
-        publish(StatusEvent(id, RedLight))
+        publish(RedLight)
       }
 
     case ChangeToGreenCommand => stash() // we can't avoid going red at that point
@@ -97,7 +97,7 @@ class GroupActor(
         isGreen = Some(true)
         become(receiveWhenIdle)
         signal(ChangedToGreenEvent)
-        publish(StatusEvent(id, GreenLight))
+        publish(GreenLight)
       }
 
     case ChangeToRedCommand   => stash() // we can't avoid going green at that point
@@ -108,6 +108,6 @@ class GroupActor(
       throw new TimeoutException(s"Group ${this.id}: timeout occured when waiting for all final green acks")
   }
 
-  //if (isGreen.isDefined) publish(StatusEvent(id, if (isGreen.get) GreenLight else RedLight))
+  //if (isGreen.isDefined) publish(if (isGreen.get) GreenLight else RedLight)
 
 }

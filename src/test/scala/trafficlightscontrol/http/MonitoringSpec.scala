@@ -27,18 +27,18 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     val tested = TestActorRef(new MonitoringActor())
   }
 
-  "A Monitoring actor" must "receive StatusEvent and register current state of light" in new MonitoringTest {
-    tested ! StatusEvent("1", RedLight)
+  "A Monitoring actor" must "receive StateChangedEvent and register current state of light" in new MonitoringTest {
+    tested ! StateChangedEvent("1", RedLight)
     tested.underlyingActor.report("1") should equal(RedLight)
-    tested ! StatusEvent("1", GreenLight)
+    tested ! StateChangedEvent("1", GreenLight)
     tested.underlyingActor.report("1") should equal(GreenLight)
-    tested ! StatusEvent("2", RedLight)
+    tested ! StateChangedEvent("2", RedLight)
     tested.underlyingActor.report("1") should equal(GreenLight)
     tested.underlyingActor.report("2") should equal(RedLight)
-    tested ! StatusEvent("2", GreenLight)
+    tested ! StateChangedEvent("2", GreenLight)
     tested.underlyingActor.report("1") should equal(GreenLight)
     tested.underlyingActor.report("2") should equal(GreenLight)
-    tested ! StatusEvent("1", RedLight)
+    tested ! StateChangedEvent("1", RedLight)
     tested.underlyingActor.report("1") should equal(RedLight)
     tested.underlyingActor.report("2") should equal(GreenLight)
   }
@@ -50,7 +50,7 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r1.report should have size 0
 
     info("case 2: when light #1 became red")
-    tested ! StatusEvent("1", RedLight)
+    tested ! StateChangedEvent("1", RedLight)
     tested ! GetReportQuery
     val r2 = expectMsgAnyClassOf(classOf[ReportEvent])
     r2 should not be r1
@@ -58,14 +58,14 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r2.report.get("1") should be(Some(RedLight))
 
     info("case 3: when light #1 became green")
-    tested ! StatusEvent("1", GreenLight)
+    tested ! StateChangedEvent("1", GreenLight)
     tested ! GetReportQuery
     val r3 = expectMsgAnyClassOf(classOf[ReportEvent])
     r3.report should have size 1
     r3.report.get("1") should be(Some(GreenLight))
 
     info("case 4: when light #2 became red")
-    tested ! StatusEvent("2", RedLight)
+    tested ! StateChangedEvent("2", RedLight)
     tested ! GetReportQuery
     val r4 = expectMsgAnyClassOf(classOf[ReportEvent])
     r4.report should have size 2
@@ -73,7 +73,7 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r4.report.get("2") should be(Some(RedLight))
 
     info("case 5: when light #2 became green")
-    tested ! StatusEvent("2", GreenLight)
+    tested ! StateChangedEvent("2", GreenLight)
     tested ! GetReportQuery
     val r5 = expectMsgAnyClassOf(classOf[ReportEvent])
     r5.report should have size 2
@@ -81,7 +81,7 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r5.report.get("2") should be(Some(GreenLight))
 
     info("case 6: when light #1 became again red")
-    tested ! StatusEvent("1", RedLight)
+    tested ! StateChangedEvent("1", RedLight)
     tested ! GetReportQuery
     val r6 = expectMsgAnyClassOf(classOf[ReportEvent])
     r6.report should have size 2
@@ -103,8 +103,8 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r1.report should have size 0
 
     info("case 2: when light #demo_1 became red")
-    tested ! StatusEvent("demo_1", RedLight)
-    tested ! StatusEvent("foo_1", GreenLight)
+    tested ! StateChangedEvent("demo_1", RedLight)
+    tested ! StateChangedEvent("foo_1", GreenLight)
     tested ! GetReportQuery("demo")
     val r2 = expectMsgAnyClassOf(classOf[ReportEvent])
     r2 should not be r1
@@ -113,8 +113,8 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r2.report.get("foo_1") shouldBe None
 
     info("case 3: when light #demo_1 became green")
-    tested ! StatusEvent("demo_1", GreenLight)
-    tested ! StatusEvent("foo_1", RedLight)
+    tested ! StateChangedEvent("demo_1", GreenLight)
+    tested ! StateChangedEvent("foo_1", RedLight)
     tested ! GetReportQuery("demo")
     val r3 = expectMsgAnyClassOf(classOf[ReportEvent])
     r3.report should have size 1
@@ -122,8 +122,8 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r3.report.get("foo_1") shouldBe None
 
     info("case 4: when light #demo_2 became red")
-    tested ! StatusEvent("demo_2", RedLight)
-    tested ! StatusEvent("foo_2", GreenLight)
+    tested ! StateChangedEvent("demo_2", RedLight)
+    tested ! StateChangedEvent("foo_2", GreenLight)
     tested ! GetReportQuery("demo")
     val r4 = expectMsgAnyClassOf(classOf[ReportEvent])
     r4.report should have size 2
@@ -131,7 +131,7 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r4.report.get("demo_2") should be(Some(RedLight))
 
     info("case 5: when light #demo_2 became green")
-    tested ! StatusEvent("demo_2", GreenLight)
+    tested ! StateChangedEvent("demo_2", GreenLight)
     tested ! GetReportQuery("demo")
     val r5 = expectMsgAnyClassOf(classOf[ReportEvent])
     r5.report should have size 2
@@ -139,7 +139,7 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r5.report.get("demo_2") should be(Some(GreenLight))
 
     info("case 6: when light #demo_1 became again red")
-    tested ! StatusEvent("demo_1", RedLight)
+    tested ! StateChangedEvent("demo_1", RedLight)
     tested ! GetReportQuery("demo")
     val r6 = expectMsgAnyClassOf(classOf[ReportEvent])
     r6.report should have size 2
@@ -156,82 +156,82 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     r7.report.get("demo_2") should be(Some(GreenLight))
   }
 
-  it must "receive GetStatusQuery(id=1) and send back light status as an Option[StatusEvent]" in new MonitoringTest {
+  it must "receive GetStatusQuery(id=1) and send back light status as an Option[StateChangedEvent]" in new MonitoringTest {
     info("case 1: when light #1 state is not known yet")
     tested ! GetStatusQuery("1")
-    val r1 = expectMsgAnyClassOf(classOf[Option[StatusEvent]])
+    val r1 = expectMsgAnyClassOf(classOf[Option[StateChangedEvent]])
     r1 should be(None)
 
     info("case 2: when light #2 state but not #1 has been reported")
-    tested ! StatusEvent("2", GreenLight)
+    tested ! StateChangedEvent("2", GreenLight)
     tested ! GetStatusQuery("1")
-    val r2 = expectMsgAnyClassOf(classOf[Option[StatusEvent]])
+    val r2 = expectMsgAnyClassOf(classOf[Option[StateChangedEvent]])
     r2 should be(None)
 
     info("case 3: when light #1 state is already known")
-    tested ! StatusEvent("1", GreenLight)
+    tested ! StateChangedEvent("1", GreenLight)
     tested ! GetStatusQuery("1")
-    val r3 = expectMsgAnyClassOf(classOf[Option[StatusEvent]])
-    r3 should be(Some(StatusEvent("1", GreenLight)))
+    val r3 = expectMsgAnyClassOf(classOf[Option[StateChangedEvent]])
+    r3 should be(Some(StateChangedEvent("1", GreenLight)))
   }
 
-  it must "receive GetPublisherQuery and send back Publisher[StatusEvent]" in new MonitoringTest {
+  it must "receive GetPublisherQuery and send back Publisher[StateChangedEvent]" in new MonitoringTest {
     info("step 1: request publisher")
     tested ! GetPublisherQuery(_ => true)
-    val publisher = expectMsgAnyClassOf(classOf[Publisher[StatusEvent]])
+    val publisher = expectMsgAnyClassOf(classOf[Publisher[StateChangedEvent]])
     info("step 2: subscribe for events")
-    val subscriber = new TestSubscriber[StatusEvent]
+    val subscriber = new TestSubscriber[StateChangedEvent]
     publisher.subscribe(subscriber)
     val subscription = subscriber.probe.expectMsgType[Subscription]
-    info("step 3: request 5 events and expect StatusEvent for light #1")
-    tested ! StatusEvent("1", GreenLight)
+    info("step 3: request 5 events and expect StateChangedEvent for light #1")
+    tested ! StateChangedEvent("1", GreenLight)
     subscription.request(5)
-    subscriber.probe.expectMsgType[StatusEvent] should be(StatusEvent("1", GreenLight))
-    info("step 4: expect StatusEvent for light #2")
-    tested ! StatusEvent("2", RedLight)
-    subscriber.probe.expectMsgType[StatusEvent] should be(StatusEvent("2", RedLight))
-    info("step 5: expect 3 more StatusEvents")
-    tested ! StatusEvent("2", GreenLight)
-    tested ! StatusEvent("1", RedLight)
-    tested ! StatusEvent("2", RedLight)
-    subscriber.probe.expectMsgType[StatusEvent] should be(StatusEvent("2", GreenLight))
-    subscriber.probe.expectMsgType[StatusEvent] should be(StatusEvent("1", RedLight))
-    subscriber.probe.expectMsgType[StatusEvent] should be(StatusEvent("2", RedLight))
+    subscriber.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("1", GreenLight))
+    info("step 4: expect StateChangedEvent for light #2")
+    tested ! StateChangedEvent("2", RedLight)
+    subscriber.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("2", RedLight))
+    info("step 5: expect 3 more StateChangedEvents")
+    tested ! StateChangedEvent("2", GreenLight)
+    tested ! StateChangedEvent("1", RedLight)
+    tested ! StateChangedEvent("2", RedLight)
+    subscriber.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("2", GreenLight))
+    subscriber.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("1", RedLight))
+    subscriber.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("2", RedLight))
     info("step 6: expect no message without explicitly requesting")
-    tested ! StatusEvent("2", RedLight)
-    tested ! StatusEvent("1", GreenLight)
-    tested ! StatusEvent("1", RedLight)
+    tested ! StateChangedEvent("2", RedLight)
+    tested ! StateChangedEvent("1", GreenLight)
+    tested ! StateChangedEvent("1", RedLight)
     subscriber.probe.expectNoMsg
     info("step 7: request next events and expect only last")
     subscription.request(5)
-    subscriber.probe.expectMsgType[StatusEvent] should be(StatusEvent("1", RedLight))
+    subscriber.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("1", RedLight))
     subscriber.probe.expectNoMsg
     info("step 8: cancel subscription")
     subscription.cancel()
     Thread.sleep(200)
     info("step 9: expect no more elements")
-    tested ! StatusEvent("3", RedLight)
-    tested ! StatusEvent("4", GreenLight)
-    tested ! StatusEvent("5", RedLight)
+    tested ! StateChangedEvent("3", RedLight)
+    tested ! StateChangedEvent("4", GreenLight)
+    tested ! StateChangedEvent("5", RedLight)
     subscriber.probe.expectNoMsg
     info("step 10: expect monitoring to work as before")
     tested ! GetStatusQuery("4")
-    val r1 = expectMsgType[Option[StatusEvent]]
-    r1 should be(Some(StatusEvent("4", GreenLight)))
+    val r1 = expectMsgType[Option[StateChangedEvent]]
+    r1 should be(Some(StateChangedEvent("4", GreenLight)))
     expectNoMsg
   }
 
   it must "receive multiple GetPublisherQuery and send back separate publishers" in new MonitoringTest {
     info("step 1: request first publisher")
     tested ! GetPublisherQuery(_ => true)
-    val p1 = expectMsgType[Publisher[StatusEvent]]
+    val p1 = expectMsgType[Publisher[StateChangedEvent]]
     info("step 2: request second publisher")
     tested ! GetPublisherQuery(_ => true)
-    val p2 = expectMsgType[Publisher[StatusEvent]]
+    val p2 = expectMsgType[Publisher[StateChangedEvent]]
     p1 should not be (p2)
     info("step 3: register subscribers")
-    val s1 = new TestSubscriber[StatusEvent]
-    val s2 = new TestSubscriber[StatusEvent]
+    val s1 = new TestSubscriber[StateChangedEvent]
+    val s2 = new TestSubscriber[StateChangedEvent]
     p1.subscribe(s1)
     val subs1 = s1.probe.expectMsgType[Subscription]
     subs1.request(1000)
@@ -239,35 +239,35 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     val subs2 = s2.probe.expectMsgType[Subscription]
     subs2.request(1000)
     info("step 4: expect same event sent to both subscribers")
-    val e1 = StatusEvent("1", GreenLight)
+    val e1 = StateChangedEvent("1", GreenLight)
     tested ! e1
-    s1.probe.expectMsgType[StatusEvent] shouldBe e1
-    s2.probe.expectMsgType[StatusEvent] shouldBe e1
+    s1.probe.expectMsgType[StateChangedEvent] shouldBe e1
+    s2.probe.expectMsgType[StateChangedEvent] shouldBe e1
     info("step 5: cancel first subscriber and expect events on second")
     subs1.cancel()
     Thread.sleep(200)
-    val e2 = StatusEvent("1", RedLight)
+    val e2 = StateChangedEvent("1", RedLight)
     tested ! e2
-    s2.probe.expectMsgType[StatusEvent] shouldBe e2
+    s2.probe.expectMsgType[StateChangedEvent] shouldBe e2
     s1.probe.expectNoMsg
   }
 
   it must "receive GetPublisherQuery and send events according to predicate" in new MonitoringTest {
     info("step 1: request publisher and register subscriber")
     tested ! GetPublisherQuery(id => id.contains("2"))
-    val p1 = expectMsgType[Publisher[StatusEvent]]
-    val s1 = new TestSubscriber[StatusEvent]
+    val p1 = expectMsgType[Publisher[StateChangedEvent]]
+    val s1 = new TestSubscriber[StateChangedEvent]
     p1.subscribe(s1)
     val subs1 = s1.probe.expectMsgType[Subscription]
     subs1.request(1000)
     info("step 2: expect only events having id matching predicate")
-    tested ! StatusEvent("1", RedLight)
+    tested ! StateChangedEvent("1", RedLight)
     s1.probe.expectNoMsg
-    tested ! StatusEvent("2", GreenLight)
-    s1.probe.expectMsgType[StatusEvent] should be(StatusEvent("2", GreenLight))
-    tested ! StatusEvent("12", RedLight)
-    s1.probe.expectMsgType[StatusEvent] should be(StatusEvent("12", RedLight))
-    tested ! StatusEvent("3", RedLight)
+    tested ! StateChangedEvent("2", GreenLight)
+    s1.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("2", GreenLight))
+    tested ! StateChangedEvent("12", RedLight)
+    s1.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("12", RedLight))
+    tested ! StateChangedEvent("3", RedLight)
     s1.probe.expectNoMsg
     info("step 3: cancel subscription")
     subs1.cancel()

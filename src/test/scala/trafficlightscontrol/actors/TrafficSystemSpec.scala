@@ -44,10 +44,10 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
 
     eventListener.expectMsgAllOf(
       checkTimeout,
-      StatusEvent("foo_l1", RedLight),
-      StatusEvent("foo_l2", GreenLight),
-      StatusEvent("foo_l3", GreenLight),
-      StatusEvent("foo_l4", RedLight)
+      StateChangedEvent("foo_l1", RedLight),
+      StateChangedEvent("foo_l2", GreenLight),
+      StateChangedEvent("foo_l3", GreenLight),
+      StateChangedEvent("foo_l4", RedLight)
     )
 
   }
@@ -59,10 +59,10 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
 
     eventListener.expectMsgAllOf(
       checkTimeout,
-      StatusEvent("bar_l1", RedLight),
-      StatusEvent("bar_l2", GreenLight),
-      StatusEvent("bar_l3", GreenLight),
-      StatusEvent("bar_l4", RedLight)
+      StateChangedEvent("bar_l1", RedLight),
+      StateChangedEvent("bar_l2", GreenLight),
+      StateChangedEvent("bar_l3", GreenLight),
+      StateChangedEvent("bar_l4", RedLight)
     )
 
   }
@@ -112,32 +112,34 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
 
     eventListener.expectMsgAllOf(
       checkTimeout,
-      StatusEvent("foo3_l1", RedLight),
-      StatusEvent("foo3_l2", GreenLight),
-      StatusEvent("foo3_l3", GreenLight),
-      StatusEvent("foo3_l4", RedLight)
+      StateChangedEvent("foo3_l1", RedLight),
+      StateChangedEvent("foo3_l2", GreenLight),
+      StateChangedEvent("foo3_l3", GreenLight),
+      StateChangedEvent("foo3_l4", RedLight)
     )
 
     eventListener.expectMsgAllOf(
       checkTimeout,
-      StatusEvent("foo3_g2", ChangingToRedLight),
-      StatusEvent("foo3_g1", ChangingToRedLight),
-      StatusEvent("foo3_l2", ChangingToRedLight),
-      StatusEvent("foo3_l3", ChangingToRedLight)
+      StateChangedEvent("foo3_s1", ChangingToGreenLight),
+      StateChangedEvent("foo3_g2", ChangingToRedLight),
+      StateChangedEvent("foo3_g1", ChangingToRedLight),
+      StateChangedEvent("foo3_l2", ChangingToRedLight),
+      StateChangedEvent("foo3_l3", ChangingToRedLight)
     )
 
     eventListener.expectMsgAllOf(
       checkTimeout,
-      StatusEvent("foo3_g2", RedLight),
-      StatusEvent("foo3_g1", RedLight),
-      StatusEvent("foo3_l2", RedLight),
-      StatusEvent("foo3_l3", RedLight),
-      StatusEvent("foo3_g1", ChangingToGreenLight),
-      StatusEvent("foo3_l1", ChangingToGreenLight),
-      StatusEvent("foo3_l2", ChangingToGreenLight),
-      StatusEvent("foo3_l1", GreenLight),
-      StatusEvent("foo3_l2", GreenLight),
-      StatusEvent("foo3_g1", GreenLight)
+      StateChangedEvent("foo3_g2", RedLight),
+      StateChangedEvent("foo3_g1", RedLight),
+      StateChangedEvent("foo3_l2", RedLight),
+      StateChangedEvent("foo3_l3", RedLight),
+      StateChangedEvent("foo3_g1", ChangingToGreenLight),
+      StateChangedEvent("foo3_l1", ChangingToGreenLight),
+      StateChangedEvent("foo3_l2", ChangingToGreenLight),
+      StateChangedEvent("foo3_l1", GreenLight),
+      StateChangedEvent("foo3_l2", GreenLight),
+      StateChangedEvent("foo3_g1", GreenLight),
+      StateChangedEvent("foo3_s1", GreenLight)
     )
 
     trafficSystemRef ! StopSystemCommand("foo3")

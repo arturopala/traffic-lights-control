@@ -78,16 +78,16 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
     monitoring.actor ? GetReportQuery(systemId) map (_.asInstanceOf[ReportEvent])
   }
 
-  def getStatusOpt(id: Id): Future[Option[StatusEvent]] = {
-    monitoring.actor ? GetStatusQuery(id) map (_.asInstanceOf[Option[StatusEvent]])
+  def getStatusOpt(id: Id): Future[Option[StateChangedEvent]] = {
+    monitoring.actor ? GetStatusQuery(id) map (_.asInstanceOf[Option[StateChangedEvent]])
   }
 
-  def getStatusPublisher(predicate: Id => Boolean): Future[Publisher[StatusEvent]] = {
-    monitoring.actor ? GetPublisherQuery(predicate) map (_.asInstanceOf[Publisher[StatusEvent]])
+  def getStatusPublisher(predicate: Id => Boolean): Future[Publisher[StateChangedEvent]] = {
+    monitoring.actor ? GetPublisherQuery(predicate) map (_.asInstanceOf[Publisher[StateChangedEvent]])
   }
 
-  def getStatusPublisher: Future[Publisher[StatusEvent]] = {
-    monitoring.actor ? GetPublisherQuery(_ => true) map (_.asInstanceOf[Publisher[StatusEvent]])
+  def getStatusPublisher: Future[Publisher[StateChangedEvent]] = {
+    monitoring.actor ? GetPublisherQuery(_ => true) map (_.asInstanceOf[Publisher[StateChangedEvent]])
   }
 
   def getLayoutList: Future[Iterable[String]] = {
@@ -107,8 +107,8 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
   def publisherAsMessageSource[A](p: Publisher[A])(f: A => String): Source[TextMessage, Unit] = Source(p).map(e => TextMessage.Strict(f(e))).named("tms")
 
   val idPattern = "\\w{1,128}".r
-  val statusEventToString: StatusEvent => String = e => e.id+":"+e.state.id
-  val lightStateToString: StatusEvent => String = e => e.state.id
+  val statusEventToString: StateChangedEvent => String = e => e.id+":"+e.state.id
+  val lightStateToString: StateChangedEvent => String = e => e.state.id
   val forAllIds: Id => Boolean = _ => true
   def forSystem(systemId: Id): Id => Boolean = x => x.startsWith(systemId)
   def forLight(id: Id): Id => Boolean = x => x == id

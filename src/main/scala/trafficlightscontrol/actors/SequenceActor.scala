@@ -52,6 +52,7 @@ class SequenceActor(
         become(receiveWhileChangingToAllRedBeforeGreen)
         members ! ChangeToRedCommand
         scheduleTimeout(timeout)
+        publish(ChangingToGreenLight)
       }
       else {
         throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
@@ -62,6 +63,7 @@ class SequenceActor(
       become(receiveWhileChangingToRed)
       members ! ChangeToRedCommand
       scheduleTimeout(timeout)
+      publish(ChangingToRedLight)
   }
 
   ///////////////////////////////////////////////////
@@ -76,6 +78,7 @@ class SequenceActor(
         isGreen = false
         become(receiveWhenIdle)
         signal(ChangedToRedEvent)
+        publish(RedLight)
       }
 
     case ChangeToGreenCommand =>
@@ -132,6 +135,7 @@ class SequenceActor(
       isGreen = false
       become(receiveWhenIdle)
       signal(ChangedToRedEvent)
+      publish(RedLight)
   }
 
   /////////////////////////////////////////////////////////
@@ -145,6 +149,7 @@ class SequenceActor(
       greenMemberId = nextGreenId
       become(receiveWhenIdle)
       signal(ChangedToGreenEvent)
+      publish(GreenLight)
       unstashAll()
 
     case ChangeToGreenCommand => //ignore, already changing to green

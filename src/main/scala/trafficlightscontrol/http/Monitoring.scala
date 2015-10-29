@@ -19,11 +19,11 @@ import akka.stream.actor._
 case class Monitoring(actor: ActorRef)
 
 /**
- * Actor responsible of listening on EventStream for StatusEvents. <br>
+ * Actor responsible of listening on EventStream for StateChangedEvents. <br>
  * Keeps current system status and spreads it responding on:
  * <li>   GetReportQuery => ReportEvent
- * <li>   GetStatusQuery(id: Id) => StatusEvent
- * <li>   GetPublisherQuery(predicate: Id => Boolean) => Publisher[StatusEvent]
+ * <li>   GetStatusQuery(id: Id) => StateChangedEvent
+ * <li>   GetPublisherQuery(predicate: Id => Boolean) => Publisher[StateChangedEvent]
  */
 class MonitoringActor extends Actor with ActorLogging {
 
@@ -32,7 +32,7 @@ class MonitoringActor extends Actor with ActorLogging {
 
   def receive = {
 
-    case event @ StatusEvent(id, status) =>
+    case event @ StateChangedEvent(id, status) =>
       report += (id -> status)
       sendToPublishers(event)
 
@@ -44,7 +44,7 @@ class MonitoringActor extends Actor with ActorLogging {
 
     case GetStatusQuery(id) =>
       report.get(id) match {
-        case Some(state) => sender ! Some(StatusEvent(id, state))
+        case Some(state) => sender ! Some(StateChangedEvent(id, state))
         case None        => sender ! None
       }
 
@@ -61,21 +61,21 @@ class MonitoringActor extends Actor with ActorLogging {
       publishers = publishers filterNot { case (_, ref) => ref == publisherActor }
   }
 
-  def sendToPublishers(event: StatusEvent): Unit = {
+  def sendToPublishers(event: StateChangedEvent): Unit = {
     for ((p, ref) <- publishers) if (p(event.id)) ref ! event
   }
 
-  context.system.eventStream.subscribe(self, classOf[StatusEvent])
+  context.system.eventStream.subscribe(self, classOf[StateChangedEvent])
 }
 
-class StatusPublisherActor extends Actor with ActorPublisher[StatusEvent] {
+class StatusPublisherActor extends Actor with ActorPublisher[StateChangedEvent] {
 
   import akka.stream.actor.ActorPublisherMessage._
 
-  var eventOpt: Option[StatusEvent] = None
+  var eventOpt: Option[StateChangedEvent] = None
 
   def receive = {
-    case event: StatusEvent =>
+    case event: StateChangedEvent =>
       if (isActive & totalDemand > 0) {
         onNext(event)
         eventOpt = None

@@ -24,7 +24,7 @@ trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
   class ActorSystemTest extends TestKit(actorSystem) with ImplicitSender {
 
     val eventListener = TestProbe()
-    actorSystem.eventStream.subscribe(eventListener.ref, classOf[StatusEvent])
+    actorSystem.eventStream.subscribe(eventListener.ref, classOf[StateChangedEvent])
 
   }
 

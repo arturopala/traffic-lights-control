@@ -142,19 +142,24 @@ class SequenceFSM(
 
   onTransition {
     case Idle -> WaitingForAllRed =>
+      context.system.eventStream.publish(StateChangedEvent(id, ChangingToRedLight))
       members.values.foreach(_ ! ChangeToRedCommand)
     case Idle -> WaitingForAllRedBeforeGreen =>
+      context.system.eventStream.publish(StateChangedEvent(id, ChangingToGreenLight))
       members.values.foreach(_ ! ChangeToRedCommand)
     case WaitingForAllRedBeforeGreen -> WaitingWhileDelayedBeforeGreen =>
       setTimer("delayChangeToGreen", CanContinueAfterDelayEvent, configuration.sequenceDelay, false)
     case WaitingWhileDelayedBeforeGreen -> WaitingForGreen =>
       members(stateData.greenMemberId) ! ChangeToGreenCommand
     case WaitingForGreen -> Idle =>
+      context.system.eventStream.publish(StateChangedEvent(id, GreenLight))
       recipient ! ChangedToGreenEvent
     case WaitingForAllRed -> Idle =>
+      context.system.eventStream.publish(StateChangedEvent(id, RedLight))
       recipient ! ChangedToRedEvent
     case WaitingWhileDelayedBeforeGreen -> Idle =>
       cancelTimer("delayChangeToGreen")
+      context.system.eventStream.publish(StateChangedEvent(id, RedLight))
       recipient ! ChangedToRedEvent
   }
 

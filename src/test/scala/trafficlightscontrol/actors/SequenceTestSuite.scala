@@ -16,100 +16,108 @@ trait SequenceTestSuite extends FlatSpecLike with Matchers with ScalaFutures wit
   def runSuite(name: String, sequence: (String, Seq[LightState]) => TestActorRef[_]) {
 
     s"A $name" should "change status of light #1 from red to green when all are red" in new ActorSystemTest {
-      val tested = sequence("s-1", Seq(RedLight, RedLight, RedLight, RedLight))
+      val tested = sequence("s1", Seq(RedLight, RedLight, RedLight, RedLight))
       tested ! RegisterRecipientCommand(self)
-      expectMsg(RecipientRegisteredEvent("s-1"))
+      expectMsg(RecipientRegisteredEvent("s1"))
       Thread.sleep(100)
       tested ! ChangeToGreenCommand
       expectMsg(ChangedToGreenEvent)
     }
 
     it should "change status of light #1 from red to green when only light #2 is green" in new ActorSystemTest {
-      val tested = sequence("s-1", Seq(RedLight, GreenLight, RedLight, RedLight))
+      val tested = sequence("s1", Seq(RedLight, GreenLight, RedLight, RedLight))
       tested ! RegisterRecipientCommand(self)
-      expectMsg(RecipientRegisteredEvent("s-1"))
+      expectMsg(RecipientRegisteredEvent("s1"))
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", RedLight),
-        StatusEvent("2", GreenLight),
-        StatusEvent("3", RedLight),
-        StatusEvent("4", RedLight)
+        StateChangedEvent("1", RedLight),
+        StateChangedEvent("2", GreenLight),
+        StateChangedEvent("3", RedLight),
+        StateChangedEvent("4", RedLight)
       )
       tested ! ChangeToGreenCommand
       expectMsg(ChangedToGreenEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", ChangingToGreenLight),
-        StatusEvent("1", GreenLight),
-        StatusEvent("2", ChangingToRedLight),
-        StatusEvent("2", RedLight)
+        StateChangedEvent("s1", ChangingToGreenLight),
+        StateChangedEvent("1", ChangingToGreenLight),
+        StateChangedEvent("1", GreenLight),
+        StateChangedEvent("2", ChangingToRedLight),
+        StateChangedEvent("2", RedLight),
+        StateChangedEvent("s1", GreenLight)
       )
     }
 
     it should "change status of light #1 from red to green when only all others are red" in new ActorSystemTest {
-      val tested = sequence("s-1", Seq(RedLight, GreenLight, GreenLight, GreenLight))
+      val tested = sequence("s1", Seq(RedLight, GreenLight, GreenLight, GreenLight))
       tested ! RegisterRecipientCommand(self)
-      expectMsg(RecipientRegisteredEvent("s-1"))
+      expectMsg(RecipientRegisteredEvent("s1"))
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", RedLight),
-        StatusEvent("2", GreenLight),
-        StatusEvent("3", GreenLight),
-        StatusEvent("4", GreenLight)
+        StateChangedEvent("1", RedLight),
+        StateChangedEvent("2", GreenLight),
+        StateChangedEvent("3", GreenLight),
+        StateChangedEvent("4", GreenLight)
       )
       tested ! ChangeToGreenCommand
       expectMsg(ChangedToGreenEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", ChangingToGreenLight),
-        StatusEvent("1", GreenLight),
-        StatusEvent("2", ChangingToRedLight),
-        StatusEvent("2", RedLight),
-        StatusEvent("3", ChangingToRedLight),
-        StatusEvent("3", RedLight),
-        StatusEvent("4", ChangingToRedLight),
-        StatusEvent("4", RedLight)
+        StateChangedEvent("s1", ChangingToGreenLight),
+        StateChangedEvent("1", ChangingToGreenLight),
+        StateChangedEvent("1", GreenLight),
+        StateChangedEvent("2", ChangingToRedLight),
+        StateChangedEvent("2", RedLight),
+        StateChangedEvent("3", ChangingToRedLight),
+        StateChangedEvent("3", RedLight),
+        StateChangedEvent("4", ChangingToRedLight),
+        StateChangedEvent("4", RedLight),
+        StateChangedEvent("s1", GreenLight)
+
       )
     }
 
     it should "change status of all lights to red" in new ActorSystemTest {
-      val tested = sequence("s-1", Seq(GreenLight, GreenLight, RedLight, GreenLight))
+      val tested = sequence("s1", Seq(GreenLight, GreenLight, RedLight, GreenLight))
       tested ! RegisterRecipientCommand(self)
-      expectMsg(RecipientRegisteredEvent("s-1"))
+      expectMsg(RecipientRegisteredEvent("s1"))
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", GreenLight),
-        StatusEvent("2", GreenLight),
-        StatusEvent("3", RedLight),
-        StatusEvent("4", GreenLight)
+        StateChangedEvent("1", GreenLight),
+        StateChangedEvent("2", GreenLight),
+        StateChangedEvent("3", RedLight),
+        StateChangedEvent("4", GreenLight)
       )
       tested ! ChangeToRedCommand
       expectMsg(ChangedToRedEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", ChangingToRedLight),
-        StatusEvent("1", RedLight),
-        StatusEvent("2", ChangingToRedLight),
-        StatusEvent("2", RedLight),
-        StatusEvent("4", ChangingToRedLight),
-        StatusEvent("4", RedLight)
+        StateChangedEvent("s1", ChangingToRedLight),
+        StateChangedEvent("1", ChangingToRedLight),
+        StateChangedEvent("1", RedLight),
+        StateChangedEvent("2", ChangingToRedLight),
+        StateChangedEvent("2", RedLight),
+        StateChangedEvent("4", ChangingToRedLight),
+        StateChangedEvent("4", RedLight),
+        StateChangedEvent("s1", RedLight)
+
       )
     }
 
     it should "change status sequentially to green starting from light #1" in new ActorSystemTest {
-      val tested = sequence("s-1", Seq(RedLight, RedLight, RedLight, GreenLight))
+      val tested = sequence("s1", Seq(RedLight, RedLight, RedLight, GreenLight))
       tested ! RegisterRecipientCommand(self)
-      expectMsg(RecipientRegisteredEvent("s-1"))
+      expectMsg(RecipientRegisteredEvent("s1"))
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", RedLight),
-        StatusEvent("2", RedLight),
-        StatusEvent("3", RedLight),
-        StatusEvent("4", GreenLight)
+        StateChangedEvent("1", RedLight),
+        StateChangedEvent("2", RedLight),
+        StateChangedEvent("3", RedLight),
+        StateChangedEvent("4", GreenLight)
       )
       for (j <- 0 to 3; i <- 1 to 4) {
         val prev_id = s"${if ((i - 1) == 0) 4 else (i - 1)}"
@@ -118,10 +126,12 @@ trait SequenceTestSuite extends FlatSpecLike with Matchers with ScalaFutures wit
         expectMsg(ChangedToGreenEvent)
         eventListener.expectMsgAllOf(
           checkTimeout,
-          StatusEvent(prev_id, ChangingToRedLight),
-          StatusEvent(prev_id, RedLight),
-          StatusEvent(id, ChangingToGreenLight),
-          StatusEvent(id, GreenLight)
+          StateChangedEvent("s1", ChangingToGreenLight),
+          StateChangedEvent(prev_id, ChangingToRedLight),
+          StateChangedEvent(prev_id, RedLight),
+          StateChangedEvent(id, ChangingToGreenLight),
+          StateChangedEvent(id, GreenLight),
+          StateChangedEvent("s1", GreenLight)
         )
       }
     }

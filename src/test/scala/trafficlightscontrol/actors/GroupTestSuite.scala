@@ -24,25 +24,25 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", RedLight),
-        StatusEvent("2", RedLight),
-        StatusEvent("3", RedLight),
-        StatusEvent("4", RedLight)
+        StateChangedEvent("1", RedLight),
+        StateChangedEvent("2", RedLight),
+        StateChangedEvent("3", RedLight),
+        StateChangedEvent("4", RedLight)
       )
       tested ! ChangeToGreenCommand
       expectMsg(ChangedToGreenEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("g1", ChangingToGreenLight),
-        StatusEvent("1", ChangingToGreenLight),
-        StatusEvent("2", ChangingToGreenLight),
-        StatusEvent("3", ChangingToGreenLight),
-        StatusEvent("4", ChangingToGreenLight),
-        StatusEvent("1", GreenLight),
-        StatusEvent("2", GreenLight),
-        StatusEvent("3", GreenLight),
-        StatusEvent("4", GreenLight),
-        StatusEvent("g1", GreenLight)
+        StateChangedEvent("g1", ChangingToGreenLight),
+        StateChangedEvent("1", ChangingToGreenLight),
+        StateChangedEvent("2", ChangingToGreenLight),
+        StateChangedEvent("3", ChangingToGreenLight),
+        StateChangedEvent("4", ChangingToGreenLight),
+        StateChangedEvent("1", GreenLight),
+        StateChangedEvent("2", GreenLight),
+        StateChangedEvent("3", GreenLight),
+        StateChangedEvent("4", GreenLight),
+        StateChangedEvent("g1", GreenLight)
       )
     }
 
@@ -53,25 +53,25 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", GreenLight),
-        StatusEvent("2", GreenLight),
-        StatusEvent("3", GreenLight),
-        StatusEvent("4", GreenLight)
+        StateChangedEvent("1", GreenLight),
+        StateChangedEvent("2", GreenLight),
+        StateChangedEvent("3", GreenLight),
+        StateChangedEvent("4", GreenLight)
       )
       tested ! ChangeToRedCommand
       expectMsg(ChangedToRedEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("g1", ChangingToRedLight),
-        StatusEvent("1", ChangingToRedLight),
-        StatusEvent("2", ChangingToRedLight),
-        StatusEvent("3", ChangingToRedLight),
-        StatusEvent("4", ChangingToRedLight),
-        StatusEvent("1", RedLight),
-        StatusEvent("2", RedLight),
-        StatusEvent("3", RedLight),
-        StatusEvent("4", RedLight),
-        StatusEvent("g1", RedLight)
+        StateChangedEvent("g1", ChangingToRedLight),
+        StateChangedEvent("1", ChangingToRedLight),
+        StateChangedEvent("2", ChangingToRedLight),
+        StateChangedEvent("3", ChangingToRedLight),
+        StateChangedEvent("4", ChangingToRedLight),
+        StateChangedEvent("1", RedLight),
+        StateChangedEvent("2", RedLight),
+        StateChangedEvent("3", RedLight),
+        StateChangedEvent("4", RedLight),
+        StateChangedEvent("g1", RedLight)
       )
     }
 
@@ -82,23 +82,23 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", RedLight),
-        StatusEvent("2", GreenLight),
-        StatusEvent("3", RedLight),
-        StatusEvent("4", RedLight)
+        StateChangedEvent("1", RedLight),
+        StateChangedEvent("2", GreenLight),
+        StateChangedEvent("3", RedLight),
+        StateChangedEvent("4", RedLight)
       )
       tested ! ChangeToGreenCommand
       expectMsg(ChangedToGreenEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("g1", ChangingToGreenLight),
-        StatusEvent("1", ChangingToGreenLight),
-        StatusEvent("3", ChangingToGreenLight),
-        StatusEvent("4", ChangingToGreenLight),
-        StatusEvent("1", GreenLight),
-        StatusEvent("3", GreenLight),
-        StatusEvent("4", GreenLight),
-        StatusEvent("g1", GreenLight)
+        StateChangedEvent("g1", ChangingToGreenLight),
+        StateChangedEvent("1", ChangingToGreenLight),
+        StateChangedEvent("3", ChangingToGreenLight),
+        StateChangedEvent("4", ChangingToGreenLight),
+        StateChangedEvent("1", GreenLight),
+        StateChangedEvent("3", GreenLight),
+        StateChangedEvent("4", GreenLight),
+        StateChangedEvent("g1", GreenLight)
       )
     }
 
@@ -109,23 +109,23 @@ trait GroupTestSuite extends FlatSpecLike with Matchers with ScalaFutures with P
       Thread.sleep(100)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("1", GreenLight),
-        StatusEvent("2", GreenLight),
-        StatusEvent("3", RedLight),
-        StatusEvent("4", GreenLight)
+        StateChangedEvent("1", GreenLight),
+        StateChangedEvent("2", GreenLight),
+        StateChangedEvent("3", RedLight),
+        StateChangedEvent("4", GreenLight)
       )
       tested ! ChangeToRedCommand
       expectMsg(ChangedToRedEvent)
       eventListener.expectMsgAllOf(
         checkTimeout,
-        StatusEvent("g1", ChangingToRedLight),
-        StatusEvent("1", ChangingToRedLight),
-        StatusEvent("2", ChangingToRedLight),
-        StatusEvent("4", ChangingToRedLight),
-        StatusEvent("1", RedLight),
-        StatusEvent("2", RedLight),
-        StatusEvent("4", RedLight),
-        StatusEvent("g1", RedLight)
+        StateChangedEvent("g1", ChangingToRedLight),
+        StateChangedEvent("1", ChangingToRedLight),
+        StateChangedEvent("2", ChangingToRedLight),
+        StateChangedEvent("4", ChangingToRedLight),
+        StateChangedEvent("1", RedLight),
+        StateChangedEvent("2", RedLight),
+        StateChangedEvent("4", RedLight),
+        StateChangedEvent("g1", RedLight)
       )
     }
 

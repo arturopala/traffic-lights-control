@@ -30,9 +30,9 @@ import DefaultJsonProtocol._
 class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest with ActorSystemTestKit {
 
   val module = new Module
-  module.monitoring.actor ! StatusEvent("demo_l1", GreenLight)
-  module.monitoring.actor ! StatusEvent("foo_l2", RedLight)
-  module.monitoring.actor ! StatusEvent("demo_l3", RedLight)
+  module.monitoring.actor ! StateChangedEvent("demo_l1", GreenLight)
+  module.monitoring.actor ! StateChangedEvent("foo_l2", RedLight)
+  module.monitoring.actor ! StateChangedEvent("demo_l3", RedLight)
 
   import JsonProtocol._
 
@@ -113,12 +113,12 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
   }
 
   it should "return status for GET /api/lights/demo/l1" in {
-    val lightStatus = StatusEvent("demo_l1", GreenLight)
+    val lightStatus = StateChangedEvent("demo_l1", GreenLight)
     module.monitoring.actor ! lightStatus
-    module.monitoring.actor ! StatusEvent("foo_l1", RedLight)
+    module.monitoring.actor ! StateChangedEvent("foo_l1", RedLight)
     Get("/api/lights/demo/l1") ~> module.httpService.route ~> check {
       status should be(OK)
-      responseAs[String].parseJson.convertTo[StatusEvent] should be(lightStatus)
+      responseAs[String].parseJson.convertTo[StateChangedEvent] should be(lightStatus)
     }
   }
 

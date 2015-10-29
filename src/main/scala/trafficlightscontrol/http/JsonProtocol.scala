@@ -24,7 +24,7 @@ object JsonProtocol extends DefaultJsonProtocol {
   }
 
   implicit val ReportEventJsonFormat = jsonFormat1(ReportEvent.apply)
-  implicit val StatusEventJsonFormat = jsonFormat2(StatusEvent.apply)
+  implicit val StateChangedEventJsonFormat = jsonFormat2(StateChangedEvent.apply)
 
   implicit object SequenceStrategyJsonFormat extends RootJsonFormat[SequenceStrategy] {
     def write(strategy: SequenceStrategy): JsValue = JsString(strategy.name)

@@ -37,7 +37,7 @@ class LightActor(
   }
 
   private val receiveQuery: Receive = {
-    case GetStatusQuery => signal(StatusEvent(id, state))
+    case GetStatusQuery => signal(StateChangedEvent(id, state))
   }
 
   /////////////////////////////////////
@@ -103,7 +103,7 @@ class LightActor(
 
   def changeStateTo(newState: LightState) = {
     state = newState
-    publish(StatusEvent(id, state))
+    publish(state)
     become(receiveByState())
   }
 

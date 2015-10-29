@@ -31,7 +31,7 @@ object GroupFSM {
 import GroupFSM._
 
 /**
- * GroupFSM is a set of components (eg. lights, groups, other sequencees) which should be all red or green at the same time.
+ * GroupFSM is a set of components (eg. lights, groups, other sequences) which should be all red or green at the same time.
  */
 class GroupFSM(
     id:            String,
@@ -113,16 +113,16 @@ class GroupFSM(
 
   onTransition {
     case Idle -> WaitingForAllRed =>
-      context.system.eventStream.publish(StatusEvent(id, ChangingToRedLight))
+      context.system.eventStream.publish(StateChangedEvent(id, ChangingToRedLight))
       members.values.foreach(_ ! ChangeToRedCommand)
     case Idle -> WaitingForAllGreen =>
-      context.system.eventStream.publish(StatusEvent(id, ChangingToGreenLight))
+      context.system.eventStream.publish(StateChangedEvent(id, ChangingToGreenLight))
       members.values.foreach(_ ! ChangeToGreenCommand)
     case WaitingForAllGreen -> Idle =>
-      context.system.eventStream.publish(StatusEvent(id, GreenLight))
+      context.system.eventStream.publish(StateChangedEvent(id, GreenLight))
       recipient ! ChangedToGreenEvent
     case WaitingForAllRed -> Idle =>
-      context.system.eventStream.publish(StatusEvent(id, RedLight))
+      context.system.eventStream.publish(StateChangedEvent(id, RedLight))
       recipient ! ChangedToRedEvent
   }
 

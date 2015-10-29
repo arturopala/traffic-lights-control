@@ -54,7 +54,7 @@ trait BaseLeafActor extends Actor with ActorLogging {
 
   final def become(receive: Receive): Unit = context.become(receive)
 
-  final def publish(event: Event): Unit = context.system.eventStream.publish(event)
+  final def publish(state: LightState): Unit = context.system.eventStream.publish(StateChangedEvent(id, state))
 }
 
 /**
