@@ -54,17 +54,19 @@ Each traffic control component receives commands: ChangeToRedCommand, ChangeToGr
 
 Each component also consumes, produces or passes TickEvents.
 
+-   **TrafficSystem**: outermost component, wraps other component and sends TickEvents at intervals
+
 -   **Light**: the most primitive component of traffic system control taking one of four states sequentially: RedLight, ChangingToGreenLight, GreenLight, ChangingToRedLight
 
 -   **Group**: set of components amongst which all are changing to the same state in the same time (all becomes Red or all becomes Green)
 
 -   **Sequence**: set of components amongst which only one can become Green at the same time, the rest have to become Red.
 
--   **Offset**: component wrapper delaying commands
+-   **TimeOffset**: proxy component delaying commands
 
--   **Pulse**: component consuming TickEvents and generating ChangeToGreenCommands
+-   **Pulse**: proxy component consuming TickEvents and sends ChangeToGreenCommands
 
--   **Switch**: component consuming TickEvents and generating alternately ChangeToGreenCommand and ChangeToRedCommand
+-   **Switch**: proxy component consuming TickEvents and sends alternately ChangeToGreenCommand and ChangeToRedCommand
 
 All statefull components reports StateChangeEvent to the event listener.
 
