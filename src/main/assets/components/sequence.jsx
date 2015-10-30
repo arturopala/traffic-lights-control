@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router'
 import {LightStateListenerMixin} from './component.js'
 import mixin from '../mixin.js'
 import './sequence.css'
@@ -13,7 +14,7 @@ export default class Sequence extends mixin(React.Component, LightStateListenerM
   render() {
   	let {compId, systemId, members, generate} = this.props
     return <span className={"sequence sequence_state"+this.state.lightState}>
-    		<span className="label">{compId}</span>
+    		<Link to={"/"+systemId+"/"+compId}><span className="label">{compId}</span></Link>
 	    	{members.map(generate)}
     	</span>
   }

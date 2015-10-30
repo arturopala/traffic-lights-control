@@ -6,7 +6,7 @@
 	border: dotted 1px #2F2F2F;
 }
 
-.group > .label {
+.group > a > .label {
 	position: absolute;
 	left: 0.2em;
 	top: 0.2em;

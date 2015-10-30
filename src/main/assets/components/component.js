@@ -7,6 +7,16 @@ export class LightStateListenerMixin {
     TrafficSystemStore.registerListener(`${systemId}_${compId}`, this.updateLightState.bind(this))
   }
 
+  componentWillReceiveProps(nextProps){
+    let {systemId,compId} = this.props
+    let nextSystemId = nextProps.systemId
+    let nextCompId = nextProps.compId
+    if(systemId !== nextSystemId || compId !== nextCompId){
+      TrafficSystemStore.unregisterListener(`${systemId}_${compId}`)
+      TrafficSystemStore.registerListener(`${nextSystemId}_${nextCompId}`, this.updateLightState.bind(this))
+    }
+  }
+
   componentWillUnmount(){
     let {systemId,compId} = this.props
     TrafficSystemStore.unregisterListener(`${systemId}_${compId}`)

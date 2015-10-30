@@ -5,7 +5,7 @@ class TrafficSystemStore {
 
 	constructor(){
 		this.state = {
-			layoutList: [],
+			layoutList: undefined,
 			lightStateMap: {},
 			listeners: {},
 			layouts: {}
@@ -21,6 +21,15 @@ class TrafficSystemStore {
 
 	setLayoutList(layoutList){
 		this.state.layoutList = layoutList
+	}
+
+	getLayoutList(){
+		if(this.state.layoutList) {
+			return new Promise((resolve, reject) => resolve(this.state.layoutList));
+		}
+		else {
+			return Fetch('/api/layouts').then(response => response.json());
+		}
 	}
 
 	getLayout(systemId){
@@ -57,7 +66,11 @@ class TrafficSystemStore {
 
 	registerListener(lightId, listener){
 		//console.log(lightId, listener)
-		this.state.listeners[lightId] = listener
+		if(lightId && listener) {
+			listener(this.state.lightStateMap[lightId])
+			this.state.listeners[lightId] = listener
+		}
+
 	}
 
 	unregisterListener(lightId){

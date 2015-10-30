@@ -4,12 +4,6 @@
 	background-color: #0F0F0F;
 }
 
-.light > .label {
-	display: inline-block;
-	padding-bottom: 0.5em;
-	color: #555555;
-}
-
 .light > .panel {
 	display: block;
 	padding: 1em 0.5em 0.5em 0.5em;

@@ -14,7 +14,7 @@ export default class Light extends mixin(React.Component, LightStateListenerMixi
   render() {
   	let {systemId,compId} = this.props
     return (
-    	<span className="light">
+    	<span key={`${systemId}_${compId}`} className="light">
     		<Link to={"/"+systemId+"/"+compId}><span className="label">{compId}</span></Link>
 	    	<span className={"panel light_state"+this.state.lightState}>
 	    		<span className="box boxRed"></span>

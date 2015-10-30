@@ -19,17 +19,41 @@ class Dashboard extends React.Component {
   }
 
   componentDidMount(){
-    this.fetchLayout()
+    this.fetchLayout(this.props)
   }
 
-  fetchLayout(){
-    let {systemId,compId} = this.props.params
-    let {layout} = this.props
+  componentWillReceiveProps(nextProps){
+    this.fetchLayout(nextProps)
+  }
+
+  fetchLayout(props){
+    let {systemId,compId} = props.params
+    let {layout} = props
     if(!layout) {
       TrafficSystemStore.getLayout(systemId).then(layout => {
-        this.setState({layout: layout})
+        let component = this.findComponent(compId,layout)
+        this.setState({layout: component})
       })
-    } else setState({layout: layout})
+    } else {
+      let component = this.findComponent(compId,layout)
+      this.setState({layout: component})
+    }
+  }
+
+  findComponent(compId, layout){
+    let component = layout
+    if(compId){
+      if(component && component.id && component.id === compId) {
+        return component;
+      }
+      else if(component && component.member) return this.findComponent(compId, component.member);
+      else if(component && component.members) {
+        let res = component.members.map(member => this.findComponent(compId, member)).filter( e => e !== undefined)
+        if(res && res.length>0) return res[0]; else return undefined;
+      } else return undefined;
+    }
+    
+    return component
   }
 
   render() {
@@ -51,8 +75,8 @@ class Dashboard extends React.Component {
       }
     }
     return (
-      <div className="dashboard">
-        <span className="label">Traffic Lights Control / <b>{systemId}</b></span>
+      <div key={`${systemId}_${compId}`} className="dashboard">
+        <span className="label"><Link to={'/'}>Traffic Lights Control</Link><Link to={`/${systemId}`}> / <b>{systemId}</b></Link>{compId?(<Link to={`/${systemId}/${compId}`}>{' / '+compId}</Link>):''}</span>
     		<div className="panel">
         {generate(this.state.layout)}
 	     </div>
