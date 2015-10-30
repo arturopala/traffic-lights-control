@@ -114,7 +114,7 @@ trait BaseNodeActor extends BaseLeafActor {
       }
 
     case TimeoutEvent =>
-      log.warning(s"Timeout ocurred. Node ${this.id} PARTIALLY initialized. Members: ${memberIds.mkString(",")}")
+      log.warning(s"Timeout ocurred. Node ${this.id} PARTIALLY initialized. Members: ${Option(memberIds).map(_.mkString(","))}")
       become(receiveWhenIdle)
   }
 

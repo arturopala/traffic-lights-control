@@ -1,21 +1,19 @@
-import React from 'react';
-import Store from '../store.js'
-import {registerLightStateListener, unregisterLightStateListener} from '../actions.js'
+import TrafficSystemStore from '../stores/trafficSystemStore.js'
 
 export class LightStateListenerMixin {
 
   componentDidMount(){
     let {systemId,compId} = this.props
-    Store.dispatch(registerLightStateListener(`${systemId}_${compId}`, this.updateLightState.bind(this)));
+    TrafficSystemStore.registerListener(`${systemId}_${compId}`, this.updateLightState.bind(this))
   }
 
   componentWillUnmount(){
     let {systemId,compId} = this.props
-    Store.dispatch(unregisterLightStateListener(`${systemId}_${compId}`));
+    TrafficSystemStore.unregisterListener(`${systemId}_${compId}`)
   }
 
   updateLightState(newState){
-    if(newState) this.setState({lightState: newState})
+    if(newState && newState !== this.state.lightState) this.setState({lightState: newState})
   }
 
 } 

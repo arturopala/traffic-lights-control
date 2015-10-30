@@ -1,11 +1,14 @@
 import React from 'react'
 import { Link } from 'react-router'
-import Fetch from '../fetch.js'
 import merge from 'deepmerge'
 import mixin from '../mixin.js'
+
 import Light from './light.jsx'
 import Sequence from './sequence.jsx'
 import Group from './group.jsx'
+
+import TrafficSystemStore from '../stores/trafficSystemStore.js'
+
 import './dashboard.css'
 
 class Dashboard extends React.Component {
@@ -16,19 +19,21 @@ class Dashboard extends React.Component {
   }
 
   componentDidMount(){
-    Fetch(`/api/layouts/${this.props.params.systemId}`, this.receiveLayoutResponse.bind(this))
+    this.fetchLayout()
   }
 
-  receiveLayoutResponse(response){
-    if (response.status >= 200 && response.status < 300) {
-      response.json().then(layout => this.setState({layout: layout}))
-    } else {
-      this.setState({error: response.statusText})
-    }
+  fetchLayout(){
+    let {systemId,compId} = this.props.params
+    let {layout} = this.props
+    if(!layout) {
+      TrafficSystemStore.getLayout(systemId).then(layout => {
+        this.setState({layout: layout})
+      })
+    } else setState({layout: layout})
   }
 
   render() {
-    let systemId = this.props.params.systemId
+    let {systemId,compId} = this.props.params
     let generate = function(comp) {
       if(comp) {
         switch(comp['type']){
@@ -47,7 +52,7 @@ class Dashboard extends React.Component {
     }
     return (
       <div className="dashboard">
-        <span className="label">Traffic Lights Control / <b>{this.props.params.systemId}</b></span>
+        <span className="label">Traffic Lights Control / <b>{systemId}</b></span>
     		<div className="panel">
         {generate(this.state.layout)}
 	     </div>
