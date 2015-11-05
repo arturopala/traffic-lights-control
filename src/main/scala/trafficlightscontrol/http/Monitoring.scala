@@ -4,6 +4,7 @@ import scala.annotation.tailrec
 
 import akka.actor.Actor
 import akka.actor.ActorRef
+import akka.actor.ActorSystem
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import akka.actor.ActorPath
@@ -27,14 +28,16 @@ case class Monitoring(actor: ActorRef)
  */
 class MonitoringActor extends Actor with ActorLogging {
 
+  val publisher = new publishers.PublisherActor[StateChangedEvent]()(context.system)
+
   var report: Map[Id, LightState] = Map()
-  var publishers: Set[(Id => Boolean, ActorRef)] = Set.empty
 
   def receive = {
 
     case event @ StateChangedEvent(id, status) =>
       report += (id -> status)
-      sendToPublishers(event)
+      publisher.publish(event)
+    //sendToPublishers(event)
 
     case GetReportQuery(system) =>
       sender ! ReportEvent(report.filterKeys(k => k.startsWith(system)))
@@ -49,46 +52,83 @@ class MonitoringActor extends Actor with ActorLogging {
       }
 
     case GetPublisherQuery(predicate) =>
-      val publisherActor = context.actorOf(StatusPublisherActor.props)
-      context.watch(publisherActor)
-      publishers = publishers + (predicate -> publisherActor)
-      val publisher = ActorPublisher(publisherActor)
-      sender ! publisher
-      log.info(s"Started new status publisher ${publisherActor.path}")
-
-    case Terminated(publisherActor) =>
-      log.info(s"Terminated status publisher ${publisherActor.path}")
-      publishers = publishers filterNot { case (_, ref) => ref == publisherActor }
-  }
-
-  def sendToPublishers(event: StateChangedEvent): Unit = {
-    for ((p, ref) <- publishers) if (p(event.id)) ref ! event
+      val p = publisher.withPredicate((e: StateChangedEvent) => predicate(e.id))
+      sender ! p
   }
 
   context.system.eventStream.subscribe(self, classOf[StateChangedEvent])
 }
 
-class StatusPublisherActor extends Actor with ActorPublisher[StateChangedEvent] {
+object publishers {
 
-  import akka.stream.actor.ActorPublisherMessage._
+  import org.reactivestreams.{ Subscriber, Publisher }
 
-  var eventOpt: Option[StateChangedEvent] = None
+  final class PublisherActor[T](implicit system: ActorSystem) extends Publisher[T] {
 
-  def receive = {
-    case event: StateChangedEvent =>
-      if (isActive & totalDemand > 0) {
-        onNext(event)
-        eventOpt = None
+    private[this] val worker = system.actorOf(Props(new PublisherActorWorker))
+
+    override def subscribe(subscriber: Subscriber[_ >: T]): Unit = {
+      Option(subscriber).map(s => new Subscription(subscriber, worker, all))
+        .getOrElse(throw new NullPointerException)
+    }
+
+    def publish(element: T): Unit = worker ! Publish(element)
+
+    case class Cancel(s: Subscription)
+    case class Subscribe(s: Subscription, predicate: T => Boolean)
+    case class Demand(s: Subscription, n: Long)
+    case class Publish(element: T)
+
+    final def all: T => Boolean = (e: T) => true
+
+    final case class Subscription(subscriber: Subscriber[_ >: T], worker: ActorRef, predicate: T => Boolean, var cancelled: Boolean = false, var demand: Long = 0) extends org.reactivestreams.Subscription {
+      override def cancel(): Unit = worker ! Cancel(this)
+      override def request(n: Long): Unit = worker ! Demand(this, n)
+      private[publishers] def push(element: T): Unit = {
+        if (demand > 0) {
+          subscriber.onNext(element)
+          demand = demand - 1
+        }
+        else {
+          //skip elements which cannot be pushed directly to the subscriber
+        }
       }
-      else eventOpt = Some(event)
-    case Request(n) =>
-      if (isActive && n > 0) eventOpt foreach onNext
-    case Cancel =>
-      context.stop(self)
+      worker ! Subscribe(this, predicate)
+    }
+
+    private[this] final class PublisherActorWorker extends Actor {
+
+      var subscriptions: Vector[Subscription] = Vector()
+
+      def receive: Receive = {
+        case Subscribe(s, _) =>
+          subscriptions.find(_.subscriber == s.subscriber).getOrElse {
+            subscriptions = subscriptions :+ s
+            s.subscriber.onSubscribe(s)
+          }
+        case Cancel(s) if !s.cancelled =>
+          subscriptions = subscriptions.filterNot(_ == s)
+          s.cancelled = true
+          s.demand = 0
+        case Cancel(s) if s.cancelled =>
+        case Demand(s, n) if !s.cancelled && n > 0 =>
+          s.demand = s.demand + n
+          if (s.demand < 0) s.demand = 0
+        case Demand(s, n) if s.cancelled =>
+        case Publish(element) =>
+          subscriptions.foreach(s => if (s.predicate(element)) s.push(element))
+        case _ =>
+      }
+
+    }
+
+    def withPredicate(predicate: T => Boolean): Publisher[T] = new Publisher[T] {
+
+      override def subscribe(subscriber: Subscriber[_ >: T]): Unit = {
+        Option(subscriber).map(s => new Subscription(subscriber, worker, predicate))
+          .getOrElse(throw new NullPointerException)
+      }
+    }
+
   }
-
-}
-
-object StatusPublisherActor {
-  val props: Props = Props(classOf[StatusPublisherActor])
 }
