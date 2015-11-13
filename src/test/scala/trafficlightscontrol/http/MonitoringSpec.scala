@@ -201,9 +201,11 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     tested ! StateChangedEvent("2", RedLight)
     tested ! StateChangedEvent("1", GreenLight)
     info("step 7: request next events and expect only last")
-    subscription.request(1)
+    subscription.request(3)
     tested ! StateChangedEvent("1", RedLight)
     expectNoMsg(200.millis)
+    subscriber.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("2", RedLight))
+    subscriber.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("1", GreenLight))
     subscriber.probe.expectMsgType[StateChangedEvent] should be(StateChangedEvent("1", RedLight))
     expectNoMsg(200.millis)
     info("step 8: cancel subscription")
@@ -351,7 +353,7 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     subscription1.cancel()
   }
 
-  it must "not push elements when not requested" in new ActorSystemTest {
+  it must "buffer elements when not requested" in new ActorSystemTest {
     val subs = new TestSubscriber[String]
     val tested = new PublisherActor[String]
     tested.subscribe(subs)
@@ -361,6 +363,9 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     tested.publish("abcd")
     subs.probe.expectNoMsg(200.millis)
     subscription1.request(2)
+    subs.probe.expectMsg("abc")
+    subs.probe.expectMsg("abcd")
+    subscription1.request(2)
     tested.publish("bca")
     subs.probe.expectMsg("bca")
     tested.publish("abc")
@@ -368,7 +373,9 @@ class MonitoringSpec extends FlatSpecLike with Matchers with ActorSystemTestKit 
     tested.publish("_abc1234567890")
     subs.probe.expectNoMsg(200.millis)
     subscription1.request(2)
+    subs.probe.expectMsg("_abc1234567890")
     tested.publish("bccda1_!")
+    subscription1.request(1)
     subs.probe.expectMsg("bccda1_!")
   }
 

@@ -37,7 +37,7 @@ class MonitoringActor extends Actor with ActorLogging {
     case event @ StateChangedEvent(id, status) =>
       report += (id -> status)
       publisher.publish(event)
-    //sendToPublishers(event)
+      log.info(event.toString)
 
     case GetReportQuery(system) =>
       sender ! ReportEvent(report.filterKeys(k => k.startsWith(system)))
@@ -81,16 +81,33 @@ object publishers {
 
     final def all: T => Boolean = (e: T) => true
 
-    final case class Subscription(subscriber: Subscriber[_ >: T], worker: ActorRef, predicate: T => Boolean, var cancelled: Boolean = false, var demand: Long = 0) extends org.reactivestreams.Subscription {
+    final case class Subscription(subscriber: Subscriber[_ >: T], worker: ActorRef, predicate: T => Boolean, var cancelled: Boolean = false) extends org.reactivestreams.Subscription {
       override def cancel(): Unit = worker ! Cancel(this)
       override def request(n: Long): Unit = worker ! Demand(this, n)
+
+      private var demand: Long = 0
+      private var buffer: Vector[T] = Vector()
+
+      private[publishers] def addDemand(n: Long) = {
+        if (n > 0) {
+          demand = demand + n
+          if (demand < 0) demand = 0
+          if (buffer.size > 0) {
+            val min = Math.min(buffer.size, demand).toInt
+            val (send, stay) = buffer.splitAt(min)
+            buffer = stay
+            send foreach push
+          }
+        }
+      }
+
       private[publishers] def push(element: T): Unit = {
         if (demand > 0) {
           subscriber.onNext(element)
           demand = demand - 1
         }
         else {
-          //skip elements which cannot be pushed directly to the subscriber
+          buffer = buffer :+ element
         }
       }
       worker ! Subscribe(this, predicate)
@@ -109,11 +126,9 @@ object publishers {
         case Cancel(s) if !s.cancelled =>
           subscriptions = subscriptions.filterNot(_ == s)
           s.cancelled = true
-          s.demand = 0
         case Cancel(s) if s.cancelled =>
         case Demand(s, n) if !s.cancelled && n > 0 =>
-          s.demand = s.demand + n
-          if (s.demand < 0) s.demand = 0
+          s.addDemand(n)
         case Demand(s, n) if s.cancelled =>
         case Publish(element) =>
           subscriptions.foreach(s => if (s.predicate(element)) s.push(element))
