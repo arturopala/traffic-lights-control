@@ -152,7 +152,7 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
     }
   }
 
-  /*import akka.http.scaladsl.model.ws._
+  import akka.http.scaladsl.model.ws._
   import akka.http.scaladsl.testkit.WSProbe
 
   it should "handle /ws/lights requests" in {
@@ -160,18 +160,18 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
     WS("/ws/lights", wsClient.flow) ~> module.httpService.route ~>
       check {
         isWebsocketUpgrade shouldEqual true
-        wsClient.sendMessage("Peter")
+        /*wsClient.sendMessage("Peter")
           wsClient.expectMessage("Hello Peter!")
 
           wsClient.sendMessage(BinaryMessage(ByteString("abcdef")))
           // wsClient.expectNoMessage() // will be checked implicitly by next expectation
 
           wsClient.sendMessage("John")
-          wsClient.expectMessage("Hello John!")
+          wsClient.expectMessage("Hello John!")*/
 
-        wsClient.sendCompletion()
-        wsClient.expectCompletion()
+        //wsClient.sendCompletion()
+        //wsClient.expectCompletion()
       }
-  }*/
+  }
 
 }
