@@ -1,6 +1,6 @@
 [![Build Status](https://semaphoreci.com/api/v1/projects/c543ecbe-9aeb-4dde-932a-4cbfd3976d59/398717/badge.svg)](https://semaphoreci.com/arturopala/traffic-lights-control)      
 
-#Traffic Lights Control system
+# Traffic Lights Control system
 
 Real-time traffic lights control system modelled using Akka Actors.
 
@@ -30,9 +30,11 @@ sbt test
 
 ### Run
 
-```sbt run```
+```
+sbt run
+```
 
-Http server runs at <http://localhost:8080/demo>
+Http server runs default at <http://localhost:8080/demo>
 
 ## REST API
 
@@ -42,6 +44,9 @@ returns system layout as JSON
 returns system status as JSON
 ### GET /api/lights/{systemId}/{lightId}
 returns light state as JSON
+
+## WS API
+
 ### GET /ws/lights
 live stream of all light state events
 ### GET /ws/lights/{systemId}
