@@ -6,11 +6,10 @@ import trafficlightscontrol.model._
 
 object TimeOffsetActor {
   def props(
-    id:            Id,
-    memberProp:    Props,
+    id: Id,
+    memberProp: Props,
     configuration: Configuration,
-    offset:        FiniteDuration
-  ): Props =
+    offset: FiniteDuration): Props =
     Props(classOf[TimeOffsetActor], id, memberProp, configuration, offset)
 }
 
@@ -19,11 +18,10 @@ object TimeOffsetActor {
  * @param offset how long to delay a message
  */
 class TimeOffsetActor(
-    val id:            Id,
-    val memberProp:    Props,
+    val id: Id,
+    val memberProp: Props,
     val configuration: Configuration,
-    offset:            FiniteDuration
-) extends SingleNodeActor {
+    offset: FiniteDuration) extends SingleNodeActor {
 
   val receiveWhenIdle: Receive = {
     case event: Event if sender() == member                       => signal(event)

@@ -2,22 +2,19 @@
 
 #Traffic Lights Control system
 
-
-## Goal
-
-Traffic lights control system modelled using Akka Actors.
+Real-time traffic lights control system modelled using Akka Actors.
 
 ## Technologies
 
 -   Scala
--   Akka Actors - 2.4.x
--   Akka HTTP - 1.0.x
+-   Akka Actors - 2.5.x
+-   Akka HTTP - 10.x
 -   WebSockets
 -   React.js + Redux
 
 ### Build
 
-Project uses SBT to build backend components and Webpack to pack front-end assets.
+Uses SBT to build backend components and Webpack to pack front-end assets.
 
 ```
 npm install
@@ -37,16 +34,20 @@ sbt test
 
 Http server runs at <http://localhost:8080/demo>
 
-## API
+## REST API
 
--   GET /api/layouts/{systemId} : returns system layout as JSON
-
--   GET /api/lights/{systemId} : returns system status as JSON
--   GET /api/lights/{systemId}/{lightId} : returns light state as JSON
-
--   GET /ws/lights : live stream of all light state events
--   GET /ws/lights/{systemId} : live stream of light state events for systemId
--   GET /ws/lights/{systemId}/{lightId} : live stream of light state events for systemId_lightId
+### GET /api/layouts/{systemId}
+returns system layout as JSON
+### GET /api/lights/{systemId}
+returns system status as JSON
+### GET /api/lights/{systemId}/{lightId}
+returns light state as JSON
+### GET /ws/lights
+live stream of all light state events
+### GET /ws/lights/{systemId}
+live stream of light state events for systemId
+### GET /ws/lights/{systemId}/{lightId}
+live stream of light state events for systemId_lightId
 
 ## Model
 

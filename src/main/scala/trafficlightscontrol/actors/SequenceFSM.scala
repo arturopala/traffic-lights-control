@@ -19,16 +19,14 @@ object SequenceFSM {
 
   case class StateData(
     greenMemberId: Id,
-    responderSet:  Set[ActorRef] = Set.empty,
-    isGreen:       Boolean       = false
-  )
+    responderSet: Set[ActorRef] = Set.empty,
+    isGreen: Boolean = false)
 
   def props(
-    id:            Id,
-    memberProps:   Iterable[Props],
+    id: Id,
+    memberProps: Iterable[Props],
     configuration: Configuration,
-    strategy:      SequenceStrategy = SequenceStrategy.RoundRobin
-  ): Props =
+    strategy: SequenceStrategy = SequenceStrategy.RoundRobin): Props =
     Props(classOf[SequenceFSM], id, memberProps, configuration, strategy)
 }
 
@@ -38,11 +36,10 @@ import SequenceFSM._
  * SequenceFSM is a set of components (eg. lights, groups, other sequencees) amongst which only one may be green at once.
  */
 class SequenceFSM(
-    id:            Id,
-    memberProps:   Iterable[Props],
+    id: Id,
+    memberProps: Iterable[Props],
     configuration: Configuration,
-    strategy:      SequenceStrategy
-) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
+    strategy: SequenceStrategy) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
   var recipient: Option[ActorRef] = None
   val members: Map[Id, ActorRef] = Map()

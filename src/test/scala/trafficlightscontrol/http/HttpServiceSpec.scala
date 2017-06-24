@@ -155,7 +155,7 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
   import akka.http.scaladsl.model.ws._
   import akka.http.scaladsl.testkit.WSProbe
 
-  it should "handle /ws/lights requests" in {
+  /*it should "handle /ws/lights requests" in {
     val wsClient = WSProbe()
     WS("/ws/lights", wsClient.flow) ~> module.httpService.route ~>
       check {
@@ -172,6 +172,6 @@ class HttpServiceSpec extends FlatSpecLike with Matchers with ScalatestRouteTest
         //wsClient.sendCompletion()
         //wsClient.expectCompletion()
       }
-  }
+  }*/
 
 }

@@ -11,13 +11,12 @@ import trafficlightscontrol.model._
 
 object PulseActor {
   def props(
-    id:            Id,
-    memberProp:    Props,
+    id: Id,
+    memberProp: Props,
     configuration: Configuration,
-    command:       Command       = ChangeToGreenCommand,
-    ackEvent:      Event         = ChangedToGreenEvent,
-    skipTicks:     Int           = 0
-  ): Props =
+    command: Command = ChangeToGreenCommand,
+    ackEvent: Event = ChangedToGreenEvent,
+    skipTicks: Int = 0): Props =
     Props(classOf[PulseActor], id, memberProp, configuration, skipTicks, command, ackEvent)
 }
 
@@ -26,13 +25,12 @@ object PulseActor {
  * @param skipTicks number of ticks to skip between command emits
  */
 class PulseActor(
-    val id:            Id,
-    val memberProp:    Props,
+    val id: Id,
+    val memberProp: Props,
     val configuration: Configuration,
-    skipTicks:         Int,
-    command:           Command,
-    ackEvent:          Event
-) extends SingleNodeActor {
+    skipTicks: Int,
+    command: Command,
+    ackEvent: Event) extends SingleNodeActor {
 
   var remainingTicksToSkip: Int = 0
 

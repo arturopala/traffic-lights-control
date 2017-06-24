@@ -1,44 +1,36 @@
 package trafficlightscontrol.http
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Future }
-import scala.util.{ Try, Success, Failure }
-import scala.util.control.NonFatal
-
-import akka.actor.{ Actor, ActorSystem, Props, ActorRef, ActorLogging }
+import akka.NotUsed
+import akka.actor.ActorSystem
+import akka.event.Logging
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.ws.TextMessage
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server._
 import akka.pattern.ask
-import akka.util.Timeout
-
 import akka.stream._
 import akka.stream.scaladsl._
-import akka.http.scaladsl._
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.ws._
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.server._
-import StatusCodes._
-import Directives._
-
-import akka.event.Logging
-
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import spray.json._
-import DefaultJsonProtocol._
-
+import akka.util.Timeout
 import org.reactivestreams.Publisher
-
 import trafficlightscontrol.actors._
 import trafficlightscontrol.model._
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.{ Failure, Success }
 
 /**
  * Http service exposing REST and WS API.
  */
 class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implicit system: ActorSystem, materializer: ActorMaterializer) extends SprayJsonSupport {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-
   import JsonProtocol._
+
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   implicit val timeout = Timeout(5.seconds)
 
@@ -98,13 +90,15 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
     manager.actor ? GetSystemInfoQuery(id) map (_.asInstanceOf[SystemInfoEvent].component)
   }
 
-  def handleWebsocket: Directive1[UpgradeToWebsocket] =
-    optionalHeaderValueByType[UpgradeToWebsocket](()).flatMap {
+  import akka.http.scaladsl.model.ws.UpgradeToWebSocket
+
+  def handleWebsocket: Directive1[UpgradeToWebSocket] =
+    optionalHeaderValueByType[UpgradeToWebSocket](()).flatMap {
       case Some(upgrade) ⇒ provide(upgrade)
-      case None          ⇒ reject(ExpectedWebsocketRequestRejection)
+      case None          ⇒ reject(ExpectedWebSocketRequestRejection)
     }
 
-  def publisherAsMessageSource[A](p: Publisher[A])(f: A => String): Source[TextMessage, Unit] = Source(p).map(e => TextMessage.Strict(f(e))).named("tms")
+  def publisherAsMessageSource[A](p: Publisher[A])(f: A => String): Source[TextMessage, NotUsed] = Source.fromPublisher(p).map((e: A) => TextMessage(f(e))).named("tms")
 
   val idPattern = "\\w{1,128}".r
   val statusEventToString: StateChangedEvent => String = e => e.id+":"+e.state.id

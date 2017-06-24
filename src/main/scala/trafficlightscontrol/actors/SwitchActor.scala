@@ -11,12 +11,11 @@ import trafficlightscontrol.model._
 
 object SwitchActor {
   def props(
-    id:             Id,
-    memberProp:     Props,
-    configuration:  Configuration,
-    initiallyGreen: Boolean       = false,
-    skipTicks:      Int           = 0
-  ): Props =
+    id: Id,
+    memberProp: Props,
+    configuration: Configuration,
+    initiallyGreen: Boolean = false,
+    skipTicks: Int = 0): Props =
     Props(classOf[SwitchActor], id, memberProp, configuration, initiallyGreen, skipTicks)
 }
 
@@ -25,12 +24,11 @@ object SwitchActor {
  * @param skipTicks number of ticks to skip between command emits
  */
 class SwitchActor(
-    val id:            Id,
-    val memberProp:    Props,
+    val id: Id,
+    val memberProp: Props,
     val configuration: Configuration,
-    initiallyGreen:    Boolean,
-    skipTicks:         Int
-) extends SingleNodeActor {
+    initiallyGreen: Boolean,
+    skipTicks: Int) extends SingleNodeActor {
 
   var isGreen: Boolean = initiallyGreen
   var remainingTicksToSkip: Int = 0

@@ -12,40 +12,34 @@ sealed trait SingleMemberComponent extends CompositeComponent {
 }
 
 case class Light(
-  id:           Id,
-  initialState: LightState = RedLight
-)(implicit val configuration: Configuration) extends Component
+  id: Id,
+  initialState: LightState = RedLight)(implicit val configuration: Configuration) extends Component
 
 case class Sequence(
-  id:       Id,
+  id: Id,
   strategy: SequenceStrategy,
-  members:  Component*
-)(implicit val configuration: Configuration) extends CompositeComponent
+  members: Component*)(implicit val configuration: Configuration) extends CompositeComponent
 
 case class Group(
-  id:      Id,
-  members: Component*
-)(implicit val configuration: Configuration) extends CompositeComponent
+  id: Id,
+  members: Component*)(implicit val configuration: Configuration) extends CompositeComponent
 
 case class Switch(
-    member:         Component,
-    initiallyGreen: Boolean   = false,
-    skipTicks:      Int       = 0
-)(implicit val configuration: Configuration) extends SingleMemberComponent {
+    member: Component,
+    initiallyGreen: Boolean = false,
+    skipTicks: Int = 0)(implicit val configuration: Configuration) extends SingleMemberComponent {
   val prefix = "switchOf"
 }
 
 case class Pulse(
-    member:    Component,
-    skipTicks: Int       = 0
-)(implicit val configuration: Configuration) extends SingleMemberComponent {
+    member: Component,
+    skipTicks: Int = 0)(implicit val configuration: Configuration) extends SingleMemberComponent {
   val prefix = "pulseOf"
 }
 
 case class Offset(
     offset: FiniteDuration,
-    member: Component
-)(implicit val configuration: Configuration) extends SingleMemberComponent {
+    member: Component)(implicit val configuration: Configuration) extends SingleMemberComponent {
   val prefix = "offsetOf"
 }
 

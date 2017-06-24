@@ -16,6 +16,8 @@ object TrafficSystem {
   }
 }
 
+case class TrafficSystem(actor: ActorRef)
+
 trait TrafficSystemMaterializer {
 
   def lightProps(light: Light, systemId: Id): Props

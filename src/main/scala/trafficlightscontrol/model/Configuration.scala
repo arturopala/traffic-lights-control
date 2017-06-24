@@ -3,14 +3,13 @@ package trafficlightscontrol.model
 import scala.concurrent.duration._
 
 case class Configuration(
-    interval:        FiniteDuration,
+    interval: FiniteDuration,
     delayRedToGreen: FiniteDuration,
     delayGreenToRed: FiniteDuration,
-    sequenceDelay:   FiniteDuration,
-    timeout:         FiniteDuration,
-    automatic:       Boolean                = true,
-    groupOffset:     Option[FiniteDuration] = None
-) {
+    sequenceDelay: FiniteDuration,
+    timeout: FiniteDuration,
+    automatic: Boolean = true,
+    groupOffset: Option[FiniteDuration] = None) {
   def withLightDelay(d: FiniteDuration): Configuration = this.copy(delayRedToGreen = d, delayGreenToRed = d)
   def withGroupOffset(o: FiniteDuration): Configuration = this.copy(groupOffset = Option(o))
 }

@@ -16,15 +16,13 @@ object GroupFSM {
   object WaitingForAllGreen extends State
 
   case class StateData(
-    responderSet: Set[ActorRef]   = Set.empty,
-    isGreen:      Option[Boolean] = None
-  )
+    responderSet: Set[ActorRef] = Set.empty,
+    isGreen: Option[Boolean] = None)
 
   def props(
-    id:            String,
-    memberProps:   Iterable[Props],
-    configuration: Configuration
-  ): Props =
+    id: String,
+    memberProps: Iterable[Props],
+    configuration: Configuration): Props =
     Props(classOf[GroupFSM], id, memberProps, configuration)
 }
 
@@ -34,10 +32,9 @@ import GroupFSM._
  * GroupFSM is a set of components (eg. lights, groups, other sequences) which should be all red or green at the same time.
  */
 class GroupFSM(
-    id:            String,
-    memberProps:   Iterable[Props],
-    configuration: Configuration
-) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
+    id: String,
+    memberProps: Iterable[Props],
+    configuration: Configuration) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
   var recipient: Option[ActorRef] = None
   val members: Map[String, ActorRef] = Map()

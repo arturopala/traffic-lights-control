@@ -11,11 +11,10 @@ import trafficlightscontrol.model._
 
 object SequenceActor {
   def props(
-    id:            Id,
-    memberProps:   Iterable[Props],
+    id: Id,
+    memberProps: Iterable[Props],
     configuration: Configuration,
-    strategy:      SequenceStrategy = SequenceStrategy.RoundRobin
-  ): Props =
+    strategy: SequenceStrategy = SequenceStrategy.RoundRobin): Props =
     Props(classOf[SequenceActor], id, memberProps, configuration, strategy)
 }
 
@@ -23,11 +22,10 @@ object SequenceActor {
  * Sequence is a set of components (eg. lights, groups, other sequencees) amongst which only one may be green at once.
  */
 class SequenceActor(
-    val id:            Id,
-    val memberProps:   Iterable[Props],
+    val id: Id,
+    val memberProps: Iterable[Props],
     val configuration: Configuration,
-    strategy:          SequenceStrategy = SequenceStrategy.RoundRobin
-) extends BaseNodeActor with Stash {
+    strategy: SequenceStrategy = SequenceStrategy.RoundRobin) extends BaseNodeActor with Stash {
 
   val responderSet: Set[ActorRef] = Set()
 

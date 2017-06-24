@@ -9,10 +9,9 @@ import trafficlightscontrol.model._
 object LightActor {
 
   def props(
-    id:            Id,
-    initialState:  LightState    = RedLight,
-    configuration: Configuration
-  ): Props = Props(classOf[LightActor], id, initialState, configuration)
+    id: Id,
+    initialState: LightState = RedLight,
+    configuration: Configuration): Props = Props(classOf[LightActor], id, initialState, configuration)
 }
 
 /**
@@ -20,10 +19,9 @@ object LightActor {
  * Possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
  */
 class LightActor(
-    val id:            Id,
-    initialState:      LightState    = RedLight,
-    val configuration: Configuration
-) extends BaseLeafActor {
+    val id: Id,
+    initialState: LightState = RedLight,
+    val configuration: Configuration) extends BaseLeafActor {
 
   var state: LightState = initialState
 
