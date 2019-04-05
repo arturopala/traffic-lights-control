@@ -5,7 +5,7 @@ import akka.pattern.ask
 import scala.collection._
 import scala.concurrent._
 import scala.concurrent.duration._
-import scala.collection.mutable.{ Set, Map }
+import scala.collection.mutable.{Map, Set}
 
 import trafficlightscontrol.model._
 
@@ -19,13 +19,14 @@ object SequenceActor {
 }
 
 /**
- * Sequence is a set of components (eg. lights, groups, other sequencees) amongst which only one may be green at once.
- */
+  * Sequence is a set of components (eg. lights, groups, other sequencees) amongst which only one may be green at once.
+  */
 class SequenceActor(
-    val id: Id,
-    val memberProps: Iterable[Props],
-    val configuration: Configuration,
-    strategy: SequenceStrategy = SequenceStrategy.RoundRobin) extends BaseNodeActor with Stash {
+  val id: Id,
+  val memberProps: Iterable[Props],
+  val configuration: Configuration,
+  strategy: SequenceStrategy = SequenceStrategy.RoundRobin)
+    extends BaseNodeActor with Stash {
 
   val responderSet: Set[ActorRef] = Set()
 
@@ -33,7 +34,7 @@ class SequenceActor(
   var greenMemberId: Id = ""
   var nextGreenId: Id = _
 
-  import configuration.{ timeout, sequenceDelay }
+  import configuration.{sequenceDelay, timeout}
 
   /////////////////////////////////////////
   // STATE 1: IDLE, WAITING FOR COMMANDS //
@@ -52,15 +53,13 @@ class SequenceActor(
           case None =>
             throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
         }
-      }
-      else if (members.contains(nextGreenId)) {
+      } else if (members.contains(nextGreenId)) {
         responderSet.clear()
         become(receiveWhileChangingToAllRedBeforeGreen)
         members ! ChangeToRedCommand
         publish(ChangingToGreenLight)
         scheduleTimeout(timeout)
-      }
-      else {
+      } else {
         throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
       }
 
@@ -116,7 +115,8 @@ class SequenceActor(
       become(receiveWhileChangingToRed) // avoid going green in the next step
 
     case TimeoutEvent =>
-      throw new TimeoutException(s"Sequence ${this.id}: timeout occured when waiting for all red acks before changing to green")
+      throw new TimeoutException(
+        s"Sequence ${this.id}: timeout occured when waiting for all red acks before changing to green")
   }
 
   //////////////////////////////////////////////////////////
@@ -160,7 +160,7 @@ class SequenceActor(
 
     case ChangeToGreenCommand => //ignore, already changing to green
 
-    case ChangeToRedCommand   => stash() // we can't avoid going green at that point
+    case ChangeToRedCommand => stash() // we can't avoid going green at that point
 
     case TimeoutEvent =>
       throw new TimeoutException(s"Sequence ${this.id}: timeout occured when waiting for final green ack")

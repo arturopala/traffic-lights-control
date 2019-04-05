@@ -1,11 +1,11 @@
 package trafficlightscontrol.actors
 
-import org.scalatest.{ FlatSpecLike, Matchers }
+import org.scalatest.{FlatSpecLike, Matchers}
 import org.scalatest.concurrent.ScalaFutures
 import akka.actor.ActorSystem
-import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
+import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import com.typesafe.config.ConfigFactory
-import akka.testkit.{ TestProbe, EventFilter }
+import akka.testkit.{EventFilter, TestProbe}
 import scala.concurrent.duration._
 import akka.actor.ActorRef
 
@@ -24,7 +24,9 @@ class TrafficSystemsManagerSpec extends FlatSpecLike with Matchers with ScalaFut
 
   val strategy = SequenceStrategy.RoundRobin
 
-  val layout = Sequence("s1", strategy,
+  val layout = Sequence(
+    "s1",
+    strategy,
     Group(
       "g1",
       Light("l1", RedLight),

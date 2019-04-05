@@ -1,12 +1,12 @@
 package trafficlightscontrol.http
 
 import java.nio.charset.Charset
-import java.nio.file.{ FileSystems, Files, Path }
+import java.nio.file.{FileSystems, Files, Path}
 import java.util.function.Consumer
 
-import org.scalatest.{ Finders, FlatSpecLike, Matchers }
-import akka.actor.{ ActorSystem, Props }
-import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
+import org.scalatest.{Finders, FlatSpecLike, Matchers}
+import akka.actor.{ActorSystem, Props}
+import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import org.scalatest.junit.JUnitRunner
 import com.typesafe.config.ConfigFactory
 import akka.testkit.TestProbe

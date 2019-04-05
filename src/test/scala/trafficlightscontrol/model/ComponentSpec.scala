@@ -1,6 +1,6 @@
 package trafficlightscontrol.model
 
-import org.scalatest.{ FlatSpecLike, Matchers }
+import org.scalatest.{FlatSpecLike, Matchers}
 import scala.concurrent.duration._
 
 import trafficlightscontrol.http._
@@ -15,7 +15,9 @@ class ComponentSpec extends FlatSpecLike with Matchers {
 
   "Component" should "convert to and from JSON" in {
     val layout: Component = Switch(
-      Sequence("s1", SequenceStrategy.RoundRobin,
+      Sequence(
+        "s1",
+        SequenceStrategy.RoundRobin,
         Group(
           "g1",
           Light("l1", RedLight),
@@ -30,10 +32,9 @@ class ComponentSpec extends FlatSpecLike with Matchers {
           )
         ),
         Pulse(
-          Sequence("s2", SequenceStrategy.RoundRobin,
-            Light("l5", GreenLight),
-            Light("l6", RedLight))
-        )),
+          Sequence("s2", SequenceStrategy.RoundRobin, Light("l5", GreenLight), Light("l6", RedLight))
+        )
+      ),
       initiallyGreen = true,
       skipTicks = 2
     )
@@ -72,7 +73,8 @@ class ComponentSpec extends FlatSpecLike with Matchers {
 
   "FiniteDuration" should "umarshall from valid string or number" in {
 
-    def offsetFrom(json: String): FiniteDuration = json.parseJson.asJsObject.getFields("offset").head.convertTo[FiniteDuration]
+    def offsetFrom(json: String): FiniteDuration =
+      json.parseJson.asJsObject.getFields("offset").head.convertTo[FiniteDuration]
 
     offsetFrom("{\"offset\":\"125\"}") should be(125.millis)
     offsetFrom("{\"offset\":125}") should be(125.millis)

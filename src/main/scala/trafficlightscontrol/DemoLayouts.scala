@@ -16,9 +16,12 @@ object DemoLayouts {
   )
 
   val demoLayout =
-
-    Sequence("s1", SequenceStrategy.RoundRobin,
-      Sequence("s2", SequenceStrategy.RoundRobin,
+    Sequence(
+      "s1",
+      SequenceStrategy.RoundRobin,
+      Sequence(
+        "s2",
+        SequenceStrategy.RoundRobin,
         Group(
           "g1",
           Light("l1", RedLight),
@@ -45,12 +48,17 @@ object DemoLayouts {
             1.second,
             Light("l6", RedLight)
           ),
-          Sequence("s3", SequenceStrategy.RoundRobin,
+          Sequence(
+            "s3",
+            SequenceStrategy.RoundRobin,
             Light("l7", RedLight),
             Light("l8", RedLight),
             Light("l9", RedLight))
-        )),
-      Sequence("s12", SequenceStrategy.RoundRobin,
+        )
+      ),
+      Sequence(
+        "s12",
+        SequenceStrategy.RoundRobin,
         Group(
           "g11",
           Offset(
@@ -63,9 +71,7 @@ object DemoLayouts {
           Light("l11", RedLight),
           Offset(
             1.second,
-            Sequence("s14", SequenceStrategy.RoundRobin,
-              Light("l14a", RedLight),
-              Light("l14b", GreenLight))
+            Sequence("s14", SequenceStrategy.RoundRobin, Light("l14a", RedLight), Light("l14b", GreenLight))
           ),
           Light("l13", GreenLight)
         ),
@@ -75,11 +81,11 @@ object DemoLayouts {
           Light("l16", RedLight),
           Offset(
             2.second,
-            Sequence("s13", SequenceStrategy.RoundRobin,
-              Light("l17", RedLight),
-              Light("l19", RedLight))
+            Sequence("s13", SequenceStrategy.RoundRobin, Light("l17", RedLight), Light("l19", RedLight))
           )
-        )))
+        )
+      )
+    )
 
   val layouts = Map(
     "demo" -> demoLayout

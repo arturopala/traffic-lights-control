@@ -1,11 +1,11 @@
 package trafficlightscontrol.actors
 
-import org.scalatest.{ FlatSpecLike, Matchers }
+import org.scalatest.{FlatSpecLike, Matchers}
 import org.scalatest.concurrent.ScalaFutures
-import akka.actor.{ ActorSystem, Props }
-import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
+import akka.actor.{ActorSystem, Props}
+import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import com.typesafe.config.ConfigFactory
-import akka.testkit.{ TestProbe, EventFilter, TestKitBase }
+import akka.testkit.{EventFilter, TestKitBase, TestProbe}
 import scala.concurrent.duration._
 import akka.actor.ActorRef
 
@@ -22,7 +22,9 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
     timeout = 1.second
   )
 
-  val layout = Sequence("s1", SequenceStrategy.roundRobin("g1", "g2"),
+  val layout = Sequence(
+    "s1",
+    SequenceStrategy.roundRobin("g1", "g2"),
     Group(
       "g1",
       Light("l1", RedLight),
@@ -35,7 +37,8 @@ class TrafficSystemSpec extends FlatSpecLike with Matchers with ScalaFutures wit
         100.millis,
         Light("l4", RedLight)
       )
-    ))
+    )
+  )
 
   "A TrafficSystem" should "be materialized with TrafficSystemMaterializer" in new ActorSystemTest {
 

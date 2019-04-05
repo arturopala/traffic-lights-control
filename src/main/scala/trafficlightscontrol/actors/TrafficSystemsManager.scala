@@ -2,7 +2,7 @@ package trafficlightscontrol.actors
 
 import akka.actor.Actor
 import akka.actor.ActorRef
-import akka.actor.{ Props, Terminated }
+import akka.actor.{Props, Terminated}
 import scala.concurrent.duration._
 import akka.actor.ActorLogging
 import akka.actor.OneForOneStrategy
@@ -40,41 +40,46 @@ class TrafficSystemsManagerActor(initialLayouts: Map[Id, Component]) extends Act
           log.info(s"Traffic system $system has been INSTALLED")
       }
 
-    case command @ StartSystemCommand(system) => installedSystems.get(system) match {
-      case Some((component, None, history)) =>
-        val props = TrafficSystem.props(component, system)(TrafficSystemMaterializer)
-        val trafficSystem = context.actorOf(props, name = system)
-        context.watch(trafficSystem)
-        installedSystems(system) = (component, Some(trafficSystem), history)
-        trafficSystem ! command
-      case Some((_, Some(_), _)) =>
-        log.warning(s"Could not start system twice, $system alredy deployed!")
-        sender ! SystemStartFailureEvent(system, s"Could not start, system $system already running!")
-      case _ =>
-        sender ! SystemStartFailureEvent(system, s"Could not start, system $system not yet installed!")
-    }
+    case command @ StartSystemCommand(system) =>
+      installedSystems.get(system) match {
+        case Some((component, None, history)) =>
+          val props = TrafficSystem.props(component, system)(TrafficSystemMaterializer)
+          val trafficSystem = context.actorOf(props, name = system)
+          context.watch(trafficSystem)
+          installedSystems(system) = (component, Some(trafficSystem), history)
+          trafficSystem ! command
+        case Some((_, Some(_), _)) =>
+          log.warning(s"Could not start system twice, $system alredy deployed!")
+          sender ! SystemStartFailureEvent(system, s"Could not start, system $system already running!")
+        case _ =>
+          sender ! SystemStartFailureEvent(system, s"Could not start, system $system not yet installed!")
+      }
 
-    case SystemStartedEvent(system) => installedSystems.get(system) match {
-      case Some((component, trafficSystemOpt, history)) =>
-        installedSystems(system) = (component, trafficSystemOpt, history.started())
-        log.info(s"Traffic system $system just STARTED")
-      case _ =>
-    }
+    case SystemStartedEvent(system) =>
+      installedSystems.get(system) match {
+        case Some((component, trafficSystemOpt, history)) =>
+          installedSystems(system) = (component, trafficSystemOpt, history.started())
+          log.info(s"Traffic system $system just STARTED")
+        case _ =>
+      }
 
-    case command @ StopSystemCommand(system) => installedSystems.get(system) match {
-      case Some((component, Some(trafficSystem), history)) =>
-        trafficSystem ! command
-        log.info(s"Traffic system $system about to STOP")
-      case Some((_, None, _)) =>
-        sender ! SystemStopFailureEvent(system, s"Could not stop, system $system not running!")
-      case _ =>
-        sender ! SystemStopFailureEvent(system, s"Could not stop, system $system not yet installed!")
-    }
+    case command @ StopSystemCommand(system) =>
+      installedSystems.get(system) match {
+        case Some((component, Some(trafficSystem), history)) =>
+          trafficSystem ! command
+          log.info(s"Traffic system $system about to STOP")
+        case Some((_, None, _)) =>
+          sender ! SystemStopFailureEvent(system, s"Could not stop, system $system not running!")
+        case _ =>
+          sender ! SystemStopFailureEvent(system, s"Could not stop, system $system not yet installed!")
+      }
 
-    case cmd @ GetSystemInfoQuery(id) => installedSystems.get(id) match {
-      case Some((component, _, history)) => sender ! SystemInfoEvent(id, component, component.configuration.interval, history)
-      case _                             => sender ! MessageIgnoredEvent(cmd)
-    }
+    case cmd @ GetSystemInfoQuery(id) =>
+      installedSystems.get(id) match {
+        case Some((component, _, history)) =>
+          sender ! SystemInfoEvent(id, component, component.configuration.interval, history)
+        case _ => sender ! MessageIgnoredEvent(cmd)
+      }
 
     case GetSystemListQuery => sender ! installedSystems.keys
 
@@ -89,7 +94,6 @@ class TrafficSystemsManagerActor(initialLayouts: Map[Id, Component]) extends Act
       }
 
     case MessageIgnoredEvent(_) =>
-
   }
 
 }

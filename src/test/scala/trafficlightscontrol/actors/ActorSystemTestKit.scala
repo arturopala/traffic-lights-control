@@ -2,7 +2,7 @@ package trafficlightscontrol.actors
 
 import com.typesafe.config.ConfigFactory
 import akka.testkit.TestKit
-import akka.actor.{ Actor, ActorSystem, ActorRef, Props, Terminated }
+import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
 import akka.testkit.ImplicitSender
 import akka.testkit.TestProbe
 import org.scalatest.BeforeAndAfter
@@ -11,7 +11,7 @@ import akka.testkit.TestKitBase
 import org.scalatest.BeforeAndAfterAll
 import scala.concurrent.duration._
 
-import org.reactivestreams.{ Publisher, Subscriber, Subscription }
+import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
 import trafficlightscontrol.model._
 
@@ -30,10 +30,10 @@ trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
 
   class TestSubscriber[T](implicit val system: ActorSystem) extends Subscriber[T] {
     val probe = TestProbe()
-    def onComplete(): Unit = { probe.ref ! "Completed" }
-    def onError(error: Throwable): Unit = { probe.ref ! error }
-    def onNext(element: T): Unit = { probe.ref ! element }
-    def onSubscribe(subscription: Subscription): Unit = { probe.ref ! subscription }
+    def onComplete(): Unit = probe.ref ! "Completed"
+    def onError(error: Throwable): Unit = probe.ref ! error
+    def onNext(element: T): Unit = probe.ref ! element
+    def onSubscribe(subscription: Subscription): Unit = probe.ref ! subscription
   }
 
   override def afterAll() {
@@ -43,9 +43,10 @@ trait ActorSystemTestKit extends BeforeAndAfterAll { this: Suite =>
 }
 
 object TestProps {
-  def apply(probe: TestProbe): Props = Props(new Actor {
-    val receive: Receive = {
-      case message => probe.ref forward message
-    }
-  })
+  def apply(probe: TestProbe): Props =
+    Props(new Actor {
+      val receive: Receive = {
+        case message => probe.ref forward message
+      }
+    })
 }

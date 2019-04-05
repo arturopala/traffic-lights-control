@@ -8,24 +8,20 @@ import trafficlightscontrol.model._
 
 object LightActor {
 
-  def props(
-    id: Id,
-    initialState: LightState = RedLight,
-    configuration: Configuration): Props = Props(classOf[LightActor], id, initialState, configuration)
+  def props(id: Id, initialState: LightState = RedLight, configuration: Configuration): Props =
+    Props(classOf[LightActor], id, initialState, configuration)
 }
 
 /**
- * LightActor is a primitive building block of a traffic control system.
- * Possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
- */
-class LightActor(
-    val id: Id,
-    initialState: LightState = RedLight,
-    val configuration: Configuration) extends BaseLeafActor {
+  * LightActor is a primitive building block of a traffic control system.
+  * Possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
+  */
+class LightActor(val id: Id, initialState: LightState = RedLight, val configuration: Configuration)
+    extends BaseLeafActor {
 
   var state: LightState = initialState
 
-  import configuration.{ delayRedToGreen, delayGreenToRed }
+  import configuration.{delayGreenToRed, delayRedToGreen}
 
   def receiveByState(): Receive = state match {
     case RedLight | UnknownLight => receiveWhenRed

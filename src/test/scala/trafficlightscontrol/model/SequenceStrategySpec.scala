@@ -1,6 +1,6 @@
 package trafficlightscontrol.model
 
-import org.scalatest.{ FlatSpecLike, Matchers }
+import org.scalatest.{FlatSpecLike, Matchers}
 import trafficlightscontrol.model._
 
 class SequenceStrategySpec extends FlatSpecLike with Matchers {

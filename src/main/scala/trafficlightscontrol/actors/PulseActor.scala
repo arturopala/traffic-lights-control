@@ -5,7 +5,7 @@ import akka.pattern.ask
 import scala.collection._
 import scala.concurrent._
 import scala.concurrent.duration._
-import scala.collection.mutable.{ Set, Map }
+import scala.collection.mutable.{Map, Set}
 
 import trafficlightscontrol.model._
 
@@ -21,20 +21,21 @@ object PulseActor {
 }
 
 /**
- * Pulse is a component reacting on TickEvent and sending downstream command.
- * @param skipTicks number of ticks to skip between command emits
- */
+  * Pulse is a component reacting on TickEvent and sending downstream command.
+  * @param skipTicks number of ticks to skip between command emits
+  */
 class PulseActor(
-    val id: Id,
-    val memberProp: Props,
-    val configuration: Configuration,
-    skipTicks: Int,
-    command: Command,
-    ackEvent: Event) extends SingleNodeActor {
+  val id: Id,
+  val memberProp: Props,
+  val configuration: Configuration,
+  skipTicks: Int,
+  command: Command,
+  ackEvent: Event)
+    extends SingleNodeActor {
 
   var remainingTicksToSkip: Int = 0
 
-  import configuration.{ timeout }
+  import configuration.{timeout}
 
   ////////////////////////////////////////////
   // STEP 1: WAIT FOR TICK EVENT            //

@@ -1,11 +1,11 @@
 package trafficlightscontrol.actors
 
-import org.scalatest.{ FlatSpecLike, Matchers }
+import org.scalatest.{FlatSpecLike, Matchers}
 import org.scalatest.concurrent.ScalaFutures
 import akka.actor.ActorSystem
-import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
+import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import com.typesafe.config.ConfigFactory
-import akka.testkit.{ TestProbe, EventFilter }
+import akka.testkit.{EventFilter, TestProbe}
 import scala.concurrent.duration._
 import akka.actor.ActorRef
 import org.scalatest.prop.PropertyChecks

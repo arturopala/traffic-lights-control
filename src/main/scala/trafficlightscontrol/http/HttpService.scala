@@ -21,12 +21,15 @@ import trafficlightscontrol.model._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
 /**
- * Http service exposing REST and WS API.
- */
-class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implicit system: ActorSystem, materializer: ActorMaterializer) extends SprayJsonSupport {
+  * Http service exposing REST and WS API.
+  */
+class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(
+  implicit system: ActorSystem,
+  materializer: ActorMaterializer)
+    extends SprayJsonSupport {
 
   import JsonProtocol._
 
@@ -34,12 +37,11 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
 
   implicit val timeout = Timeout(5.seconds)
 
-  def bind(host: String, port: Int): Future[Http.ServerBinding] = {
+  def bind(host: String, port: Int): Future[Http.ServerBinding] =
     Http().bindAndHandle(route, host, port) andThen {
       case Success(_) => println(s"Server online at http://$host:$port/")
       case Failure(e) => println(s"Error starting HTTP server: $e")
     }
-  }
 
   val exceptionHandler = {
     ExceptionHandler {
@@ -49,7 +51,8 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
   }
 
   val rejectionHandler = {
-    RejectionHandler.newBuilder()
+    RejectionHandler
+      .newBuilder()
       .handle {
         case MissingQueryParamRejection(param) =>
           complete(BadRequest, s"Request is missing required query parameter '$param'")
@@ -62,46 +65,40 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
       .result()
   }
 
-  def getFullReport: Future[ReportEvent] = {
+  def getFullReport: Future[ReportEvent] =
     monitoring.actor ? GetReportQuery map (_.asInstanceOf[ReportEvent])
-  }
 
-  def getReport(systemId: Id): Future[ReportEvent] = {
+  def getReport(systemId: Id): Future[ReportEvent] =
     monitoring.actor ? GetReportQuery(systemId) map (_.asInstanceOf[ReportEvent])
-  }
 
-  def getStatusOpt(id: Id): Future[Option[StateChangedEvent]] = {
+  def getStatusOpt(id: Id): Future[Option[StateChangedEvent]] =
     monitoring.actor ? GetStatusQuery(id) map (_.asInstanceOf[Option[StateChangedEvent]])
-  }
 
-  def getStatusPublisher(predicate: Id => Boolean): Future[Publisher[StateChangedEvent]] = {
+  def getStatusPublisher(predicate: Id => Boolean): Future[Publisher[StateChangedEvent]] =
     monitoring.actor ? GetPublisherQuery(predicate) map (_.asInstanceOf[Publisher[StateChangedEvent]])
-  }
 
-  def getStatusPublisher: Future[Publisher[StateChangedEvent]] = {
+  def getStatusPublisher: Future[Publisher[StateChangedEvent]] =
     monitoring.actor ? GetPublisherQuery(_ => true) map (_.asInstanceOf[Publisher[StateChangedEvent]])
-  }
 
-  def getLayoutList: Future[Iterable[String]] = {
+  def getLayoutList: Future[Iterable[String]] =
     manager.actor ? GetSystemListQuery map (_.asInstanceOf[Iterable[String]])
-  }
 
-  def getLayout(id: Id): Future[Component] = {
+  def getLayout(id: Id): Future[Component] =
     manager.actor ? GetSystemInfoQuery(id) map (_.asInstanceOf[SystemInfoEvent].component)
-  }
 
   import akka.http.scaladsl.model.ws.UpgradeToWebSocket
 
   def handleWebsocket: Directive1[UpgradeToWebSocket] =
     optionalHeaderValueByType[UpgradeToWebSocket](()).flatMap {
       case Some(upgrade) ⇒ provide(upgrade)
-      case None          ⇒ reject(ExpectedWebSocketRequestRejection)
+      case None ⇒ reject(ExpectedWebSocketRequestRejection)
     }
 
-  def publisherAsMessageSource[A](p: Publisher[A])(f: A => String): Source[TextMessage, NotUsed] = Source.fromPublisher(p).map((e: A) => TextMessage(f(e))).named("tms")
+  def publisherAsMessageSource[A](p: Publisher[A])(f: A => String): Source[TextMessage, NotUsed] =
+    Source.fromPublisher(p).map((e: A) => TextMessage(f(e))).named("tms")
 
   val idPattern = "\\w{1,128}".r
-  val statusEventToString: StateChangedEvent => String = e => e.id+":"+e.state.id
+  val statusEventToString: StateChangedEvent => String = e => e.id + ":" + e.state.id
   val lightStateToString: StateChangedEvent => String = e => e.state.id
   val forAllIds: Id => Boolean = _ => true
   def forSystem(systemId: Id): Id => Boolean = x => x.startsWith(systemId)
@@ -131,7 +128,7 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
                         complete(getReport(systemId))
                       } ~
                         path(idPattern) { lightId =>
-                          onSuccess(getStatusOpt(systemId+"_"+lightId)) {
+                          onSuccess(getStatusOpt(systemId + "_" + lightId)) {
                             case Some(status) => complete(status)
                             case None         => complete(NotFound)
                           }
@@ -140,10 +137,14 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
                 } ~
                   pathPrefix("layouts") {
                     pathEmpty {
-                      onSuccess(getLayoutList) { layouts => complete(layouts) }
+                      onSuccess(getLayoutList) { layouts =>
+                        complete(layouts)
+                      }
                     } ~
                       path(idPattern) { systemId =>
-                        onSuccess(getLayout(systemId)) { layout => complete(layout) }
+                        onSuccess(getLayout(systemId)) { layout =>
+                          complete(layout)
+                        }
                       }
                   }
               }
@@ -152,7 +153,11 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
               pathEmpty {
                 handleWebsocket { websocket =>
                   onSuccess(getStatusPublisher(forAllIds)) { p =>
-                    complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString), None))
+                    complete(
+                      websocket.handleMessagesWithSinkSource(
+                        Sink.ignore,
+                        publisherAsMessageSource(p)(statusEventToString),
+                        None))
                   }
                 }
               } ~
@@ -160,14 +165,22 @@ class HttpService(monitoring: Monitoring, manager: TrafficSystemsManager)(implic
                   pathEmpty {
                     handleWebsocket { websocket =>
                       onSuccess(getStatusPublisher(forSystem(systemId))) { p =>
-                        complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString), None))
+                        complete(
+                          websocket.handleMessagesWithSinkSource(
+                            Sink.ignore,
+                            publisherAsMessageSource(p)(statusEventToString),
+                            None))
                       }
                     }
                   } ~
                     path(idPattern) { lightId =>
                       handleWebsocket { websocket =>
-                        onSuccess(getStatusPublisher(forLight(systemId+"_"+lightId))) { p =>
-                          complete(websocket.handleMessagesWithSinkSource(Sink.ignore, publisherAsMessageSource(p)(statusEventToString), None))
+                        onSuccess(getStatusPublisher(forLight(systemId + "_" + lightId))) { p =>
+                          complete(
+                            websocket.handleMessagesWithSinkSource(
+                              Sink.ignore,
+                              publisherAsMessageSource(p)(statusEventToString),
+                              None))
                         }
                       }
                     }

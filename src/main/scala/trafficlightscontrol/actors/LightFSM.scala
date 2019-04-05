@@ -8,24 +8,19 @@ import trafficlightscontrol.model._
 
 object LightFSM {
 
-  def props(
-    id: Id,
-    initialState: LightState = RedLight,
-    configuration: Configuration): Props = Props(classOf[LightFSM], id, initialState, configuration)
+  def props(id: Id, initialState: LightState = RedLight, configuration: Configuration): Props =
+    Props(classOf[LightFSM], id, initialState, configuration)
 }
 
 /**
- * LightFSM is a primitive building block of a traffic control system. R
- * Represents single control point with possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
- * @param id UUID
- * @param initalState initial state of the light
- * @param delay green <-> red sequence delay
- * @param automatic should sequence from yellow to red or green automatically or manually?
- */
-class LightFSM(
-  id: Id,
-  initialState: LightState = RedLight,
-  configuration: Configuration)
+  * LightFSM is a primitive building block of a traffic control system. R
+  * Represents single control point with possible states: GreenLight, ChangingToRedLight, RedLight, ChangingToGreenLight.
+  * @param id UUID
+  * @param initalState initial state of the light
+  * @param delay green <-> red sequence delay
+  * @param automatic should sequence from yellow to red or green automatically or manually?
+  */
+class LightFSM(id: Id, initialState: LightState = RedLight, configuration: Configuration)
     extends Actor with ActorLogging with FSM[LightState, Option[ActorRef]] {
 
   startWith(initialState, None)
@@ -71,9 +66,11 @@ class LightFSM(
     case ChangingToRedLight -> RedLight =>
       stateData map (_ ! ChangedToRedEvent)
     case RedLight -> ChangingToGreenLight =>
-      if (configuration.automatic) setTimer("changeToGreen", CanContinueAfterDelayEvent, configuration.delayRedToGreen, false)
+      if (configuration.automatic)
+        setTimer("changeToGreen", CanContinueAfterDelayEvent, configuration.delayRedToGreen, false)
     case GreenLight -> ChangingToRedLight =>
-      if (configuration.automatic) setTimer("changeToRed", CanContinueAfterDelayEvent, configuration.delayGreenToRed, false)
+      if (configuration.automatic)
+        setTimer("changeToRed", CanContinueAfterDelayEvent, configuration.delayGreenToRed, false)
   }
 
   whenUnhandled {
@@ -82,8 +79,7 @@ class LightFSM(
         val recipient = Option(newRecipient)
         recipient ! RecipientRegisteredEvent(id)
         stay using recipient
-      }
-      else stay
+      } else stay
 
     case Event(GetStatusQuery, _) => {
       sender ! StateChangedEvent(id, stateName)

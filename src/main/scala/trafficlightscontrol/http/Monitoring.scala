@@ -20,12 +20,12 @@ import akka.stream.actor._
 case class Monitoring(actor: ActorRef)
 
 /**
- * Actor responsible of listening on EventStream for StateChangedEvents. <br>
- * Keeps current system status and spreads it responding on:
- * <li>   GetReportQuery => ReportEvent
- * <li>   GetStatusQuery(id: Id) => StateChangedEvent
- * <li>   GetPublisherQuery(predicate: Id => Boolean) => Publisher[StateChangedEvent]
- */
+  * Actor responsible of listening on EventStream for StateChangedEvents. <br>
+  * Keeps current system status and spreads it responding on:
+  * <li>   GetReportQuery => ReportEvent
+  * <li>   GetStatusQuery(id: Id) => StateChangedEvent
+  * <li>   GetPublisherQuery(predicate: Id => Boolean) => Publisher[StateChangedEvent]
+  */
 class MonitoringActor extends Actor with ActorLogging {
 
   val publisher = new publishers.PublisherActor[StateChangedEvent]()(context.system)
@@ -61,16 +61,16 @@ class MonitoringActor extends Actor with ActorLogging {
 
 object publishers {
 
-  import org.reactivestreams.{ Subscriber, Publisher }
+  import org.reactivestreams.{Publisher, Subscriber}
 
   final class PublisherActor[T](implicit system: ActorSystem) extends Publisher[T] {
 
     private[this] val worker = system.actorOf(Props(new PublisherActorWorker))
 
-    override def subscribe(subscriber: Subscriber[_ >: T]): Unit = {
-      Option(subscriber).map(s => new Subscription(subscriber, worker, all))
+    override def subscribe(subscriber: Subscriber[_ >: T]): Unit =
+      Option(subscriber)
+        .map(s => new Subscription(subscriber, worker, all))
         .getOrElse(throw new NullPointerException)
-    }
 
     def publish(element: T): Unit = worker ! Publish(element)
 
@@ -81,14 +81,19 @@ object publishers {
 
     final def all: T => Boolean = (e: T) => true
 
-    final case class Subscription(subscriber: Subscriber[_ >: T], worker: ActorRef, predicate: T => Boolean, var cancelled: Boolean = false) extends org.reactivestreams.Subscription {
+    final case class Subscription(
+      subscriber: Subscriber[_ >: T],
+      worker: ActorRef,
+      predicate: T => Boolean,
+      var cancelled: Boolean = false)
+        extends org.reactivestreams.Subscription {
       override def cancel(): Unit = worker ! Cancel(this)
       override def request(n: Long): Unit = worker ! Demand(this, n)
 
       private var demand: Long = 0
       private var buffer: Vector[T] = Vector()
 
-      private[publishers] def addDemand(n: Long) = {
+      private[publishers] def addDemand(n: Long) =
         if (n > 0) {
           demand = demand + n
           if (demand < 0) demand = 0
@@ -99,17 +104,14 @@ object publishers {
             send foreach push
           }
         }
-      }
 
-      private[publishers] def push(element: T): Unit = {
+      private[publishers] def push(element: T): Unit =
         if (demand > 0) {
           subscriber.onNext(element)
           demand = demand - 1
-        }
-        else {
+        } else {
           buffer = buffer :+ element
         }
-      }
       worker ! Subscribe(this, predicate)
     }
 
@@ -139,10 +141,10 @@ object publishers {
 
     def withPredicate(predicate: T => Boolean): Publisher[T] = new Publisher[T] {
 
-      override def subscribe(subscriber: Subscriber[_ >: T]): Unit = {
-        Option(subscriber).map(s => new Subscription(subscriber, worker, predicate))
+      override def subscribe(subscriber: Subscriber[_ >: T]): Unit =
+        Option(subscriber)
+          .map(s => new Subscription(subscriber, worker, predicate))
           .getOrElse(throw new NullPointerException)
-      }
     }
 
   }

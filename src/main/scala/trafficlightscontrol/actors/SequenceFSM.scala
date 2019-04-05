@@ -2,7 +2,7 @@ package trafficlightscontrol.actors
 
 import akka.actor._
 import akka.pattern.ask
-import scala.collection.mutable.{ Set, Map }
+import scala.collection.mutable.{Map, Set}
 import scala.concurrent._
 import scala.concurrent.duration._
 
@@ -17,10 +17,7 @@ object SequenceFSM {
   object WaitingWhileDelayedBeforeGreen extends State
   object WaitingForGreen extends State
 
-  case class StateData(
-    greenMemberId: Id,
-    responderSet: Set[ActorRef] = Set.empty,
-    isGreen: Boolean = false)
+  case class StateData(greenMemberId: Id, responderSet: Set[ActorRef] = Set.empty, isGreen: Boolean = false)
 
   def props(
     id: Id,
@@ -33,13 +30,10 @@ object SequenceFSM {
 import SequenceFSM._
 
 /**
- * SequenceFSM is a set of components (eg. lights, groups, other sequencees) amongst which only one may be green at once.
- */
-class SequenceFSM(
-    id: Id,
-    memberProps: Iterable[Props],
-    configuration: Configuration,
-    strategy: SequenceStrategy) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
+  * SequenceFSM is a set of components (eg. lights, groups, other sequencees) amongst which only one may be green at once.
+  */
+class SequenceFSM(id: Id, memberProps: Iterable[Props], configuration: Configuration, strategy: SequenceStrategy)
+    extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
   var recipient: Option[ActorRef] = None
   val members: Map[Id, ActorRef] = Map()
@@ -57,8 +51,7 @@ class SequenceFSM(
       if (members.size == memberProps.size) {
         log.info(s"Sequence ${this.id} initialized. Members: ${memberIds.mkString(",")}, timeout: $timeout")
         goto(Idle)
-      }
-      else stay
+      } else stay
     case Event(ChangeToGreenCommand | ChangeToRedCommand, _) =>
       log.warning(s"Sequence $id not yet initialized, skipping command")
       stay
@@ -70,11 +63,9 @@ class SequenceFSM(
       if (isGreen && nextGreenId == greenMemberId) {
         recipient ! ChangedToGreenEvent
         stay
-      }
-      else if (members.contains(nextGreenId)) {
+      } else if (members.contains(nextGreenId)) {
         goto(WaitingForAllRedBeforeGreen) using StateData(greenMemberId = nextGreenId, isGreen = isGreen)
-      }
-      else {
+      } else {
         throw new IllegalStateException(s"Sequence ${this.id}: Member $nextGreenId not found")
       }
     }

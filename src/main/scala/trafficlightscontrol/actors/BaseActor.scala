@@ -5,8 +5,8 @@ import akka.actor._
 import trafficlightscontrol.model._
 
 /**
- * Base trait of leaf-like traffic system components
- */
+  * Base trait of leaf-like traffic system components
+  */
 trait BaseLeafActor extends Actor with ActorLogging {
 
   def id: Id
@@ -36,21 +36,17 @@ trait BaseLeafActor extends Actor with ActorLogging {
 
   private var delayTask: Cancellable = _
 
-  final def schedule(timeout: FiniteDuration, msg: Any): Cancellable = {
+  final def schedule(timeout: FiniteDuration, msg: Any): Cancellable =
     context.system.scheduler.scheduleOnce(timeout, self, msg)(context.system.dispatcher)
-  }
 
-  final def scheduleDelay(delay: FiniteDuration): Unit = {
+  final def scheduleDelay(delay: FiniteDuration): Unit =
     if (configuration.automatic) delayTask = schedule(delay, CanContinueAfterDelayEvent)
-  }
 
-  final def cancelDelay(): Unit = {
+  final def cancelDelay(): Unit =
     delayTask.cancel()
-  }
 
-  final def signal(event: Event): Unit = {
+  final def signal(event: Event): Unit =
     _recipient ! event
-  }
 
   final def become(receive: Receive): Unit = context.become(receive)
 
@@ -58,8 +54,8 @@ trait BaseLeafActor extends Actor with ActorLogging {
 }
 
 /**
- * Base trait of node-like traffic system components (composing some members)
- */
+  * Base trait of node-like traffic system components (composing some members)
+  */
 trait BaseNodeActor extends BaseLeafActor {
 
   def receiveWhenIdle: Receive
@@ -71,12 +67,11 @@ trait BaseNodeActor extends BaseLeafActor {
   private var _members: Map[Id, ActorRef] = Map()
   private var _memberIds: Seq[Id] = _
 
-  override def preStart = {
+  override def preStart =
     for (props <- memberProps) {
       val member = context.actorOf(props, getIdFromProps(props))
       member ! RegisterRecipientCommand(self)
     }
-  }
 
   private def getIdFromProps(props: Props): Id = props.args.headOption match {
     case Some(id: Id) => id
@@ -85,13 +80,11 @@ trait BaseNodeActor extends BaseLeafActor {
 
   private var timeoutTask: Cancellable = _
 
-  final def scheduleTimeout(timeout: FiniteDuration): Unit = {
+  final def scheduleTimeout(timeout: FiniteDuration): Unit =
     timeoutTask = schedule(timeout, TimeoutEvent)
-  }
 
-  final def cancelTimeout(): Unit = {
+  final def cancelTimeout(): Unit =
     timeoutTask.cancel()
-  }
 
   /////////////////////////////////////////////////////////////////
   // STATE 0: INITIALIZING, WAITING FOR ALL MEMBERS REGISTRATION //
@@ -114,7 +107,8 @@ trait BaseNodeActor extends BaseLeafActor {
       }
 
     case TimeoutEvent =>
-      log.warning(s"Timeout ocurred. Node ${this.id} PARTIALLY initialized. Members: ${Option(memberIds).map(_.mkString(","))}")
+      log.warning(
+        s"Timeout ocurred. Node ${this.id} PARTIALLY initialized. Members: ${Option(memberIds).map(_.mkString(","))}")
       become(receiveWhenIdle)
   }
 
@@ -126,15 +120,16 @@ trait BaseNodeActor extends BaseLeafActor {
 
   override val receive = composeWithDefault(receiveWhenInitializing)
 
-  override def composeWithDefault(receive: Receive): Receive = super.composeWithDefault(receive orElse receiveCommonNodeMessages)
+  override def composeWithDefault(receive: Receive): Receive =
+    super.composeWithDefault(receive orElse receiveCommonNodeMessages)
 
   scheduleTimeout(configuration.timeout)
 
 }
 
 /**
- * Base trait of node-like traffic system components (wrapping only one member)
- */
+  * Base trait of node-like traffic system components (wrapping only one member)
+  */
 trait SingleNodeActor extends BaseNodeActor {
 
   def memberProp: Props
@@ -143,4 +138,3 @@ trait SingleNodeActor extends BaseNodeActor {
   final def member: ActorRef = members.head._2
 
 }
-

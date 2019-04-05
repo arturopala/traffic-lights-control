@@ -44,7 +44,8 @@ case class SystemStartFailureEvent(system: Id, reason: String) extends Event
 case class SystemStopFailureEvent(system: Id, reason: String) extends Event
 
 case class GetSystemInfoQuery(system: Id) extends Query
-case class SystemInfoEvent(system: Id, component: Component, interval: FiniteDuration, history: SystemHistory) extends Event
+case class SystemInfoEvent(system: Id, component: Component, interval: FiniteDuration, history: SystemHistory)
+    extends Event
 
 case object GetSystemListQuery extends Query
 

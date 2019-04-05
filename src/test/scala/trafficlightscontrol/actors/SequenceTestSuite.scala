@@ -1,11 +1,11 @@
 package trafficlightscontrol.actors
 
-import org.scalatest.{ FlatSpecLike, Matchers }
+import org.scalatest.{FlatSpecLike, Matchers}
 import org.scalatest.concurrent.ScalaFutures
 import akka.actor.ActorSystem
-import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
+import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import com.typesafe.config.ConfigFactory
-import akka.testkit.{ TestProbe, EventFilter }
+import akka.testkit.{EventFilter, TestProbe}
 import scala.concurrent.duration._
 import akka.actor.ActorRef
 
@@ -75,7 +75,6 @@ trait SequenceTestSuite extends FlatSpecLike with Matchers with ScalaFutures wit
         StateChangedEvent("4", ChangingToRedLight),
         StateChangedEvent("4", RedLight),
         StateChangedEvent("s1", GreenLight)
-
       )
     }
 
@@ -103,7 +102,6 @@ trait SequenceTestSuite extends FlatSpecLike with Matchers with ScalaFutures wit
         StateChangedEvent("4", ChangingToRedLight),
         StateChangedEvent("4", RedLight),
         StateChangedEvent("s1", RedLight)
-
       )
     }
 
@@ -121,7 +119,7 @@ trait SequenceTestSuite extends FlatSpecLike with Matchers with ScalaFutures wit
       )
       for (j <- 0 to 3; i <- 1 to 4) {
         val prev_id = s"${if ((i - 1) == 0) 4 else (i - 1)}"
-        val id = s"${i}"
+        val id = s"$i"
         tested ! ChangeToGreenCommand
         expectMsg(ChangedToGreenEvent)
         eventListener.expectMsgAllOf(

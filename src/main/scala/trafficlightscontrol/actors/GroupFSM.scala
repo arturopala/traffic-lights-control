@@ -2,7 +2,7 @@ package trafficlightscontrol.actors
 
 import akka.actor._
 import akka.pattern.ask
-import scala.collection.mutable.{ Set, Map }
+import scala.collection.mutable.{Map, Set}
 import scala.concurrent._
 import scala.concurrent.duration._
 
@@ -15,26 +15,19 @@ object GroupFSM {
   object WaitingForAllRed extends State
   object WaitingForAllGreen extends State
 
-  case class StateData(
-    responderSet: Set[ActorRef] = Set.empty,
-    isGreen: Option[Boolean] = None)
+  case class StateData(responderSet: Set[ActorRef] = Set.empty, isGreen: Option[Boolean] = None)
 
-  def props(
-    id: String,
-    memberProps: Iterable[Props],
-    configuration: Configuration): Props =
+  def props(id: String, memberProps: Iterable[Props], configuration: Configuration): Props =
     Props(classOf[GroupFSM], id, memberProps, configuration)
 }
 
 import GroupFSM._
 
 /**
- * GroupFSM is a set of components (eg. lights, groups, other sequences) which should be all red or green at the same time.
- */
-class GroupFSM(
-    id: String,
-    memberProps: Iterable[Props],
-    configuration: Configuration) extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
+  * GroupFSM is a set of components (eg. lights, groups, other sequences) which should be all red or green at the same time.
+  */
+class GroupFSM(id: String, memberProps: Iterable[Props], configuration: Configuration)
+    extends Actor with ActorLogging with LoggingFSM[State, StateData] with Stash {
 
   var recipient: Option[ActorRef] = None
   val members: Map[String, ActorRef] = Map()
@@ -52,28 +45,29 @@ class GroupFSM(
       if (members.size == memberProps.size) {
         log.info(s"Group ${this.id} initialized. Members: ${memberIds.mkString(",")}, timeout: $timeout")
         goto(Idle)
-      }
-      else stay
+      } else stay
     case Event(ChangeToGreenCommand | ChangeToRedCommand, _) =>
       log.warning(s"Group $id not yet initialized, skipping command")
       stay
   }
 
   when(Idle) {
-    case Event(ChangeToGreenCommand, StateData(_, isGreen)) => isGreen match {
-      case None | Some(false) =>
-        goto(WaitingForAllGreen)
-      case Some(true) =>
-        recipient ! ChangedToGreenEvent
-        stay
-    }
-    case Event(ChangeToRedCommand, StateData(_, isGreen)) => isGreen match {
-      case None | Some(true) =>
-        goto(WaitingForAllRed)
-      case Some(false) =>
-        recipient ! ChangedToRedEvent
-        stay
-    }
+    case Event(ChangeToGreenCommand, StateData(_, isGreen)) =>
+      isGreen match {
+        case None | Some(false) =>
+          goto(WaitingForAllGreen)
+        case Some(true) =>
+          recipient ! ChangedToGreenEvent
+          stay
+      }
+    case Event(ChangeToRedCommand, StateData(_, isGreen)) =>
+      isGreen match {
+        case None | Some(true) =>
+          goto(WaitingForAllRed)
+        case Some(false) =>
+          recipient ! ChangedToRedEvent
+          stay
+      }
   }
 
   when(WaitingForAllRed, stateTimeout = timeout) {
